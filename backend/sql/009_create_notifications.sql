@@ -5,8 +5,7 @@ CREATE TABLE IF NOT EXISTS notifications (
     user_id         BIGINT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
     title           VARCHAR(150) NOT NULL,
     message         TEXT NOT NULL,
-    type            VARCHAR(30) NOT NULL DEFAULT 'general'
-                    CHECK (type IN ('general', 'event_reminder', 'announcement', 'message_alert')),
+    type            VARCHAR(30) NOT NULL DEFAULT 'general' CHECK (type IN ('general', 'event_reminder', 'announcement', 'message_alert')),
     sent_at         TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
