@@ -1,16 +1,4 @@
 ### Backend code goes here, placeholder file delete later
-
-#### Logged Changes
-#### 9/16/26 @ 3 am - Ahren Agatep
-- Initialized /backend and installed core dependencies
-    - express : web framework and router
-    - pg : PostgreSQL database client
-    - dotenv : environment variables loader
-    - bcrypt : password hashing utility
-    - jsonwebtoken : secure user session token generator
-    - cors : Cross-Origin Request manager
-    - nodemon : auto-restarts your server on file changes
-
 ### 1\. Database Setup (PostgreSQL on Supabase)
 
 *   Create the Supabase project, get your connection string/env vars sorted
