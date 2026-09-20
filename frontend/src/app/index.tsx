@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 45,
     borderBottomRightRadius: 45,
   },
-
+  
   logoBox: {
     width: 65,
     height: 64,
