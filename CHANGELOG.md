@@ -1,5 +1,5 @@
 ### Changelog
-
+---
 #### 9/21/26 @ 9 pm
 #### Backend - Ahren Agatep
 - Set up PostgreSQL connection pool (src/config/db.js) using pg + DATABASE_URL
@@ -9,7 +9,7 @@
 - Created src/routes, src/controllers, src/middleware, src/utils folders for auth work
 #### Frontend
 - N/A
-
+---
 ### 9/17/26 @ 9 pm
 #### Backend - Ahren Agatep
 - Added .sql files for tables (9 total, still need to run, in order due to foreign key dependencies)
@@ -27,7 +27,7 @@
 - Added indexes on frequently-queried foreign key columns (e.g. `idx_memberships_club_id`, `idx_attendance_event_id`, `idx_users_role`) to speed up lookups without changing how queries are written
 #### Frontend
 - N/A
-
+---
 ### 9/16/26 @ 3 am
 #### Backend - Ahren Agatep
 - Initialized /backend and installed core dependencies

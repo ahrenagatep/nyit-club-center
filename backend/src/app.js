@@ -1,12 +1,14 @@
 // src/app.js
+// defines Express application, sets up middleware, and defines a health check route that queries the database for the current time to verify connectivity
+
 const express = require('express');
 const cors = require('cors');
-const pool = require('./config/db');
+const pool = require('./config/db'); // shared connection pool from db.js for executing queries
 
 const app = express();
 
-app.use(cors());
-app.use(express.json());
+app.use(cors());            // allows frontend to make requests to this API from different origin (cross-origin requests)
+app.use(express.json());    // parses incoming JSON requests and puts into in req.body
 
 app.get('/health', async (req, res) => {
   try {
@@ -18,4 +20,4 @@ app.get('/health', async (req, res) => {
   }
 });
 
-module.exports = app;
+module.exports = app;   // export the configured app so server.js can start it
