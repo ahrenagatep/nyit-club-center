@@ -1,5 +1,15 @@
 ### Changelog
 
+#### 9/21/26 @ 9 pm
+#### Backend - Ahren Agatep
+- Set up PostgreSQL connection pool (src/config/db.js) using pg + DATABASE_URL
+    - hit an ENOTFOUND error on the direct connection string due to IPv6-only DNS resolution on local network; switched to Supabase's pooled connection string (port 6543) to resolve
+- Scaffolded Express app (src/app.js) and entry point (src/server.js)
+- Added GET /health route to verify Express -> pg -> Supabase connection end-to-end
+- Created src/routes, src/controllers, src/middleware, src/utils folders for auth work
+#### Frontend
+- N/A
+
 ### 9/17/26 @ 9 pm
 #### Backend - Ahren Agatep
 - Added .sql files for tables (9 total, still need to run, in order due to foreign key dependencies)
