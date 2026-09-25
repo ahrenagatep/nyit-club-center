@@ -4,11 +4,14 @@
 const express = require('express');
 const cors = require('cors');
 const pool = require('./config/db'); // shared connection pool from db.js for executing queries
+const authRoutes = require('./routes/auth');
 
 const app = express();
 
 app.use(cors());            // allows frontend to make requests to this API from different origin (cross-origin requests)
 app.use(express.json());    // parses incoming JSON requests and puts into in req.body
+
+app.use('/auth', authRoutes);
 
 app.get('/health', async (req, res) => {
   try {

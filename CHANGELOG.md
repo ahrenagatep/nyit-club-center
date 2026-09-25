@@ -1,5 +1,16 @@
 ### Changelog
 ---
+#### 9/24/26 
+#### Backend
+- Added email/password auth through Supabase Auth (can definitely be improved)
+    - POST /auth/register : NYIT-email-only signup (`@nyit.edu`), creates a Supabase Auth user and a matching `users` profile row
+    - POST /auth/login : sign-in via `signInWithPassword`, returns a Supabase access/refresh token session
+    - POST /auth/verify : confirms the signup email using the OTP/token from the confirmation message (`verifyOtp`, type `signup`)
+- Wired JWT-style protection to the Supabase access token (`Authorization: Bearer ...`) plus a Student/Moderator/Admin role check middleware
+- Placeholders in `src/config/supabase.js`: `SUPABASE_URL`, `SUPABASE_ANON_KEY`
+#### Frontend
+- N/A
+---
 #### 9/21/26 @ 9 pm
 #### Backend - Ahren Agatep
 - Set up PostgreSQL connection pool (src/config/db.js) using pg + DATABASE_URL
