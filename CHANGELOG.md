@@ -1,6 +1,21 @@
 ### Changelog
 ---
-#### 9/21/26 @ 9 pm
+### 9/24/26
+#### Backend - Ahren Agatep
+- Reviewed teammate's auth implementation (Supabase Auth-backed register/login/verify, JWT-style middleware, role check)
+- Flagged three open issues for next standup (see [PR comment](https://github.com/ahrenagatep/nyit-club-center/pull/35))
+- Built `/clubs` routes and controller (`src/routes/clubs.js`, `src/controllers/clubsController.js`):
+    - `GET /clubs` - public, list/search/filter clubs by name or category
+    - `GET /clubs/:id` - public, fetch a single club
+    - `POST /clubs` - moderator/admin only, create a club
+    - `PUT /clubs/:id` - moderator/admin only, update a club
+    - `DELETE /clubs/:id` - admin only, delete a club
+- Created temporary mock auth middleware (`src/middleware/mockAuth.js`) to test clubs routes independently, since real auth isn't merged to `main` yet (to be removed once the real auth branch is fixed and merged)
+- Verified full CRUD + role protection end-to-end via Postman
+#### Frontend
+- N/A
+---
+### 9/21/26 @ 9 pm
 #### Backend - Ahren Agatep
 - Set up PostgreSQL connection pool (src/config/db.js) using pg + DATABASE_URL
     - hit an ENOTFOUND error on the direct connection string due to IPv6-only DNS resolution on local network; switched to Supabase's pooled connection string (port 6543) to resolve
