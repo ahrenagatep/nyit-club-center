@@ -1,12 +1,9 @@
 // Auth endpoints backed by Supabase Auth (email + password)
 // local `users` rows are created so the rest of the app can use user_id / role
 
-const bcrypt = require('bcrypt');
 const supabase = require('../config/supabase');
 const pool = require('../config/db');
 const { isNyitEmail, normalizeEmail } = require('../utils/nyitEmail');
-
-const SALT_ROUNDS = 10;
 
 function missingFields(body, fields) {
   return fields.filter((field) => {
@@ -15,12 +12,13 @@ function missingFields(body, fields) {
   });
 }
 
-async function upsertLocalUser({ nyit_email, password, username, first_name, last_name }) {
-  const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+// auth_user_id is supabase's own user id (data.user.id from signUp/getUser)
+// bridges between supabase auth and our local users table
 
+async function upsertLocalUser({ auth_user_id, nyit_email, username, first_name, last_name }) { 
   const existing = await pool.query(
-    'SELECT user_id, nyit_email, username, first_name, last_name, role FROM users WHERE nyit_email = $1',
-    [nyit_email]
+    'SELECT user_id, auth_user_id, nyit_email, username, first_name, last_name, role FROM users WHERE auth_user_id = $1',
+    [auth_user_id]
   );
 
   if (existing.rows[0]) {
@@ -28,10 +26,10 @@ async function upsertLocalUser({ nyit_email, password, username, first_name, las
   }
 
   const inserted = await pool.query(
-    `INSERT INTO users (nyit_email, password, username, first_name, last_name, role)
+    `INSERT INTO users (auth_user_id, nyit_email, username, first_name, last_name, role)
      VALUES ($1, $2, $3, $4, $5, 'student')
-     RETURNING user_id, nyit_email, username, first_name, last_name, role`,
-    [nyit_email, passwordHash, username, first_name, last_name]
+     RETURNING user_id, auth_user_id, nyit_email, username, first_name, last_name, role`,
+    [auth_user_id, nyit_email, username, first_name, last_name]
   );
 
   return inserted.rows[0];
@@ -89,8 +87,8 @@ async function register(req, res) {
   let profile;
   try {
     profile = await upsertLocalUser({
+      auth_user_id: data.user.id, // <-- supabase's real user id saved as the link
       nyit_email,
-      password,
       username,
       first_name,
       last_name,
@@ -138,8 +136,8 @@ async function login(req, res) {
   let profile;
   try {
     const result = await pool.query(
-      'SELECT user_id, nyit_email, username, first_name, last_name, role FROM users WHERE nyit_email = $1',
-      [nyit_email]
+      'SELECT user_id, auth_user_id, nyit_email, username, first_name, last_name, role FROM users WHERE auth_user_id = $1',
+      [data.user.id]  // change to lookup by supabase id , not email
     );
     profile = result.rows[0] || { nyit_email, role: 'student' };
   } catch (err) {
@@ -154,7 +152,7 @@ async function login(req, res) {
 }
 
 // POST /auth/verify
-// uses the 6-digit (or token hash) code from the Supabase confirmation email
+// uses the 6-digit (or token hash) code from the confirmation email
 async function verify(req, res) {
   const emailRaw = req.body?.nyit_email || req.body?.email;
   const token = req.body?.token;
@@ -182,8 +180,8 @@ async function verify(req, res) {
   let profile = null;
   try {
     const result = await pool.query(
-      'SELECT user_id, nyit_email, username, first_name, last_name, role FROM users WHERE nyit_email = $1',
-      [nyit_email]
+      'SELECT user_id, auth_user_id, nyit_email, username, first_name, last_name, role FROM users WHERE auth_user_id = $1',
+      [data.user.id] // <-- lookup by supabase's id , not email
     );
     profile = result.rows[0] || { nyit_email, role: 'student' };
   } catch (err) {
