@@ -8,10 +8,13 @@ const authRoutes = require('./routes/auth');
 
 const app = express();
 
+const clubsRoutes = require('./routes/clubs');
+
 app.use(cors());            // allows frontend to make requests to this API from different origin (cross-origin requests)
 app.use(express.json());    // parses incoming JSON requests and puts into in req.body
 
 app.use('/auth', authRoutes);
+app.use('/clubs', clubsRoutes);
 
 app.get('/health', async (req, res) => {
   try {
