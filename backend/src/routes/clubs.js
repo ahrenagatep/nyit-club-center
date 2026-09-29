@@ -2,11 +2,8 @@
 
 const express = require('express');
 const { listClubs, getClub, createClub, updateClub, deleteClub } = require('../controllers/clubsController');
-// const { requireAuth } = require('../middleware/auth');
-// const { requireRole } = require('../middleware/requireRole');
-
-// TEMPORARY mock authentication , replace with above code once auth branch is fixed and merged
-const { requireAuth, requireRole } = require('../middleware/mockAuth');
+const { requireAuth } = require('../middleware/auth');
+const { requireRole } = require('../middleware/requireRole');
 
 const router = express.Router();
 
