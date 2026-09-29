@@ -20,22 +20,25 @@ async function listClubs(req, res) {
 
   if (search) {
     values.push(`%${search}%`);
-    conditions.push(`name ILIKE $${values.length}`);
+    conditions.push(`c.name ILIKE $${values.length}`);
   }
 
   if (category) {
     values.push(category);
-    conditions.push(`category = $${values.length}`);
+    conditions.push(`c.category = $${values.length}`);
   }
 
   const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
   try {
     const result = await pool.query(
-      `SELECT club_id, president_id, name, description, category, created_at
-       FROM clubs
+      `SELECT c.club_id, c.president_id, c.name, c.description, c.category, c.created_at,
+              COUNT(m.user_id)::int AS member_count
+       FROM clubs c
+       LEFT JOIN memberships m ON m.club_id = c.club_id
        ${whereClause}
-       ORDER BY created_at DESC`,
+       GROUP BY c.club_id
+       ORDER BY c.created_at DESC`,
       values
     );
     res.json(result.rows);
