@@ -1,4 +1,9 @@
 # Changelog
+## 2026-09-30
+### Backend
+#### Ahren Agatep
+- Temporarily disabled NYIT-only email restriction (regex + DB constraint) to allow testing with any email address, since our sending domain isn't yet trusted by NYIT's mail servers
+    - to be re-enabled later (possibly)
 ## 2026-09-28
 ### Backend
 #### Ahren Agatep
