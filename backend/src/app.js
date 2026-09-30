@@ -26,4 +26,8 @@ app.get('/health', async (req, res) => {
   }
 });
 
+app.get('/verified', (req, res) => {
+  res.send('<h1>You\'re verified!</h1><p>You can now log in.</p>');
+});
+
 module.exports = app;   // export the configured app so server.js can start it

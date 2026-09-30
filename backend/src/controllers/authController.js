@@ -77,6 +77,7 @@ async function register(req, res) {
     password,
     options: {
       data: { username, first_name, last_name },
+      emailRedirectTo: 'http://localhost:3000/verified',
     },
   });
 
