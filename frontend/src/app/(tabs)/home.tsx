@@ -1,7 +1,9 @@
-import React from "react";
+//import React from "react";
+import React, { useState } from "react"; //remove if needed****
 import {
   View,
   Text,
+  TextInput, //remove if needed****
   StyleSheet,
   ScrollView,
   Pressable,
@@ -9,13 +11,15 @@ import {
 
 
 export default function HomeScreen() {
+  const [search, setSearch] = useState(""); //remove if not needed***
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
-    >
-      {/* HEADER */}
+    >  
+      {/* HEADER */} 
+      {/* Displays the search bar and club category buttons */}
       <View style={styles.header}>
         <View>
           <Text style={styles.welcomeText}>Welcome Back,</Text>
@@ -38,12 +42,16 @@ export default function HomeScreen() {
         <View style={styles.searchBar}>
           <Text style={styles.searchIcon}>🔍</Text>
 
-          <Text style={styles.searchText}>
-            Search clubs, events, people...
-          </Text>
+          <TextInput
+              style={styles.searchText}
+              placeholder="Search clubs, events, people..."
+              placeholderTextColor="#7A7E8C"
+              value={search}
+              onChangeText={setSearch}
+          />
 
           <Pressable>
-            <Text style={styles.filterIcon}>⚙️</Text>
+            <Text style={styles.filterIcon}>▽</Text>
           </Pressable>
         </View>
 
@@ -154,7 +162,7 @@ export default function HomeScreen() {
           <Text style={styles.detailText}>📍 Room 301</Text>
           <Text style={styles.detailText}>👥 35</Text>
         </View>
-
+         {/*rsvp button*/}
         <Pressable style={styles.rsvpButton}>
           <Text style={styles.rsvpText}>RSVP</Text>
         </Pressable>
@@ -185,6 +193,7 @@ export default function HomeScreen() {
       </View>
 
       {/* YOUR CLUBS */}
+      {/* Shows clubs that the student has already joined */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Your Clubs</Text>
 
@@ -192,7 +201,7 @@ export default function HomeScreen() {
           <Text style={styles.sectionLink}>View all ›</Text>
         </Pressable>
       </View>
-
+       {/* Computer Science Club */}
       <View style={styles.yourClubCard}>
         <Text style={styles.clubEmoji}>💻</Text>
 
@@ -202,7 +211,7 @@ export default function HomeScreen() {
           <Text style={styles.clubMembers}>Member</Text>
         </View>
       </View>
-
+         {/* Arts Club */}
       <View style={styles.yourClubCard}>
         <Text style={styles.clubEmoji}>🎨</Text>
 
@@ -303,6 +312,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: "#747887",
     fontSize: 17,
+    letterSpacing: 0, //delete this if not needed
   },
 
   filterIcon: {
@@ -487,7 +497,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FFFFFF",
   },
-
   yourClubText: {
     marginLeft: 14,
     flex: 1,
