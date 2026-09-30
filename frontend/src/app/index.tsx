@@ -11,12 +11,13 @@ import {
 
 import { router } from "expo-router";
 
-
+// lines 15-106, tells react native what the pages see and does
 export default function LoginScreen() {
+  //stores the users email, password and its visibility
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-
+  //this lets user go straigt to home page after pressing 
   const handleLogin = () => {
     router.replace("/(tabs)/home");
   };
@@ -96,14 +97,22 @@ export default function LoginScreen() {
           onPress={handleLogin}
         >
           <Text style={styles.signInButtonText}>
-            Sign in
+            Login
           </Text>
+        </Pressable>
+        {/* SIGN UP BUTTON */}
+        <Pressable
+          style={styles.signUpButton}
+          onPress={() => router.push("/signup")}
+        >
+          <Text style={styles.signUpButtonText}>Don't have an account? Sign Up</Text>
         </Pressable>
       </View>
     </KeyboardAvoidingView>
   );
 }
-
+// lines 108-238 is appearance of the components and styling of the app, controls the layout
+// while first section makes the compoents and controls it
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -195,6 +204,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     color: "#111111",
+    letterSpacing: 0, //delete this if not needed
   },
 
   eyeIcon: {
@@ -233,5 +243,15 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "bold",
   },
-
+  
+  signUpButton: {
+    marginTop: 18,
+    alignItems: "center",
+  },
+  
+  signUpButtonText: {
+    color: "#0B55B7",
+    fontSize: 15,
+    fontWeight: "600",
+  },
 });
