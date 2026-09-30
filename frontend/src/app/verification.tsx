@@ -1,13 +1,10 @@
-import React, { useState } from "react";
+import React from "react";
 
 import {
     View,
     Text,
-    TextInput,
     Pressable,
     StyleSheet,
-    KeyboardAvoidingView,
-    Platform,
 } from "react-native";
 
 import { router, useLocalSearchParams } from "expo-router";
@@ -15,25 +12,9 @@ import { router, useLocalSearchParams } from "expo-router";
 export default function VerificationScreen() {
     const { email } = useLocalSearchParams();
 
-    const [code, setCode] = useState("");
-    const [error, setError] = useState("");
-
-    const handleVerify = () => {
-        if (code.length != 6) {
-            setError("Enter a 6 digit verification code.")
-            return;
-        }
-        setError("")
-
-        router.replace("/")
-    };
-
     return (
-        <KeyboardAvoidingView
-            style={styles.container}
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-        >
-            {/* Back button */}
+        <View style={styles.container}>
+            {/*Back Button*/}
             <Pressable
                 style={styles.backButton}
                 onPress={() => router.back()}
@@ -41,57 +22,44 @@ export default function VerificationScreen() {
                 <Text style={styles.backArrow}>‹</Text>
             </Pressable>
 
-            {/* Title */}
-            <Text style={styles.title}>Check your email</Text>
-            <Text style={styles.subtitle}> We have sent a 6-digit code to</Text>
-            <Text style={styles.emailText}>{email}</Text>
+            {/*Popup*/}
+            <View style={styles.popupCard}>
+                <Text style={styles.icon}>✉️</Text>
+                <Text style={styles.title}>Please check your email</Text>
+                <Text style={styles.message}>Verification link has been sent to:</Text>
+                <Text style={styles.emailText}>{email}</Text>
+                <Text style={styles.instructions}> Open email and click link to confirm your account</Text>
 
-            {/* code input */}
-            <TextInput
-                style={styles.codeInput}
-                placeholder="Enter 6-digit code"
-                placeholderTextColor="#999999"
-                keyboardType="number-pad"
-                maxLength={6}
-                value={code}
-                onChangeText={setCode}
-            />
+                {/*Back to login*/}
+                <Pressable
+                    style={styles.loginButton}
+                    onPress={() => router.replace("/")}
+                >
+                    <Text style={styles.loginButtonText}>Back to Login</Text>
+                </Pressable>
 
-            {/* Error */}
-            {error !== "" && (
-                <Text style={styles.errorText}>{error}</Text>
-            )}
-
-            {/* Verify Button */}
-            <Pressable
-                style={styles.verifyButton}
-                onPress={handleVerify}
-            >
-                <Text style={styles.verifyButtonText}>Verify Email</Text>
-            </Pressable>
-
-            {/* Resend */}
-            <View style={styles.resendRow}>
-                <Text style={styles.resendText}>Didn't recieve code?</Text>
-
+                {/* Resend */}
                 <Pressable>
-                    <Text style={styles.resendButton}>Resend Code</Text>
+                    <Text style={styles.resendButton}>
+                        Resend Verification
+                    </Text>
                 </Pressable>
             </View>
-        </KeyboardAvoidingView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
+
     container: {
         flex: 1,
-        backgroundColor: "#FFFFFF",
-        paddingHorizontal: 28,
+        backgroundColor: "#F5F7FA",
+        paddingHorizontal: 25,
         paddingTop: 70,
     },
 
     backButton: {
-        marginBottom: 35,
+        marginBottom: 40,
     },
 
     backArrow: {
@@ -99,73 +67,76 @@ const styles = StyleSheet.create({
         color: "#171717",
     },
 
+    popupCard: {
+        backgroundColor: "#FFFFFF",
+        borderRadius: 20,
+        padding: 28,
+        alignItems: "center",
+
+        shadowColor: "#000000",
+        shadowOpacity: 0.08,
+        shadowRadius: 10,
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        elevation: 4,
+    },
+
+    icon: {
+        fontSize: 50,
+        marginBottom: 20,
+    },
+
     title: {
-        fontSize: 30,
+        fontSize: 28,
         fontWeight: "bold",
         color: "#171717",
     },
 
-    subtitle: {
-        marginTop: 12,
+    message: {
+        marginTop: 15,
         fontSize: 16,
         color: "#777B8A",
+        textAlign: "center",
     },
 
     emailText: {
+        marginTop: 8,
         fontSize: 16,
         fontWeight: "600",
         color: "#0B55B7",
-        marginTop: 5,
-        marginBottom: 35,
     },
 
-    codeInput: {
-        borderWidth: 1,
-        borderColor: "#D5D8DD",
-        borderRadius: 12,
-        paddingVertical: 16,
-        paddingHorizontal: 16,
-        fontSize: 20,
-        letterSpacing: 8,
+    instructions: {
+        marginTop: 20,
+        fontSize: 15,
+        color: "#777B8A",
         textAlign: "center",
-        color: "#171717",
+        lineHeight: 22,
     },
 
-    errorText: {
-        color: "#D32F2F",
-        fontSize: 14,
-        marginTop: 10,
-    },
-
-    verifyButton: {
+    loginButton: {
         backgroundColor: "#0B55B7",
-        paddingVertical: 16,
+        width: "100%",
+        paddingVertical: 15,
         borderRadius: 12,
         alignItems: "center",
-        marginTop: 25,
+        marginTop: 30,
     },
 
-    verifyButtonText: {
+    loginButtonText: {
         color: "#FFFFFF",
         fontSize: 17,
         fontWeight: "600",
-    },
-
-    resendRow: {
-        flexDirection: "row",
-        justifyContent: "center",
-        marginTop: 22,
-        gap: 5,
-    },
-
-    resendText: {
-        color: "#777B8A",
-        fontSize: 14,
     },
 
     resendButton: {
         color: "#0B55B7",
         fontSize: 14,
         fontWeight: "600",
+        marginTop: 20,
     },
 });
+
+

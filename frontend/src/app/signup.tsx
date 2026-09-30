@@ -7,6 +7,7 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  ScrollView, 
 } from "react-native";
 
 import { router } from "expo-router";
@@ -49,6 +50,16 @@ export default function SignUpScreen() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        automaticallyAdjustKeyboardInsets={true}
+        showsVerticalScrollIndicator={false}
+      >  
+
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.logoBox}>
@@ -121,6 +132,7 @@ export default function SignUpScreen() {
           <Text style={styles.backButtonText}> Have an account? Sign In</Text>
         </Pressable>
       </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -129,6 +141,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFFFFF",
+  },
+
+  scrollView: {
+    flex: 1,
+  },
+  
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 40,
   },
 
   header: {
@@ -165,9 +186,9 @@ const styles = StyleSheet.create({
   },
 
   signUpArea: {
-    flex: 1,
     paddingHorizontal: 28,
     paddingTop: 35,
+    paddingBottom: 40,
   },
 
   title: {
