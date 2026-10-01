@@ -22,11 +22,6 @@ export default function SignUpScreen() {
 
     const cleanEmail = email.trim().toLowerCase();
 
-    if (!cleanEmail.endsWith("@nyit.edu")) {
-      setError("Please use your @nyit.edu school address");
-      return;
-    }
-
     if (password.length === 0) {
       setError("Enter a password.")
       return;
