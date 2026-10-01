@@ -52,18 +52,18 @@ export default function LoginScreen() {
         <Text style={styles.signInTitle}>Sign in</Text>
 
         <Text style={styles.signInSubtitle}>
-          Use your NYIT email
+          Enter your email
         </Text>
 
         {/* EMAIL */}
-        <Text style={styles.label}>NYIT Email</Text>
+        <Text style={styles.label}>Email</Text>
 
         <View style={styles.inputContainer}>
           <Text style={styles.inputIcon}>✉️</Text>
 
           <TextInput
             style={styles.input}
-            placeholder="Enter your NYIT email"
+            placeholder="Enter your email"
             placeholderTextColor="#8A8D99"
             keyboardType="email-address"
             autoCapitalize="none"
