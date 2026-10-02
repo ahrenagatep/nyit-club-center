@@ -25,6 +25,13 @@ export default function TabLayout() {
           title: "Explore",
         }}
       />
+
+      <Tabs.Screen
+        name="events"
+        options={{
+          title: "Events",
+        }}
+      />
     </Tabs>
   );
 }
