@@ -29,6 +29,7 @@ import {
   type Club,
 } from "@/data/mock-data";
 import { useAppState } from "@/state/app-state";
+import { useAuth } from "@/state/auth";
 
 // How many upcoming events to preview on Home; "View all" opens the Events tab.
 const HOME_EVENT_LIMIT = 2;
@@ -43,6 +44,7 @@ function openExplore(
 export default function HomeScreen() {
   const [search, setSearch] = useState("");
   const { joinedClubIds } = useAppState();
+  const { user } = useAuth();
 
   const recommendedClubs = RECOMMENDED_CLUB_IDS.map(getClubById).filter(
     (club): club is Club => club !== undefined,
@@ -71,7 +73,7 @@ export default function HomeScreen() {
         <View>
           <Text style={styles.welcomeText}>Welcome Back,</Text>
           <Text style={styles.name} accessibilityRole="header">
-            {CURRENT_USER.first_name}
+            {user?.first_name || CURRENT_USER.first_name}
           </Text>
         </View>
 

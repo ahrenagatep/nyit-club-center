@@ -6,6 +6,7 @@ import { ScreenHeader } from '@/components/screen-header';
 import { Brand } from '@/constants/brand';
 import { CURRENT_USER } from '@/data/mock-data';
 import { useAppState } from '@/state/app-state';
+import { useAuth } from '@/state/auth';
 
 /**
  * Profile (Home → 👤). Shows account info and links to the user's clubs,
@@ -14,8 +15,15 @@ import { useAppState } from '@/state/app-state';
  */
 export default function ProfileScreen() {
   const { joinedClubIds, rsvpEventIds } = useAppState();
-  const fullName = `${CURRENT_USER.first_name} ${CURRENT_USER.last_name}`;
-  const roleLabel = CURRENT_USER.role.charAt(0).toUpperCase() + CURRENT_USER.role.slice(1);
+  const { user, signOut } = useAuth();
+
+  // Signed-in user from /auth/login; the mock user only fills gaps (e.g. bio isn't returned yet).
+  const fullName =
+    [user?.first_name, user?.last_name].filter(Boolean).join(' ') ||
+    `${CURRENT_USER.first_name} ${CURRENT_USER.last_name}`;
+  const email = user?.nyit_email ?? CURRENT_USER.nyit_email;
+  const role = user?.role ?? CURRENT_USER.role;
+  const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
 
   const links: { icon: string; label: string; detail?: string; href: Href }[] = [
     { icon: '🏛️', label: 'Your Clubs', detail: `${joinedClubIds.length}`, href: '/my-clubs' },
@@ -34,12 +42,6 @@ export default function ProfileScreen() {
     { icon: '🎨', label: 'Themes' },
   ];
 
-  const signOut = () => {
-    // TODO: clear the JWT/session once real auth is merged.
-    if (router.canDismiss()) router.dismissAll();
-    router.replace('/');
-  };
-
   return (
     <ScrollView
       style={styles.container}
@@ -56,7 +58,7 @@ export default function ProfileScreen() {
         <Text style={styles.name} accessibilityRole="header">
           {fullName}
         </Text>
-        <Text style={styles.email}>{CURRENT_USER.nyit_email}</Text>
+        <Text style={styles.email}>{email}</Text>
         <View style={styles.roleTag}>
           <Text style={styles.roleText}>{roleLabel}</Text>
         </View>
