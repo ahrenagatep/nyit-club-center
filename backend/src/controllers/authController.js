@@ -5,6 +5,9 @@ const supabase = require('../config/supabase');
 const pool = require('../config/db');
 const { isNyitEmail, normalizeEmail } = require('../utils/nyitEmail');
 
+// where the link in the confirmation email sends the user after Supabase verifies them
+const EMAIL_REDIRECT_URL = 'http://localhost:3000/verified';
+
 function missingFields(body, fields) {
   return fields.filter((field) => {
     const value = body[field];
@@ -72,12 +75,32 @@ async function register(req, res) {
     return res.status(400).json({ error: 'Password must be at least 6 characters' });
   }
 
+  // check email/username are free BEFORE creating the supabase account,
+  // otherwise a taken username leaves an orphaned supabase account behind
+  try {
+    const taken = await pool.query(
+      'SELECT nyit_email, username FROM users WHERE nyit_email = $1 OR username = $2',
+      [nyit_email, username]
+    );
+
+    if (taken.rows.some((row) => row.nyit_email === nyit_email)) {
+      return res.status(409).json({ error: 'An account with this email already exists. Try logging in.' });
+    }
+
+    if (taken.rows.length) {
+      return res.status(409).json({ error: 'That username is taken. Try another one.' });
+    }
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Could not check account availability' });
+  }
+
   const { data, error } = await supabase.auth.signUp({
     email: nyit_email,
     password,
     options: {
       data: { username, first_name, last_name },
-      emailRedirectTo: 'http://localhost:3000/verified',
+      emailRedirectTo: EMAIL_REDIRECT_URL,
     },
   });
 
@@ -195,4 +218,32 @@ async function verify(req, res) {
   });
 }
 
-module.exports = { register, login, verify };
+// POST /auth/resend
+// re-sends the signup confirmation email (supabase rate-limits this per address)
+async function resend(req, res) {
+  const emailRaw = req.body?.nyit_email || req.body?.email;
+
+  if (!emailRaw || String(emailRaw).trim() === '') {
+    return res.status(400).json({ error: 'Missing fields: nyit_email (or email)' });
+  }
+
+  const nyit_email = normalizeEmail(emailRaw);
+
+  if (!isNyitEmail(nyit_email)) {
+    return res.status(400).json({ error: 'Email must be a valid @nyit.edu address' });
+  }
+
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email: nyit_email,
+    options: { emailRedirectTo: EMAIL_REDIRECT_URL },
+  });
+
+  if (error) {
+    return res.status(error.status === 429 ? 429 : 400).json({ error: error.message });
+  }
+
+  return res.json({ message: 'Verification email sent' });
+}
+
+module.exports = { register, login, verify, resend };
