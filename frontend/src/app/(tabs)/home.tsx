@@ -1,56 +1,148 @@
-//import React from "react";
-import React, { useState } from "react"; //remove if needed****
+import React, { useState } from "react";
 import {
   View,
   Text,
-  TextInput, //remove if needed****
+  TextInput,
   StyleSheet,
   ScrollView,
   Pressable,
 } from "react-native";
+import { router } from "expo-router";
 
+import {
+  CategoryChip,
+  ClubRow,
+  EmptyState,
+  EventCard,
+  openClub,
+} from "@/components/club-cards";
+import {
+  CATEGORIES,
+  CLUBS,
+  CURRENT_USER,
+  getMemberCount,
+  getMembershipRoleLabel,
+  RECOMMENDED_CLUB_IDS,
+  getClubById,
+  getUpcomingEvents,
+  type Category,
+  type Club,
+} from "@/data/mock-data";
+import { useAppState } from "@/state/app-state";
+
+// How many upcoming events to preview on Home; "View all" opens the Events tab.
+const HOME_EVENT_LIMIT = 2;
+
+// Opens the Explore tab, optionally pre-filtered, pre-searched, or with the sort panel open.
+function openExplore(
+  params: { category?: Category; q?: string; filters?: "1" } = {},
+) {
+  router.navigate({ pathname: "/explore", params });
+}
 
 export default function HomeScreen() {
-  const [search, setSearch] = useState(""); //remove if not needed***
+  const [search, setSearch] = useState("");
+  const { joinedClubIds } = useAppState();
+
+  const recommendedClubs = RECOMMENDED_CLUB_IDS.map(getClubById).filter(
+    (club): club is Club => club !== undefined,
+  );
+  const upcomingEvents = getUpcomingEvents().slice(0, HOME_EVENT_LIMIT);
+  const yourClubs = CLUBS.filter((club) =>
+    joinedClubIds.includes(club.club_id),
+  );
+
+  // Search runs on Explore so Home stays a preview; the box clears for next time.
+  const submitSearch = () => {
+    const q = search.trim();
+    openExplore(q ? { q } : {});
+    setSearch("");
+  };
+
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
-    >  
-      {/* HEADER */} 
-      {/* Displays the search bar and club category buttons */}
+    >
+      {/* HEADER */}
       <View style={styles.header}>
         <View>
           <Text style={styles.welcomeText}>Welcome Back,</Text>
-          <Text style={styles.name}>Student</Text>
+          <Text style={styles.name} accessibilityRole="header">
+            {CURRENT_USER.first_name}
+          </Text>
         </View>
 
         <View style={styles.headerIcons}>
-          <Pressable>
+          <Pressable
+            onPress={() => router.push("/notifications")}
+            style={({ pressed }) => [
+              styles.iconButton,
+              pressed && styles.pressed,
+            ]}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Notifications"
+          >
             <Text style={styles.notificationIcon}>🔔</Text>
           </Pressable>
 
-          <Pressable style={styles.profileCircle}>
+          <Pressable
+            onPress={() => router.push("/profile")}
+            style={({ pressed }) => [
+              styles.profileCircle,
+              pressed && styles.pressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Your profile"
+          >
             <Text style={styles.profileIcon}>👤</Text>
           </Pressable>
         </View>
       </View>
 
       {/* SEARCH & FILTER */}
+      {/* Displays the search bar and club category buttons */}
       <View style={styles.searchCard}>
         <View style={styles.searchBar}>
-          <Text style={styles.searchIcon}>🔍</Text>
+          <Pressable
+            onPress={submitSearch}
+            style={({ pressed }) => [
+              styles.searchIconButton,
+              pressed && styles.pressed,
+            ]}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Search"
+            accessibilityHint="Shows matching clubs and events on the Explore tab"
+          >
+            <Text style={styles.searchIcon}>🔍</Text>
+          </Pressable>
 
           <TextInput
-              style={styles.searchText}
-              placeholder="Search clubs, events, people..."
-              placeholderTextColor="#7A7E8C"
-              value={search}
-              onChangeText={setSearch}
+            style={styles.searchText}
+            placeholder="Search clubs, events, people..."
+            placeholderTextColor="#696C7A"
+            value={search}
+            onChangeText={setSearch}
+            onSubmitEditing={submitSearch}
+            returnKeyType="search"
+            autoCorrect={false}
+            accessibilityLabel="Search clubs, events, people"
           />
 
-          <Pressable>
+          <Pressable
+            onPress={() => openExplore({ filters: "1" })}
+            style={({ pressed }) => [
+              styles.iconButton,
+              pressed && styles.pressed,
+            ]}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Filter and sort clubs"
+          >
             <Text style={styles.filterIcon}>▽</Text>
           </Pressable>
         </View>
@@ -60,36 +152,39 @@ export default function HomeScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.categoryRow}
         >
-          <Pressable
-            style={[styles.categoryButton, styles.activeCategoryButton]}
-          >
-            <Text style={styles.activeCategoryText}>All</Text>
-          </Pressable>
+          <CategoryChip
+            label="All"
+            accessibilityLabel="All clubs"
+            active
+            onPress={() => openExplore()}
+          />
 
-          <Pressable style={styles.categoryButton}>
-            <Text style={styles.categoryText}>Academic</Text>
-          </Pressable>
-
-          <Pressable style={styles.categoryButton}>
-            <Text style={styles.categoryText}>Sports</Text>
-          </Pressable>
-
-          <Pressable style={styles.categoryButton}>
-            <Text style={styles.categoryText}>Arts</Text>
-          </Pressable>
-
-          <Pressable style={styles.categoryButton}>
-            <Text style={styles.categoryText}>Tech</Text>
-          </Pressable>
+          {CATEGORIES.map((category) => (
+            <CategoryChip
+              key={category}
+              label={category}
+              accessibilityLabel={`${category} clubs`}
+              active={false}
+              onPress={() => openExplore({ category })}
+            />
+          ))}
         </ScrollView>
       </View>
 
       {/* RECOMMENDED FOR YOU */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Recommended for You</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          Recommended for You
+        </Text>
 
-        <Pressable>
-          <Text style={styles.sectionLink}>See all ,</Text>
+        <Pressable
+          onPress={() => openExplore()}
+          style={styles.linkButton}
+          hitSlop={8}
+          accessibilityRole="link"
+          accessibilityLabel="See all clubs"
+        >
+          <Text style={styles.sectionLink}>See all ›</Text>
         </Pressable>
       </View>
 
@@ -98,134 +193,118 @@ export default function HomeScreen() {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.clubRow}
       >
-        <Pressable style={styles.clubCard}>
-          <Text style={styles.clubEmoji}>🤖</Text>
+        {recommendedClubs.map((club) => {
+          const members = getMemberCount(
+            club,
+            joinedClubIds.includes(club.club_id),
+          );
 
-          <Text style={styles.clubName}>Robotics Club</Text>
+          return (
+            <Pressable
+              key={club.club_id}
+              onPress={() => openClub(club.club_id)}
+              style={({ pressed }) => [
+                styles.clubCard,
+                pressed && styles.pressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={`${club.name}, ${members} members, ${club.category}`}
+              accessibilityHint="Opens the club page"
+            >
+              <Text style={styles.clubEmoji}>{club.emoji}</Text>
 
-          <Text style={styles.clubMembers}>124 members</Text>
+              <Text style={styles.clubName}>{club.name}</Text>
 
-          <View style={styles.tag}>
-            <Text style={styles.tagText}>Tech</Text>
-          </View>
-        </Pressable>
+              <Text style={styles.clubMembers}>{members} members</Text>
 
-        <Pressable style={styles.clubCard}>
-          <Text style={styles.clubEmoji}>📷</Text>
-
-          <Text style={styles.clubName}>Photography Club</Text>
-
-          <Text style={styles.clubMembers}>89 members</Text>
-
-          <View style={styles.tag}>
-            <Text style={styles.tagText}>Arts</Text>
-          </View>
-        </Pressable>
-
-        <Pressable style={styles.clubCard}>
-          <Text style={styles.clubEmoji}>🎮</Text>
-
-          <Text style={styles.clubName}>Gaming Club</Text>
-
-          <Text style={styles.clubMembers}>102 members</Text>
-
-          <View style={styles.tag}>
-            <Text style={styles.tagText}>Social</Text>
-          </View>
-        </Pressable>
+              <View style={styles.tag}>
+                <Text style={styles.tagText}>{club.category}</Text>
+              </View>
+            </Pressable>
+          );
+        })}
       </ScrollView>
 
       {/* UPCOMING EVENTS */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Upcoming Events</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          Upcoming Events
+        </Text>
 
-        <Pressable>
-          <Text style={styles.sectionLink}>View all ,</Text>
+        <Pressable
+          onPress={() => router.navigate("/events")}
+          style={styles.linkButton}
+          hitSlop={8}
+          accessibilityRole="link"
+          accessibilityLabel="View all events"
+        >
+          <Text style={styles.sectionLink}>View all ›</Text>
         </Pressable>
       </View>
 
-      <View style={styles.eventCard}>
-        <View style={styles.eventTopRow}>
-          <View style={styles.eventTextArea}>
-            <Text style={styles.eventTitle}>Tech Talk: Rise of AI</Text>
-
-            <Text style={styles.eventClub}>Computer Science Club</Text>
-          </View>
-
-          <View style={styles.dateBadge}>
-            <Text style={styles.dateText}>Apr 28</Text>
-          </View>
-        </View>
-
-        <View style={styles.eventDetails}>
-          <Text style={styles.detailText}>🕔 5:00 PM</Text>
-          <Text style={styles.detailText}>📍 Room 301</Text>
-          <Text style={styles.detailText}>👥 35</Text>
-        </View>
-         {/*rsvp button*/}
-        <Pressable style={styles.rsvpButton}>
-          <Text style={styles.rsvpText}>RSVP</Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.eventCard}>
-        <View style={styles.eventTopRow}>
-          <View style={styles.eventTextArea}>
-            <Text style={styles.eventTitle}>Fall Concert</Text>
-
-            <Text style={styles.eventClub}>Music Club</Text>
-          </View>
-
-          <View style={styles.dateBadge}>
-            <Text style={styles.dateText}>Oct 10</Text>
-          </View>
-        </View>
-
-        <View style={styles.eventDetails}>
-          <Text style={styles.detailText}>🕖 7:00 PM</Text>
-          <Text style={styles.detailText}>📍 SAC Gym</Text>
-          <Text style={styles.detailText}>👥 100</Text>
-        </View>
-
-        <Pressable style={styles.rsvpButton}>
-          <Text style={styles.rsvpText}>RSVP</Text>
-        </Pressable>
-      </View>
+      {upcomingEvents.map((event) => (
+        <EventCard key={event.event_id} event={event} />
+      ))}
 
       {/* YOUR CLUBS */}
       {/* Shows clubs that the student has already joined */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Your Clubs</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          Your Clubs
+        </Text>
 
-        <Pressable>
+        <Pressable
+          onPress={() => router.push("/my-clubs")}
+          style={styles.linkButton}
+          hitSlop={8}
+          accessibilityRole="link"
+          accessibilityLabel="View all of your clubs"
+        >
           <Text style={styles.sectionLink}>View all ›</Text>
         </Pressable>
       </View>
-       {/* Computer Science Club */}
-      <View style={styles.yourClubCard}>
-        <Text style={styles.clubEmoji}>💻</Text>
 
-        <View style={styles.yourClubText}>
-          <Text style={styles.clubName}>Computer Science Club</Text>
-
-          <Text style={styles.clubMembers}>Member</Text>
-        </View>
-      </View>
-         {/* Arts Club */}
-      <View style={styles.yourClubCard}>
-        <Text style={styles.clubEmoji}>🎨</Text>
-
-        <View style={styles.yourClubText}>
-          <Text style={styles.clubName}>Arts Club</Text>
-
-          <Text style={styles.clubMembers}>Member</Text>
-        </View>
-      </View>
+      {yourClubs.length === 0 ? (
+        <EmptyState
+          emoji="🔍"
+          title="You haven't joined any clubs yet"
+          message="Tap See all above to browse clubs."
+        />
+      ) : (
+        yourClubs.map((club) => (
+          <ClubRow
+            key={club.club_id}
+            club={club}
+            subtitle={getMembershipRoleLabel(club.club_id)}
+          />
+        ))
+      )}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  pressed: {
+    opacity: 0.7,
+  },
+
+  iconButton: {
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  searchIconButton: {
+    minHeight: 44,
+    justifyContent: "center",
+  },
+
+  linkButton: {
+    minHeight: 44,
+    justifyContent: "center",
+  },
+
   container: {
     flex: 1,
     backgroundColor: "#FFFFFF",
@@ -310,9 +389,10 @@ const styles = StyleSheet.create({
 
   searchText: {
     flex: 1,
-    color: "#747887",
+    minHeight: 44,
+    color: "#171717",
     fontSize: 17,
-    letterSpacing: 0, //delete this if not needed
+    letterSpacing: 0,
   },
 
   filterIcon: {
@@ -322,29 +402,6 @@ const styles = StyleSheet.create({
   categoryRow: {
     marginTop: 18,
     gap: 10,
-  },
-
-  categoryButton: {
-    backgroundColor: "#F1F1F3",
-    paddingHorizontal: 20,
-    paddingVertical: 11,
-    borderRadius: 16,
-  },
-
-  activeCategoryButton: {
-    backgroundColor: "#0B55B7",
-  },
-
-  categoryText: {
-    color: "#1C1C1E",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-
-  activeCategoryText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
   },
 
   sectionHeader: {
@@ -396,7 +453,7 @@ const styles = StyleSheet.create({
 
   clubMembers: {
     fontSize: 15,
-    color: "#747887",
+    color: "#696C7A",
     marginTop: 8,
   },
 
@@ -412,93 +469,5 @@ const styles = StyleSheet.create({
   tagText: {
     color: "#0B55B7",
     fontSize: 14,
-  },
-
-  eventCard: {
-    marginHorizontal: 20,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#E2E2E5",
-    borderRadius: 18,
-    padding: 20,
-    backgroundColor: "#FFFFFF",
-  },
-
-  eventTopRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-
-  eventTextArea: {
-    flex: 1,
-    paddingRight: 12,
-  },
-
-  eventTitle: {
-    color: "#171717",
-    fontSize: 19,
-    fontWeight: "600",
-  },
-
-  eventClub: {
-    color: "#747887",
-    fontSize: 15,
-    marginTop: 6,
-  },
-
-  dateBadge: {
-    backgroundColor: "#E7EFFB",
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 18,
-  },
-
-  dateText: {
-    color: "#0B55B7",
-    fontSize: 15,
-    fontWeight: "500",
-  },
-
-  eventDetails: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 14,
-    marginTop: 20,
-  },
-
-  detailText: {
-    color: "#747887",
-    fontSize: 14,
-  },
-
-  rsvpButton: {
-    backgroundColor: "#0B55B7",
-    paddingVertical: 14,
-    borderRadius: 13,
-    alignItems: "center",
-    marginTop: 20,
-  },
-
-  rsvpText: {
-    color: "#FFFFFF",
-    fontSize: 17,
-    fontWeight: "bold",
-  },
-
-  yourClubCard: {
-    marginHorizontal: 20,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#E2E2E5",
-    borderRadius: 18,
-    padding: 18,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-  },
-  yourClubText: {
-    marginLeft: 14,
-    flex: 1,
   },
 });
