@@ -30,4 +30,29 @@ app.get('/verified', (req, res) => {
   res.send('<h1>You\'re verified!</h1><p>You can now log in.</p>');
 });
 
+// error handler (must stay last): answers malformed JSON and any unhandled error
+// with a JSON error instead of Express's default HTML page, which includes a
+// stack trace and server file paths
+app.use((err, req, res, next) => {
+  if (res.headersSent) {
+    return next(err);
+  }
+
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'Request body must be valid JSON' });
+  }
+
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'Request body is too large' });
+  }
+
+  const status = err.status || err.statusCode || 500;
+  if (status < 500) {
+    return res.status(status).json({ error: err.expose ? err.message : 'Bad request' });
+  }
+
+  console.error(err);
+  return res.status(500).json({ error: 'Something went wrong on the server' });
+});
+
 module.exports = app;   // export the configured app so server.js can start it
