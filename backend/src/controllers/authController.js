@@ -2,6 +2,7 @@
 // local `users` rows are created so the rest of the app can use user_id / role
 
 const supabase = require('../config/supabase');
+const { createRequestClient } = require('../config/supabaseRequestClient');
 const pool = require('../config/db');
 const { isNyitEmail, normalizeEmail } = require('../utils/nyitEmail');
 
@@ -246,4 +247,92 @@ async function resend(req, res) {
   return res.json({ message: 'Verification email sent' });
 }
 
-module.exports = { register, login, verify, resend };
+// POST /auth/forgot-password
+// emails a password reset code. Always answers the same way whether or not the
+// account exists, so this can't be used to find out who has an account.
+// The code comes from {{ .Token }} in the Supabase "Reset Password" email template.
+async function forgotPassword(req, res) {
+  const emailRaw = req.body?.nyit_email || req.body?.email;
+
+  if (!emailRaw || String(emailRaw).trim() === '') {
+    return res.status(400).json({ error: 'Missing fields: nyit_email (or email)' });
+  }
+
+  const nyit_email = normalizeEmail(emailRaw);
+
+  if (!isNyitEmail(nyit_email)) {
+    return res.status(400).json({ error: 'Email must be a valid @nyit.edu address' });
+  }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(nyit_email);
+
+  if (error) {
+    if (error.status === 429) {
+      return res.status(429).json({ error: error.message });
+    }
+    // supabase doesn't error for unknown emails, so this is a real failure (e.g. SMTP)
+    console.error('resetPasswordForEmail failed:', error.message);
+    return res.status(500).json({ error: "Couldn't send the reset email. Try again later." });
+  }
+
+  return res.json({ message: 'If an account exists for that email, we sent a reset code.' });
+}
+
+// POST /auth/reset-password
+// checks the emailed code, sets the new password, then signs the account out
+// everywhere so anyone using the old password loses access
+async function resetPassword(req, res) {
+  const required = ['nyit_email', 'token', 'new_password'];
+  const missing = missingFields(req.body || {}, required);
+
+  if (missing.length) {
+    return res.status(400).json({ error: `Missing fields: ${missing.join(', ')}` });
+  }
+
+  const nyit_email = normalizeEmail(req.body.nyit_email);
+  const token = String(req.body.token).trim();
+  const new_password = String(req.body.new_password);
+
+  if (!isNyitEmail(nyit_email)) {
+    return res.status(400).json({ error: 'Email must be a valid @nyit.edu address' });
+  }
+
+  if (!/^\d{6,10}$/.test(token)) {
+    return res.status(400).json({ error: 'Enter the code from the email' });
+  }
+
+  if (new_password.length < 6) {
+    return res.status(400).json({ error: 'Password must be at least 6 characters' });
+  }
+
+  // per-request client: verifyOtp signs the user in, and that session must not
+  // end up on the shared client
+  const client = createRequestClient();
+
+  const { data, error } = await client.auth.verifyOtp({
+    email: nyit_email,
+    token,
+    type: 'recovery',
+  });
+
+  if (error || !data?.session) {
+    return res.status(400).json({ error: 'That code is invalid or has expired. Request a new one.' });
+  }
+
+  const { error: updateError } = await client.auth.updateUser({ password: new_password });
+
+  if (updateError) {
+    return res.status(400).json({ error: updateError.message });
+  }
+
+  // revokes every refresh token for this account (other devices + this recovery session)
+  const { error: signOutError } = await client.auth.signOut({ scope: 'global' });
+  if (signOutError) {
+    // the password is already changed, so don't fail the request over this
+    console.error('signOut after password reset failed:', signOutError.message);
+  }
+
+  return res.json({ message: 'Password updated. Log in with your new password.' });
+}
+
+module.exports = { register, login, verify, resend, forgotPassword, resetPassword };
