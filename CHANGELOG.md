@@ -1,4 +1,16 @@
 # Changelog
+## 2026-10-02
+### Backend
+#### Anthony Dominguez
+- Added `POST /auth/resend` (re-sends the signup confirmation email)
+- Added `POST /auth/forgot-password` and `POST /auth/reset-password` (6-digit code from email → new password; signs the account out on all devices)
+    - **needs `{{ .Token }}` in the Supabase "Reset Password" email template** (Authentication → Email Templates)
+- `POST /auth/register` now checks the email/username are free before creating the Supabase account (no more orphaned Supabase accounts)
+- JSON error handler in `app.js`: malformed JSON / oversized bodies / unhandled errors return JSON instead of an HTML stack trace
+- Added `sql/010_users_supabase_auth.sql` so a fresh DB built from 001–010 matches the live `users` table (no-op on the live DB)
+### Frontend
+#### Anthony Dominguez
+- Login, Sign Up, Verification, and new Forgot Password screens call the auth API; session saved with `expo-secure-store`; route guard
 ## 2026-09-30
 ### Backend
 #### Ahren Agatep
