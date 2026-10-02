@@ -37,7 +37,8 @@ export default function RootLayout() {
 }
 
 /**
- * Signed-out users can only reach Login, Sign Up, and Verification; signed-in
+ * Signed-out users can only reach Login, Sign Up, Verification, and Forgot
+ * Password; signed-in
  * users only reach the app. When the auth status flips, expo-router redirects
  * to the first screen the user is allowed to see.
  *
@@ -60,6 +61,7 @@ function RootStack() {
           <Stack.Screen name="index" />
           <Stack.Screen name="signup" />
           <Stack.Screen name="verification" />
+          <Stack.Screen name="forgot-password" />
         </Stack.Protected>
 
         <Stack.Protected guard={status !== "signedOut"}>

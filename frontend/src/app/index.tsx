@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 
 import { ApiError, authApi } from "@/lib/api";
 import { validateEmail } from "@/lib/validation";
@@ -31,6 +31,9 @@ function loginErrorMessage(err: unknown): string {
 // tells react native what the page shows and does
 export default function LoginScreen() {
   const { signIn } = useAuth();
+  // set by Forgot Password after a successful reset
+  const params = useLocalSearchParams<{ email?: string; reset?: string }>();
+  const justReset = params.reset === "1";
 
   //stores the users email, password and its visibility
   const [email, setEmail] = useState("");
@@ -41,6 +44,14 @@ export default function LoginScreen() {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Login stays mounted under Forgot Password, so apply a new email param when it arrives
+  const [appliedEmailParam, setAppliedEmailParam] = useState<string>();
+  if (typeof params.email === "string" && params.email !== appliedEmailParam) {
+    setAppliedEmailParam(params.email);
+    setEmail(params.email);
+    setPassword("");
+  }
 
   // set when Supabase rejects the login because the email isn't confirmed yet
   const [unconfirmed, setUnconfirmed] = useState(false);
@@ -124,6 +135,20 @@ export default function LoginScreen() {
           Enter your email
         </Text>
 
+        {/* PASSWORD RESET CONFIRMATION */}
+        {justReset && (
+          <View
+            style={styles.successBox}
+            accessibilityRole="alert"
+            accessibilityLiveRegion="polite"
+          >
+            <Text style={styles.noticeTitle}>✓ Password updated</Text>
+            <Text style={styles.noticeText}>
+              Log in with your new password.
+            </Text>
+          </View>
+        )}
+
         {/* EMAIL */}
         <Text style={styles.label}>Email</Text>
 
@@ -200,7 +225,18 @@ export default function LoginScreen() {
         )}
 
         {/* FORGOT PASSWORD */}
-        <Pressable>
+        <Pressable
+          onPress={() =>
+            router.push({
+              pathname: "/forgot-password",
+              params: { email: email.trim() },
+            })
+          }
+          disabled={loading}
+          style={styles.forgotPasswordButton}
+          accessibilityRole="button"
+          accessibilityLabel="Forgot password?"
+        >
           <Text style={styles.forgotPassword}>
             Forgot password?
           </Text>
@@ -417,6 +453,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     marginTop: 16,
+  },
+
+  forgotPasswordButton: {
+    alignSelf: "flex-end",
+    minHeight: 44,
+    justifyContent: "center",
+  },
+
+  successBox: {
+    marginTop: -12,
+    marginBottom: 16,
+    padding: 14,
+    borderRadius: 14,
+    backgroundColor: "#E6F4EA",
   },
 
   noticeBox: {

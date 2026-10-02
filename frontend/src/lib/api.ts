@@ -114,4 +114,18 @@ export const authApi = {
 
   resendVerification: (nyit_email: string) =>
     apiRequest<{ message: string }>('/auth/resend', { method: 'POST', body: { nyit_email } }),
+
+  /** Emails a reset code. Same answer whether or not the account exists. */
+  forgotPassword: (nyit_email: string) =>
+    apiRequest<{ message: string }>('/auth/forgot-password', {
+      method: 'POST',
+      body: { nyit_email },
+    }),
+
+  /** Sets a new password using the emailed code; signs the account out everywhere. */
+  resetPassword: (nyit_email: string, token: string, new_password: string) =>
+    apiRequest<{ message: string }>('/auth/reset-password', {
+      method: 'POST',
+      body: { nyit_email, token, new_password },
+    }),
 };

@@ -2,18 +2,17 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  TextInput,
   Pressable,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   ActivityIndicator,
-  type TextInputProps,
 } from "react-native";
 
 import { router } from "expo-router";
 
+import { FormField } from "@/components/form-field";
 import { ApiError, authApi } from "@/lib/api";
 import {
   validateEmail,
@@ -32,50 +31,6 @@ type FieldName =
   | "confirmPassword";
 
 type FieldErrors = Partial<Record<FieldName, string>>;
-
-/** Labelled text input with an inline error and an optional show/hide toggle. */
-function FormField({
-  label,
-  error,
-  secure,
-  ...inputProps
-}: TextInputProps & { label: string; error?: string; secure?: boolean }) {
-  const [visible, setVisible] = useState(false);
-
-  return (
-    <>
-      <Text style={styles.label}>{label}</Text>
-
-      <View style={[styles.inputRow, error && styles.inputInvalid]}>
-        <TextInput
-          style={styles.inputText}
-          placeholderTextColor="#6B6E7A"
-          secureTextEntry={secure && !visible}
-          accessibilityLabel={label}
-          {...inputProps}
-        />
-
-        {secure && (
-          <Pressable
-            onPress={() => setVisible(!visible)}
-            style={styles.eyeButton}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel={
-              visible ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`
-            }
-          >
-            <Text style={styles.eyeIcon}>{visible ? "🙈" : "👁️"}</Text>
-          </Pressable>
-        )}
-      </View>
-
-      <Text style={styles.fieldError} accessibilityLiveRegion="polite">
-        {error ?? ""}
-      </Text>
-    </>
-  );
-}
 
 export default function SignUpScreen() {
   const { signIn } = useAuth();
@@ -140,6 +95,7 @@ export default function SignUpScreen() {
         params: { email: cleanEmail },
       });
     } catch (err) {
+      // show the error on its field when it clearly belongs to one, otherwise above the button
       if (err instanceof ApiError && /username/i.test(err.message)) {
         setFieldErrors({ username: err.message });
       } else if (
@@ -147,12 +103,13 @@ export default function SignUpScreen() {
         /already (exists|registered)/i.test(err.message)
       ) {
         setFieldErrors({ email: err.message });
+      } else {
+        setError(
+          err instanceof ApiError
+            ? err.message
+            : "Something went wrong. Please try again.",
+        );
       }
-      setError(
-        err instanceof ApiError
-          ? err.message
-          : "Something went wrong. Please try again.",
-      );
       setLoading(false);
     }
   };
@@ -384,55 +341,6 @@ const styles = StyleSheet.create({
     color: "#696C7A",
     marginTop: 7,
     marginBottom: 30,
-  },
-
-  label: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#222222",
-    marginBottom: 8,
-  },
-
-  // same look as the original single input, now a row so it can hold the 👁️ toggle
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#D6D8DD",
-    borderRadius: 12,
-    paddingHorizontal: 15,
-  },
-
-  inputText: {
-    flex: 1,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: "#171717",
-    letterSpacing: 0,
-  },
-
-  inputInvalid: {
-    borderColor: "#C62828",
-  },
-
-  eyeButton: {
-    minWidth: 44,
-    minHeight: 44,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  eyeIcon: {
-    fontSize: 18,
-  },
-
-  // reserves the space the old 20px input margin used, so errors don't shift the layout
-  fieldError: {
-    color: "#C62828",
-    fontSize: 13,
-    minHeight: 20,
-    marginTop: 4,
-    marginBottom: 4,
   },
 
   errorText: {

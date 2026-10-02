@@ -39,6 +39,14 @@ export function validateUsername(username: string): string | null {
   return null;
 }
 
+/** Supabase email codes are 6 digits by default (up to 10 if the project changes it). */
+export function validateResetCode(code: string): string | null {
+  const value = code.trim();
+  if (!value) return 'Enter the code from the email.';
+  if (!/^\d{6,10}$/.test(value)) return 'The code is the 6-digit number in the email.';
+  return null;
+}
+
 export function validateName(name: string, label: string): string | null {
   const value = name.trim();
   if (!value) return `Enter your ${label}.`;
