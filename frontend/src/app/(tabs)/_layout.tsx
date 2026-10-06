@@ -25,6 +25,27 @@ export default function TabLayout() {
           title: "Explore",
         }}
       />
+
+      <Tabs.Screen
+        name="skill-exchange"
+        options={{
+          title: "Skill Exchnange",
+        }}
+      />
+
+      <Tabs.Screen
+        name="events"
+        options={{
+          title: "Events",
+        }}  
+      />
+
+      <Tabs.Screen
+        name="more"
+        options={{
+          title: "More",
+        }}
+      />  
     </Tabs>
   );
 }
