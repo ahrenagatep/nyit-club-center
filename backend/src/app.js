@@ -5,10 +5,10 @@ const express = require('express');
 const cors = require('cors');
 const pool = require('./config/db'); // shared connection pool from db.js for executing queries
 const authRoutes = require('./routes/auth');
+const clubsRoutes = require('./routes/clubs');
+const path = require('path'); 
 
 const app = express();
-
-const clubsRoutes = require('./routes/clubs');
 
 app.use(cors());            // allows frontend to make requests to this API from different origin (cross-origin requests)
 app.use(express.json());    // parses incoming JSON requests and puts into in req.body
@@ -27,7 +27,7 @@ app.get('/health', async (req, res) => {
 });
 
 app.get('/verified', (req, res) => {
-  res.send('<h1>You\'re verified!</h1><p>You can now log in.</p>');
+  res.sendFile(path.join(__dirname, '../public/verified.html'));
 });
 
 // error handler (must stay last): answers malformed JSON and any unhandled error
