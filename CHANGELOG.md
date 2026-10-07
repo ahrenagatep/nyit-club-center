@@ -1,4 +1,23 @@
 # Changelog
+## 2026-10-06
+### Frontend
+#### Anthony Dominguez
+- Fixed "Can't reach the server" on Android emulators and phones: the app defaulted the API to `http://localhost:3000`, which on a device means the device itself
+    - New `pickApiUrl()` in `src/lib/api.ts` picks the backend address once at startup:
+        - `EXPO_PUBLIC_API_URL` always wins (required for release builds and tunnels)
+        - web → the page's host, port 3000
+        - phones/emulators in development → the computer running `expo start`, port 3000
+        - with `--localhost`: Android emulator → `10.0.2.2`, Android phone on USB → `localhost` (via `adb reverse`, detected with `expo-device`)
+    - Tunnel hosts (Expo `--tunnel`, VS Code port forwarding `*.devtunnels.ms`) log a warning asking for `EXPO_PUBLIC_API_URL`; requests to `*.devtunnels.ms` send `X-Tunnel-Skip-AntiPhishing-Page`
+    - Development builds log the choice once: `[api] Using <url> (<source>)`
+- Separate "Can't reach the server" and "taking too long to respond" errors (`ApiError.code` = `NETWORK` / `TIMEOUT`); development builds include the server address in the message
+- Timeouts: 15 s by default, 30 s for register / resend / forgot-password (they wait on Supabase sending email)
+- Sign Up timeout now says the account may already exist (check email before retrying); Forgot Password timeout moves on to the code step in case the code still arrives
+- New `npm run android:usb` (adb reverse 8081 + 3000, then `expo start --localhost --android`): Android phones over USB work on Windows "Public" networks and campus Wi-Fi
+- `.env.example` no longer sets a value and explains when to set `EXPO_PUBLIC_API_URL` (deployed builds, tunnels, backend elsewhere)
+    - **if you copied the old `.env.example` to `.env.local`, delete its `EXPO_PUBLIC_API_URL=http://localhost:3000` line** and restart with `npx expo start --clear`
+- No API, DB, or backend changes; no new dependencies
+- Tested: `tsc`, web + Android exports, `pickApiUrl` unit tests 21/21, web click-throughs against a stub API (auth 27, forgot password 15, navigation 37, address/timeouts 7, all passing); not yet run on a physical phone or emulator
 ## 2026-10-02
 ### Backend
 #### Anthony Dominguez

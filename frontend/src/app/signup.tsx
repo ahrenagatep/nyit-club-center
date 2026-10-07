@@ -96,7 +96,12 @@ export default function SignUpScreen() {
       });
     } catch (err) {
       // show the error on its field when it clearly belongs to one, otherwise above the button
-      if (err instanceof ApiError && /username/i.test(err.message)) {
+      if (err instanceof ApiError && err.code === "TIMEOUT") {
+        // the server may have created the account and only the confirmation email was slow
+        setError(
+          "The server took too long to respond. Your account may have been created, so check your email for a confirmation link before trying again.",
+        );
+      } else if (err instanceof ApiError && /username/i.test(err.message)) {
         setFieldErrors({ username: err.message });
       } else if (
         err instanceof ApiError &&

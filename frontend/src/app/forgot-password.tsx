@@ -76,7 +76,15 @@ export default function ForgotPasswordScreen() {
         `If an account exists for ${cleanEmail}, we sent it a reset code.`,
       );
     } catch (err) {
-      setError(errorMessage(err));
+      if (err instanceof ApiError && err.code === "TIMEOUT") {
+        // the email may still have been sent, so let the user enter a code if one arrives
+        setStep("reset");
+        setNotice(
+          "The server took too long to respond, but a code may still arrive. If it does, enter it below; otherwise tap Resend code.",
+        );
+      } else {
+        setError(errorMessage(err));
+      }
     } finally {
       setLoading(false);
     }
