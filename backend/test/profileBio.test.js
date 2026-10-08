@@ -1,3 +1,5 @@
+// Tests for PATCH /api/me/profile/bio.
+// Sends real HTTP requests to the app; only Supabase and the database are mocked.
 'use strict';
 
 process.env.SUPABASE_URL = process.env.SUPABASE_URL || 'https://example.supabase.co';
@@ -24,6 +26,8 @@ let queryImpl;
 mock.method(supabase.auth, 'getUser', (...args) => getUserImpl(...args));
 mock.method(pool, 'query', (...args) => queryImpl(...args));
 
+// Reset mocks before each test: only VALID_TOKEN is accepted, and the only
+// allowed query is the auth middleware's user lookup.
 beforeEach(() => {
   getUserImpl = async (token) => {
     if (token === VALID_TOKEN) {
@@ -53,6 +57,7 @@ beforeEach(() => {
   };
 });
 
+// Sends one request to the app on a random port and returns { status, body }.
 function request({ method, path, headers = {}, body }) {
   return new Promise((resolve, reject) => {
     const server = http.createServer(app);
@@ -98,6 +103,7 @@ function request({ method, path, headers = {}, body }) {
   });
 }
 
+// Pass token = null to send no Authorization header.
 function patchBio(body, token = VALID_TOKEN) {
   return request({
     method: 'PATCH',
