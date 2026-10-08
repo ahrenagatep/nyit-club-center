@@ -71,7 +71,7 @@ async function getClub(req, res) {
 }
 
 // POST /clubs
-// Requires requireAuth + requireRole('moderator', 'admin') in the route.
+// Requires requireAuth , any student can create a club -> becomes the president of club
 async function createClub(req, res) {
   const required = ['name'];
   const missing = missingFields(req.body || {}, required);
@@ -90,6 +90,15 @@ async function createClub(req, res) {
        RETURNING club_id, president_id, name, description, category, created_at`,
       [president_id, name.trim(), description || null, category || null]
     );
+
+    const club = result.rows[0];
+
+    // add the creator as the president in the memberships table
+    await pool.query(
+      `INSERT INTO memberships (user_id, club_id, role, status)
+       VALUES ($1, $2, 'president', 'active')`,
+      [president_id, club.club_id]
+    )
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error(err);
