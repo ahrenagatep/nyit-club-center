@@ -1,4 +1,11 @@
 # Changelog
+## 2026-10-08
+### Backend
+#### Anson Chen
+- Added `PATCH /api/me/profile/bio`, which lets authenticated users edit their own profile bio. The bio must be a string of 300 characters or fewer, and an empty string clears it.
+- The user is identified only from the verified token (`req.user.user_id`), so any `user_id` sent in the request body is ignored. The endpoint returns `200` with `{ "bio": "..." }` on success, `400` for invalid input, `401` for missing or invalid tokens, `404` if the profile isn't found, and `500` on database errors. New files: `profileController.js`, `me.js`, and `profileBio.test.js` (9 tests covering updates, empty and oversized bios, invalid input, auth failures, and ignoring a client-supplied `user_id`).
+- Run the tests with `node --test` or `npm test` from the backend root. Let me know if this has issues or needs fixing.
+- Confirm `src/app.js` mounts the router at `/api/me`.
 ## 2026-10-06
 ### Frontend
 #### Anthony Dominguez
