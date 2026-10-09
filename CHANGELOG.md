@@ -1,4 +1,33 @@
 # Changelog
+## 2026-10-08
+### Backend
+#### Anthony Dominguez
+- `sql/011` is **already applied to the shared Supabase database** (2026-10-08). Anyone using a different database must run 011 before running this code: login, register, and verify now select `major` and `school_year`
+- New migration `sql/011_users_profile_fields.sql` (idempotent): adds `users.major VARCHAR(80)` and `users.school_year VARCHAR(20)`; adds checks `users_school_year_check` (Freshman / Sophomore / Junior / Senior or NULL) and `users_bio_length_check` (bio ≤ 200 characters; `bio` already existed)
+- New `GET /users/me` (any signed-in user): `{ user }`, the caller's own row
+- New `PATCH /users/me` (any signed-in user, own row only): body has any of `major`, `school_year`, `bio`; omitted fields stay the same, `""`/`null` clears one; returns `{ message, user }`
+    - 400 for unknown fields (e.g. `role`, `nyit_email`, `username` can't be changed this way), non-text values, a school year outside the list, major > 80 / bio > 200 characters, an empty body, or a non-object body; 401 without a valid token; 404 if the token has no `users` row
+    - values are trimmed; field names come from a fixed list and values are parameterized
+- `/auth/register`, `/auth/login`, `/auth/verify` responses: `user` now also has `major`, `school_year`, `bio` (additive; shared column list in `src/utils/userColumns.js`)
+- Fixed `requireAuth` (`middleware/auth.js`): it called `normalizeEmail` without importing it, so a valid token with no `users` row crashed into a 500 instead of reaching the route
+- Tested against a throwaway Postgres built from `sql/001–011` (010/011 run twice) with Supabase faked: 21/21 (schema + constraints, every validation case, own-row-only updates, SQL-looking input, CORS preflight for PATCH, response time)
+### Frontend
+#### Anthony Dominguez
+- Fixed the Profile regression from PR #42 (`ui-login-navigation`, kept in #44): the rewritten Profile and new More tab didn't use the signed-in user, there was no way to sign out, and a teammate's name and personal email were hard-coded
+    - `profile.tsx` (layout and edit pop-up from #42/#44 kept):
+        - name, `nyit_email`, and role come from `useAuth`; the hard-coded name, email, major, year, and bio are gone
+        - the ✎ pop-up now **saves major, school year, and bio to the account** (`PATCH /users/me`): "Saving…" while it waits, errors shown in the pop-up (expired session gets its own message), tapping the selected year again clears it; Profile refreshes from `GET /users/me` when it opens, so edits from another device show up
+        - **Sign out** button restored
+        - "My Involvement" stats and lists use the shared join/RSVP state: Clubs Joined, Events Going (was a fixed "Events Attended"), Skill Posts (0 until Skill Exchange saves posts); Recent Clubs (newest first) and Upcoming Events (RSVP'd, soonest first) open the club/event; empty lists link to Explore/Events/Skill Exchange
+        - every button works: stat cards and "View All" open My Clubs / Events / Skill Exchange; ⚙️ opens a Settings sheet (Notifications, plus Favorites and Themes marked "Coming soon")
+        - back arrow falls back to Home when there's no previous screen (deep link, web refresh)
+        - accessibility: labels/roles on the back, ⚙️, ✎, ✕, "View All", and year buttons; labelled inputs; 44 px touch targets; section headings; muted grey `#777B8A` → `Brand.textMuted` (`#777B8A` fails WCAG AA contrast on white)
+        - "Freshmen" → "Freshman" in the edit pop-up
+    - `(tabs)/more.tsx`: signed-in name and email instead of the hard-coded name/major; **Sign out** button; accessibility labels; same contrast fix
+    - `(tabs)/_layout.tsx`: tab title typo "Skill Exchnange" → "Skill Exchange"; emoji icons on all five tabs (they showed React Navigation's ▼ placeholder)
+- `src/lib/api.ts`: `usersApi.me` / `usersApi.updateMe`, `AuthUser` gains `major` / `school_year` / `bio`, shared `SCHOOL_YEARS` and `PROFILE_LIMITS`; `src/state/auth.tsx`: `updateUser()` replaces the signed-in user and saves it with the session
+- No new dependencies; Skill Exchange screen untouched (separate branch)
+- Tested: `tsc`, web + Android exports, new Profile click-through 31/31 (stub API), navigation 37, auth 27, forgot password 15, API address 7, `pickApiUrl` 21, all passing
 ## 2026-10-06
 ### Frontend
 #### Anthony Dominguez

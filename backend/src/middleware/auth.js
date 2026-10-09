@@ -3,6 +3,7 @@
 
 const supabase = require('../config/supabase');
 const pool = require('../config/db');
+const { normalizeEmail } = require('../utils/nyitEmail');
 
 async function requireAuth(req, res, next) {
   const header = req.headers.authorization || '';

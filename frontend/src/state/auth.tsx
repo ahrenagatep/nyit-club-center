@@ -18,6 +18,8 @@ type AuthState = {
   session: AuthSession | null;
   signIn: (user: AuthUser, session: AuthSession) => Promise<void>;
   signOut: () => Promise<void>;
+  /** Replaces the signed-in user (e.g. after a profile edit) and saves it with the session. */
+  updateUser: (user: AuthUser) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -72,9 +74,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const updateUser = useCallback(
+    async (nextUser: AuthUser) => {
+      setUser(nextUser);
+      if (!session) return;
+      try {
+        await saveStoredAuth({ user: nextUser, session });
+      } catch {
+        // Couldn't persist; the change still shows until the app closes.
+      }
+    },
+    [session],
+  );
+
   const value = useMemo<AuthState>(
-    () => ({ status, user, session, signIn, signOut }),
-    [status, user, session, signIn, signOut],
+    () => ({ status, user, session, signIn, signOut, updateUser }),
+    [status, user, session, signIn, signOut, updateUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

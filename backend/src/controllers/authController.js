@@ -5,6 +5,7 @@ const supabase = require('../config/supabase');
 const { createRequestClient } = require('../config/supabaseRequestClient');
 const pool = require('../config/db');
 const { isNyitEmail, normalizeEmail } = require('../utils/nyitEmail');
+const { USER_COLUMNS } = require('../utils/userColumns');
 
 // where the link in the confirmation email sends the user after Supabase verifies them
 const EMAIL_REDIRECT_URL = 'http://localhost:3000/verified';
@@ -21,7 +22,7 @@ function missingFields(body, fields) {
 
 async function upsertLocalUser({ auth_user_id, nyit_email, username, first_name, last_name }) { 
   const existing = await pool.query(
-    'SELECT user_id, auth_user_id, nyit_email, username, first_name, last_name, role FROM users WHERE auth_user_id = $1',
+    `SELECT ${USER_COLUMNS} FROM users WHERE auth_user_id = $1`,
     [auth_user_id]
   );
 
@@ -32,7 +33,7 @@ async function upsertLocalUser({ auth_user_id, nyit_email, username, first_name,
   const inserted = await pool.query(
     `INSERT INTO users (auth_user_id, nyit_email, username, first_name, last_name, role)
      VALUES ($1, $2, $3, $4, $5, 'student')
-     RETURNING user_id, auth_user_id, nyit_email, username, first_name, last_name, role`,
+     RETURNING ${USER_COLUMNS}`,
     [auth_user_id, nyit_email, username, first_name, last_name]
   );
 
@@ -161,7 +162,7 @@ async function login(req, res) {
   let profile;
   try {
     const result = await pool.query(
-      'SELECT user_id, auth_user_id, nyit_email, username, first_name, last_name, role FROM users WHERE auth_user_id = $1',
+      `SELECT ${USER_COLUMNS} FROM users WHERE auth_user_id = $1`,
       [data.user.id]  // change to lookup by supabase id , not email
     );
     profile = result.rows[0] || { nyit_email, role: 'student' };
@@ -205,7 +206,7 @@ async function verify(req, res) {
   let profile = null;
   try {
     const result = await pool.query(
-      'SELECT user_id, auth_user_id, nyit_email, username, first_name, last_name, role FROM users WHERE auth_user_id = $1',
+      `SELECT ${USER_COLUMNS} FROM users WHERE auth_user_id = $1`,
       [data.user.id] // <-- lookup by supabase's id , not email
     );
     profile = result.rows[0] || { nyit_email, role: 'student' };
