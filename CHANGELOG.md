@@ -13,17 +13,20 @@
 - Tested against a throwaway Postgres built from `sql/001–011` (010/011 run twice) with Supabase faked: 21/21 (schema + constraints, every validation case, own-row-only updates, SQL-looking input, CORS preflight for PATCH, response time)
 #### Ahren Agatep
 - Add `POST /clubs/:id/join` for students to join clubs
+- Add `DELETE /clubs/:id/join` for students to leave clubs
+    - Presidents can't leave their own club
+        - PENDING: Add logic to transfer ownership of club so graduating presidents can leave
 - Enforced unique club names (not case sensitive) with a lower(name) index
     - Dupes return 409 on create/update
 - Aligned the clubs API with the frontend mock data
     - category allow-list
-    - `member-count` on `GET /clubs/:id`
+    - `member_count` on `GET /clubs/:id`
     - BIGINT IDs returned as numbers
 - Updated `clubsController.js` with category validation
 - Still needed to align w/ the frontend:
     - `end_date` and `category` on events
     - `club_id` and `event_id` on notifs
-    - `attendee_count` can be compute with a `COUNT`
+    - `attendee_count` can be computed with a `COUNT`
     - Need to confer with frontend before schema changes 
 ### Frontend
 #### Anthony Dominguez
