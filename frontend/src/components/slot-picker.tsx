@@ -1,7 +1,7 @@
 /**
  * Calendar for a Skill Exchange post's dates (campus time).
- * - Specific dates: tap days on the calendar, optionally set one time window
- *   for all of them, and optionally repeat them weekly.
+ * - Specific dates: tap days on the calendar, set one time for all of them or a
+ *   different time for each date, and optionally repeat them weekly.
  * - Requests can instead pick "Need it by": any time from now until that day.
  */
 import { useMemo } from 'react';
@@ -17,7 +17,9 @@ import {
   lastSelectableKey,
   selectedDays,
   todayKey,
+  windowForDate,
   type SlotSelection,
+  type TimeWindow,
 } from '@/lib/skill-dates';
 
 const STEP = 30; // minutes
@@ -27,13 +29,70 @@ const DEFAULT_WINDOW = { start: 12 * 60, end: 17 * 60 };
 export function emptySelection(kind: SkillKind): SlotSelection {
   return kind === 'request'
     ? { mode: 'deadline', deadline: null }
-    : { mode: 'dates', dates: [], window: null, repeatWeeks: 0 };
+    : { mode: 'dates', dates: [], window: null, repeatWeeks: 0, perDay: false, windows: {} };
+}
+
+/** "All day" switch, or start/end steppers in 30-minute steps; forDay names the date for screen readers. */
+function TimeEditor({
+  value,
+  onChange,
+  forDay,
+}: {
+  value: TimeWindow | null;
+  onChange: (next: TimeWindow | null) => void;
+  forDay?: string;
+}) {
+  const suffix = forDay ? ` for ${forDay}` : '';
+  const labelId = `all-day-label${forDay ? `-${forDay.replace(/\W+/g, '-')}` : ''}`;
+  return (
+    <>
+      <View style={styles.switchRow}>
+        <Text style={styles.switchLabel} nativeID={labelId}>
+          All day
+        </Text>
+        <Switch
+          value={!value}
+          onValueChange={(allDay) => onChange(allDay ? null : DEFAULT_WINDOW)}
+          trackColor={{ true: Brand.primary, false: '#C9CBD1' }}
+          thumbColor={Brand.white}
+          accessibilityLabel={`All day${suffix}`}
+          accessibilityLabelledBy={labelId}
+        />
+      </View>
+      {value && (
+        <View style={styles.timeRow}>
+          <Stepper
+            label="Start time"
+            name={`Start time${suffix}`}
+            value={formatMinutes(value.start)}
+            canDecrease={value.start > 0}
+            canIncrease={value.start + STEP < value.end}
+            onDecrease={() => onChange({ ...value, start: value.start - STEP })}
+            onIncrease={() => onChange({ ...value, start: value.start + STEP })}
+          />
+          <Stepper
+            label="End time"
+            name={`End time${suffix}`}
+            value={value.end === 1440 ? 'Midnight' : formatMinutes(value.end)}
+            canDecrease={value.end - STEP > value.start}
+            canIncrease={value.end < 1440}
+            onDecrease={() => onChange({ ...value, end: value.end - STEP })}
+            onIncrease={() => onChange({ ...value, end: value.end + STEP })}
+          />
+        </View>
+      )}
+    </>
+  );
 }
 
 
 
+// "Start time for Mon, Oct 12" → "start time for Mon, Oct 12" (dates keep their capitals)
+const lowerFirst = (text: string) => text.charAt(0).toLowerCase() + text.slice(1);
+
 export function Stepper({
   label,
+  name,
   value,
   onDecrease,
   onIncrease,
@@ -41,6 +100,8 @@ export function Stepper({
   canIncrease,
 }: {
   label: string;
+  /** What screen readers call it, when it needs more than the visible label (e.g. "Start time for Mon, Oct 12"). */
+  name?: string;
   value: string;
   onDecrease: () => void;
   onIncrease: () => void;
@@ -57,10 +118,10 @@ export function Stepper({
           style={({ pressed }) => [styles.stepButton, !canDecrease && styles.disabled, pressed && styles.pressed]}
           accessibilityRole="button"
           accessibilityState={{ disabled: !canDecrease }}
-          accessibilityLabel={`Earlier ${label.toLowerCase()}`}>
+          accessibilityLabel={`Earlier ${lowerFirst(name ?? label)}`}>
           <Text style={styles.stepButtonText}>‹</Text>
         </Pressable>
-        <Text style={styles.stepValue} accessibilityLiveRegion="polite" accessibilityLabel={`${label}: ${value}`}>
+        <Text style={styles.stepValue} accessibilityLiveRegion="polite" accessibilityLabel={`${name ?? label}: ${value}`}>
           {value}
         </Text>
         <Pressable
@@ -69,7 +130,7 @@ export function Stepper({
           style={({ pressed }) => [styles.stepButton, !canIncrease && styles.disabled, pressed && styles.pressed]}
           accessibilityRole="button"
           accessibilityState={{ disabled: !canIncrease }}
-          accessibilityLabel={`Later ${label.toLowerCase()}`}>
+          accessibilityLabel={`Later ${lowerFirst(name ?? label)}`}>
           <Text style={styles.stepButtonText}>›</Text>
         </Pressable>
       </View>
@@ -102,13 +163,17 @@ export function SlotPicker({
       onChange({ ...value, deadline: value.deadline === key ? null : key });
     } else {
       const dates = picked.has(key) ? value.dates.filter((d) => d !== key) : [...value.dates, key].sort();
-      onChange({ ...value, dates });
+      // with a time per date, a new date starts with the shared time; a removed one drops its own
+      const windows = { ...(value.windows ?? {}) };
+      if (picked.has(key)) delete windows[key];
+      else windows[key] = value.window;
+      onChange({ ...value, dates, windows });
     }
   };
 
   const setMode = (mode: SlotSelection['mode']) => {
     if (mode === value.mode) return;
-    onChange(mode === 'deadline' ? { mode, deadline: null } : { mode, dates: [], window: null, repeatWeeks: 0 });
+    onChange(mode === 'deadline' ? { mode, deadline: null } : { mode, dates: [], window: null, repeatWeeks: 0, perDay: false, windows: {} });
   };
 
   const dates = value.mode === 'dates' ? value : null;
@@ -121,7 +186,11 @@ export function SlotPicker({
   } else if (!days.length) {
     summary = kind === 'offer' ? "Tap the days you're available." : 'Tap the days that work for you.';
   } else {
-    const time = timeWindow ? `${formatMinutes(timeWindow.start)} – ${formatMinutes(timeWindow.end)}` : 'all day';
+    const time = dates?.perDay
+      ? 'different times'
+      : timeWindow
+        ? `${formatMinutes(timeWindow.start)} – ${formatMinutes(timeWindow.end)}`
+        : 'all day';
     summary = `${days.length} ${days.length === 1 ? 'date' : 'dates'}, ${time}`;
     if (dates && dates.repeatWeeks > 0) {
       summary += `, through ${formatDayKey(days[days.length - 1])}`;
@@ -168,39 +237,44 @@ export function SlotPicker({
 
       {dates && (
         <>
-          <View style={styles.switchRow}>
-            <Text style={styles.switchLabel} nativeID="all-day-label">
-              All day
-            </Text>
-            <Switch
-              value={!timeWindow}
-              onValueChange={(allDay) => onChange({ ...dates, window: allDay ? null : DEFAULT_WINDOW })}
-              trackColor={{ true: Brand.primary, false: '#C9CBD1' }}
-              thumbColor={Brand.white}
-              accessibilityLabel="All day"
-              accessibilityLabelledBy="all-day-label"
-            />
-          </View>
-
-          {timeWindow && (
-            <View style={styles.timeRow}>
-              <Stepper
-                label="Start time"
-                value={formatMinutes(timeWindow.start)}
-                canDecrease={timeWindow.start > 0}
-                canIncrease={timeWindow.start + STEP < timeWindow.end}
-                onDecrease={() => onChange({ ...dates, window: { ...timeWindow, start: timeWindow.start - STEP } })}
-                onIncrease={() => onChange({ ...dates, window: { ...timeWindow, start: timeWindow.start + STEP } })}
-              />
-              <Stepper
-                label="End time"
-                value={timeWindow.end === 1440 ? 'Midnight' : formatMinutes(timeWindow.end)}
-                canDecrease={timeWindow.end - STEP > timeWindow.start}
-                canIncrease={timeWindow.end < 1440}
-                onDecrease={() => onChange({ ...dates, window: { ...timeWindow, end: timeWindow.end - STEP } })}
-                onIncrease={() => onChange({ ...dates, window: { ...timeWindow, end: timeWindow.end + STEP } })}
+          {dates.dates.length > 1 && (
+            <View style={styles.switchRow}>
+              <Text style={styles.switchLabel} nativeID="same-time-label">
+                Same time on every date
+              </Text>
+              <Switch
+                value={!dates.perDay}
+                onValueChange={(same) =>
+                  onChange({
+                    ...dates,
+                    perDay: !same,
+                    // start each date from the shared time
+                    windows: same ? dates.windows : Object.fromEntries(dates.dates.map((d) => [d, windowForDate(dates, d)])),
+                  })
+                }
+                trackColor={{ true: Brand.primary, false: '#C9CBD1' }}
+                thumbColor={Brand.white}
+                accessibilityLabel="Same time on every date"
+                accessibilityLabelledBy="same-time-label"
               />
             </View>
+          )}
+
+          {dates.perDay && dates.dates.length > 1 ? (
+            [...dates.dates].sort().map((date) => (
+              <View key={date} style={styles.dayCard}>
+                <Text style={styles.dayCardTitle} accessibilityRole="header">
+                  {formatDayKey(date)}
+                </Text>
+                <TimeEditor
+                  value={windowForDate(dates, date)}
+                  forDay={formatDayKey(date)}
+                  onChange={(next) => onChange({ ...dates, windows: { ...(dates.windows ?? {}), [date]: next } })}
+                />
+              </View>
+            ))
+          ) : (
+            <TimeEditor value={timeWindow} onChange={(next) => onChange({ ...dates, window: next })} />
           )}
 
           <Stepper
@@ -283,6 +357,19 @@ const styles = StyleSheet.create({
   },
   timeRow: {
     gap: 4,
+  },
+  dayCard: {
+    borderWidth: 1,
+    borderColor: Brand.border,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    marginTop: 8,
+  },
+  dayCardTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Brand.text,
   },
   stepper: {
     flexDirection: 'row',

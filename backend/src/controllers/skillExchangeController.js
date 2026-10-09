@@ -23,11 +23,11 @@ const CREATE_FIELDS = ['kind', 'title', 'description', 'extras', 'location', 'lo
 const EDITABLE_FIELDS = ['description', 'extras', 'tags', 'status'];
 const LOCKED_FIELDS = ['kind', 'title', 'location', 'location_flexible', 'slots'];
 
-const FIELD_LABELS = { title: 'Title', description: 'Description', extras: 'Extras', location: 'Location', tags: 'Tags' };
+const FIELD_LABELS = { title: 'Title', description: 'Description', extras: 'Additional information', location: 'Location', tags: 'Tags' };
 const profanityError = (field) =>
   `${FIELD_LABELS[field]} contains language that isn't allowed. Please remove it and try again.`;
 
-// one post with its author, tags, and counts; ids are cast to int so the app gets numbers
+// one post with its author, tags, counts, and next dates; ids are cast to int so the app gets numbers
 const POST_COLUMNS = `
   p.post_id::int AS post_id, p.kind, p.title, p.description, p.extras, p.location,
   p.location_flexible, p.status, p.created_at, p.updated_at,
@@ -37,7 +37,12 @@ const POST_COLUMNS = `
     'kudos', (SELECT count(*)::int FROM kudos k WHERE k.receiver_id = u.user_id)
   ) AS author,
   COALESCE((SELECT json_agg(t.tag ORDER BY lower(t.tag)) FROM skill_post_tags t WHERE t.post_id = p.post_id), '[]'::json) AS tags,
-  (SELECT count(*)::int FROM skill_comments c WHERE c.post_id = p.post_id) AS comment_count`;
+  (SELECT count(*)::int FROM skill_comments c WHERE c.post_id = p.post_id) AS comment_count,
+  -- for the list cards: the next 3 dates that haven't ended, and how many there are in all
+  COALESCE((SELECT json_agg(json_build_object('starts_at', u.starts_at, 'ends_at', u.ends_at) ORDER BY u.starts_at)
+            FROM (SELECT s.starts_at, s.ends_at FROM skill_post_slots s
+                  WHERE s.post_id = p.post_id AND s.ends_at > now() ORDER BY s.starts_at LIMIT 3) u), '[]'::json) AS upcoming_slots,
+  (SELECT count(*)::int FROM skill_post_slots s WHERE s.post_id = p.post_id AND s.ends_at > now()) AS upcoming_slot_count`;
 
 const SLOT_COLUMN = `
   COALESCE((SELECT json_agg(json_build_object('slot_id', s.slot_id::int, 'starts_at', s.starts_at, 'ends_at', s.ends_at)

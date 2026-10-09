@@ -1,5 +1,5 @@
 /**
- * One response to a post (/skill/engagement/7), opened from a notification or the post.
+ * One response to a post (/skill-exchange/engagement/7), opened from a notification or the post.
  * Poster + pending: accept or decline (optional message; a decline without one is silent).
  * Responder + pending: withdraw. Accepted: both see each other's contact details and
  * either can cancel (optional message; the other person is told); the poster marks it
@@ -12,7 +12,7 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 
 import { FormField } from '@/components/form-field';
 import { ScreenHeader } from '@/components/screen-header';
-import { ENGAGEMENT_STATUS, KudosBadge, authorName, initials } from '@/components/skill-cards';
+import { ENGAGEMENT_STATUS, KudosBadge, authorName, backToOrigin, initials } from '@/components/skill-cards';
 import { Brand } from '@/constants/brand';
 import { ApiError, ENGAGEMENT_MESSAGE_MAX, engagementsApi, type SkillAuthor, type SkillEngagement } from '@/lib/api';
 import { formatPostDate, formatSlot, timeAgo } from '@/lib/skill-dates';
@@ -52,7 +52,7 @@ function PersonCard({ person, role, showContact }: { person: SkillAuthor; role: 
 }
 
 export default function EngagementScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
   const engagementId = /^\d+$/.test(id ?? '') ? Number(id) : null;
   const { session } = useAuth();
 
@@ -115,7 +115,7 @@ export default function EngagementScreen() {
   if (!engagement) {
     return (
       <View style={styles.container}>
-        <ScreenHeader title="Skill Exchange" />
+        <ScreenHeader title="Skill Exchange" onBack={backToOrigin(from)} />
         <View style={styles.center}>
           {loadError ? (
             <Text style={styles.errorText} accessibilityRole="alert">
@@ -207,7 +207,7 @@ export default function EngagementScreen() {
           }}
         />
       }>
-      <ScreenHeader title={heading} subtitle={isRequest ? 'Request' : 'Offer'} />
+      <ScreenHeader title={heading} subtitle={isRequest ? 'Request' : 'Offer'} onBack={backToOrigin(from)} />
 
       <View style={styles.body}>
         <View style={[styles.status, { backgroundColor: status.bg }]}>
@@ -215,7 +215,7 @@ export default function EngagementScreen() {
         </View>
 
         <Pressable
-          onPress={() => router.push({ pathname: '/skill/[id]', params: { id: String(e.post_id) } })}
+          onPress={() => router.push({ pathname: '/skill-exchange/[id]', params: { id: String(e.post_id) } })}
           style={({ pressed }) => [styles.postLink, pressed && styles.pressed]}
           accessibilityRole="button"
           accessibilityLabel={`Open post ${e.post.title}`}>

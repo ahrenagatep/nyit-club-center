@@ -75,10 +75,6 @@ function RootStack() {
           <Stack.Screen name="my-clubs" />
           <Stack.Screen name="notifications" />
           <Stack.Screen name="profile" />
-          <Stack.Screen name="skill/[id]" />
-          <Stack.Screen name="skill/new" />
-          <Stack.Screen name="skill/interest" />
-          <Stack.Screen name="skill/engagement/[id]" />
         </Stack.Protected>
       </Stack>
 

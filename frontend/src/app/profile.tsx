@@ -355,7 +355,7 @@ export default function ProfileScreen() {
                             title={post.title}
                             subtitle={`${KIND_LABEL[post.kind]} · ${STATUS_LABEL[post.status]}`}
                             hint="Opens the post"
-                            onPress={() => openSkillPost(post.post_id)}
+                            onPress={() => openSkillPost(post.post_id, "profile")}
                         />
                     ))
                 ) : (

@@ -217,11 +217,7 @@ export default function EventsScreen() {
                 )}
 
                 {/* Categories */}
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.categoryRow}
-                >
+                <View style={styles.categoryRow}>
                     {categories.map((category) => (
                         <Pressable
                             key={category}
@@ -247,7 +243,7 @@ export default function EventsScreen() {
                             </Text>
                         </Pressable>
                     ))}
-                </ScrollView>
+                </View>
             </View>
 
             {viewMode === "list" ? (
@@ -590,8 +586,11 @@ const styles = StyleSheet.create({
         marginTop: 12,
     },
 
+    // wraps instead of scrolling sideways, so every category fits any screen width
     categoryRow: {
         marginTop: 15,
+        flexDirection: "row",
+        flexWrap: "wrap",
         gap: 8,
     },
 

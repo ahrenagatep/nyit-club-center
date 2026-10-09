@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
+  Platform,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { NotificationBell } from "@/components/notification-bell";
@@ -209,11 +210,7 @@ export default function ExploreScreen() {
         )}
 
         {/* category Buttons */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryRow}
-        >
+        <View style={styles.categoryRow}>
           {categoryChips.map(({ label, value }) => {
             const active = category === value;
             return (
@@ -238,7 +235,7 @@ export default function ExploreScreen() {
               </Pressable>
             );
           })}
-        </ScrollView>
+        </View>
       </View>
 
       {browsing && (
@@ -267,7 +264,7 @@ export default function ExploreScreen() {
           ) : (
             <ScrollView
               horizontal
-              showsHorizontalScrollIndicator={false}
+              showsHorizontalScrollIndicator={Platform.OS === "web"}
               contentContainerStyle={styles.horizontalCards}
             >
               {yourClubs.map((club) => {
@@ -316,7 +313,7 @@ export default function ExploreScreen() {
 
           <ScrollView
             horizontal
-            showsHorizontalScrollIndicator={false}
+            showsHorizontalScrollIndicator={Platform.OS === "web"}
             contentContainerStyle={styles.horizontalCards}
           >
             {trendingClubs.map((club) => {
@@ -568,8 +565,11 @@ const styles = StyleSheet.create({
     gap: 10,
   },
 
+  // wraps instead of scrolling sideways, so every category fits any screen width
   categoryRow: {
     marginTop: 17,
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 10,
   },
 
