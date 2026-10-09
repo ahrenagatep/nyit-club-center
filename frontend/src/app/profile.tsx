@@ -352,7 +352,6 @@ const styles = StyleSheet.create({
 
         borderTopLeftRadius: 25,
         borderTopRightRadius: 25,
-
         paddingHorizontal: 22,
         paddingTop: 20,
         paddingBottom: 40,
@@ -366,7 +365,6 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-
         marginBottom: 10,
     },
 
@@ -391,12 +389,9 @@ const styles = StyleSheet.create({
     majorInput: {
         borderWidth: 1,
         borderColor: "#D9DBE1",
-
         borderRadius: 14,
-
         paddingHorizontal: 14,
         paddingVertical: 12,
-
         fontSize: 14,
         color: "#171717",
     },
@@ -409,10 +404,8 @@ const styles = StyleSheet.create({
     // Default school year button
     optionButton: {
         backgroundColor: "#F1F1F3",
-
         paddingHorizontal: 14,
         paddingVertical: 9,
-
         borderRadius: 16,
     },
     // Blue style for the selected school year
@@ -432,29 +425,20 @@ const styles = StyleSheet.create({
     // Multiline textbox for the user's bio
     bioInput: {
         minHeight: 110,
-
         borderWidth: 1,
         borderColor: "#D9DBE1",
-
         borderRadius: 14,
-
         padding: 14,
-
         fontSize: 14,
         color: "#171717",
-
         textAlignVertical: "top",
     },
     // Button that saves the edited profile information
     saveButton: {
         backgroundColor: "#0B55B7",
-
         marginTop: 28,
-
         paddingVertical: 14,
-
         borderRadius: 12,
-
         alignItems: "center",
     },
 
@@ -472,7 +456,6 @@ const styles = StyleSheet.create({
         paddingTop: 60,
         paddingHorizontal: 20,
         paddingBottom: 75,
-
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
@@ -497,17 +480,13 @@ const styles = StyleSheet.create({
 
     profileCard: {
         backgroundColor: "#FFFFFF",
-
         marginHorizontal: 18,
         marginTop: -55,
-
         borderRadius: 18,
         padding: 18,
-
         shadowColor: "#000000",
         shadowOpacity: 0.09,
         shadowRadius: 8,
-
         shadowOffset: {
             width: 0,
             height: 4,
@@ -524,14 +503,10 @@ const styles = StyleSheet.create({
     avatar: {
         width: 88,
         height: 88,
-
         borderRadius: 44,
-
         backgroundColor: "#EAF3FF",
-
         alignItems: "center",
         justifyContent: "center",
-
         marginRight: 15,
     },
 
@@ -569,9 +544,7 @@ const styles = StyleSheet.create({
     bio: {
         fontSize: 14,
         color: "#666A78",
-
         lineHeight: 20,
-
         marginTop: 20,
         marginBottom: 12,
     },
@@ -579,7 +552,6 @@ const styles = StyleSheet.create({
     infoRow: {
         flexDirection: "row",
         alignItems: "center",
-
         marginTop: 10,
     },
 
@@ -599,17 +571,14 @@ const styles = StyleSheet.create({
         marginHorizontal: 18,
         marginTop: 28,
         marginBottom: 12,
-
         fontSize: 21,
         fontWeight: "bold",
-
         color: "#171717",
     },
 
     sectionTitleNoMargin: {
         fontSize: 21,
         fontWeight: "bold",
-
         color: "#171717",
     },
 
@@ -617,25 +586,18 @@ const styles = StyleSheet.create({
 
     statsRow: {
         flexDirection: "row",
-
         marginHorizontal: 18,
-
         gap: 10,
     },
 
     statCard: {
         flex: 1,
-
         borderWidth: 1,
         borderColor: "#E0E2E6",
-
         borderRadius: 16,
-
         paddingVertical: 17,
         paddingHorizontal: 5,
-
         alignItems: "center",
-
         backgroundColor: "#FFFFFF",
     },
 
@@ -646,18 +608,14 @@ const styles = StyleSheet.create({
     statNumber: {
         fontSize: 21,
         fontWeight: "bold",
-
         color: "#171717",
-
         marginTop: 6,
     },
 
     statLabel: {
         fontSize: 11,
         color: "#777B8A",
-
         textAlign: "center",
-
         marginTop: 4,
     },
 
@@ -665,10 +623,8 @@ const styles = StyleSheet.create({
 
     sectionHeader: {
         marginHorizontal: 18,
-
         marginTop: 28,
         marginBottom: 12,
-
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
@@ -676,7 +632,6 @@ const styles = StyleSheet.create({
 
     viewAll: {
         color: "#0B55B7",
-
         fontSize: 14,
         fontWeight: "600",
     },
@@ -684,31 +639,22 @@ const styles = StyleSheet.create({
     activityCard: {
         marginHorizontal: 18,
         marginBottom: 11,
-
         padding: 15,
-
         borderWidth: 1,
         borderColor: "#E0E2E6",
-
         borderRadius: 15,
-
         flexDirection: "row",
         alignItems: "center",
-
         backgroundColor: "#FFFFFF",
     },
 
     activityIconBox: {
         width: 52,
         height: 52,
-
         borderRadius: 14,
-
         backgroundColor: "#EAF3FF",
-
         alignItems: "center",
         justifyContent: "center",
-
         marginRight: 13,
     },
 
@@ -723,14 +669,12 @@ const styles = StyleSheet.create({
     activityTitle: {
         fontSize: 15,
         fontWeight: "600",
-
         color: "#171717",
     },
 
     activitySubtitle: {
         fontSize: 12,
         color: "#777B8A",
-
         marginTop: 4,
     },
 
