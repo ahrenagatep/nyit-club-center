@@ -1,34 +1,180 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import {
+    ActivityIndicator,
     View,
     Text,
     TextInput,
     Pressable,
+    RefreshControl,
     ScrollView,
     StyleSheet,
     Modal,
+    Switch,
 } from "react-native";
+import { router, useFocusEffect } from "expo-router";
 
+import { EmptyState } from "@/components/club-cards";
+import { SkillPostCard } from "@/components/skill-cards";
+import { TagPicker, useSkillTagGroups } from "@/components/tag-picker";
+import { Brand } from "@/constants/brand";
+import {
+    ApiError,
+    skillApi,
+    type SkillKind,
+    type SkillPost,
+    type SkillSort,
+    type SkillStatus,
+} from "@/lib/api";
+import { useAuth } from "@/state/auth";
+
+const PAGE_SIZE = 20;
+const SEARCH_DELAY_MS = 300;
+
+const SORTS: { value: SkillSort; label: string }[] = [
+    { value: "newest", label: "Newest" },
+    { value: "oldest", label: "Oldest" },
+    { value: "soonest", label: "Soonest date" },
+];
+
+const STATUS_FILTERS: Record<SkillKind, { value: SkillStatus | null; label: string }[]> = {
+    request: [
+        { value: null, label: "All" },
+        { value: "open", label: "Open" },
+        { value: "closed", label: "Closed" },
+    ],
+    offer: [
+        { value: null, label: "All" },
+        { value: "available", label: "Available" },
+        { value: "unavailable", label: "Unavailable" },
+    ],
+};
+
+function errorMessage(error: unknown): string {
+    if (error instanceof ApiError) {
+        if (error.status === 401) return "Your session has expired. Sign out and log in again.";
+        return error.message;
+    }
+    return "Something went wrong. Please try again.";
+}
+
+/** Skill Exchange tab: students request help or offer it (Requests | Offers). */
 export default function SkillExchangeScreen() {
-    const [search, setSearch] = useState("");
-    const [filterVisble, setFilterVisible] = useState(false);
-    const [category, setCategory] = useState("All");
-    const [skill, setSkill] = useState("All");
-    const [location, setLocation] = useState("All");
-    const [exchangeType, setExchangeType] = useState("All");
+    const { session } = useAuth();
+    const tagGroups = useSkillTagGroups();
 
-    const categories = ["All", "Coding", "Design", "Math", "Science",];
-    const skills = ["All", "Java", "Calculus", "Physics", "Chemistry",];
-    const locations = ["All", "Online", "In Person",];
-    const exchangeTypes = ["All", "Teach", "Learn",];
+    const [kind, setKind] = useState<SkillKind>("request");
+    const [search, setSearch] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+    const [tags, setTags] = useState<string[]>([]);
+    const [sort, setSort] = useState<SkillSort>("newest");
+    const [status, setStatus] = useState<SkillStatus | null>(null);
+    const [mine, setMine] = useState(false);
+    const [filterVisible, setFilterVisible] = useState(false);
+
+    const [posts, setPosts] = useState<SkillPost[]>([]);
+    const [hasMore, setHasMore] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [expanded, setExpanded] = useState<Set<number>>(new Set());
+
+    // answers from an older search are ignored once a newer one has started
+    const requestId = useRef(0);
+    const loadedOnce = useRef(false);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedSearch(search.trim()), SEARCH_DELAY_MS);
+        return () => clearTimeout(timer);
+    }, [search]);
+
+    const load = useCallback(
+        async (mode: "replace" | "more" | "refresh") => {
+            if (!session) return;
+            const id = ++requestId.current;
+            if (mode === "replace") setLoading(true);
+            if (mode === "more") setLoadingMore(true);
+            try {
+                const offset = mode === "more" ? posts.length : 0;
+                const result = await skillApi.list(session.access_token, {
+                    kind,
+                    q: debouncedSearch || undefined,
+                    tags,
+                    sort,
+                    status: status ?? undefined,
+                    mine: mine || undefined,
+                    limit: PAGE_SIZE,
+                    offset,
+                });
+                if (id !== requestId.current) return;
+                setPosts((current) => (mode === "more" ? [...current, ...result.posts] : result.posts));
+                setHasMore(result.has_more);
+                setError(null);
+                loadedOnce.current = true;
+            } catch (e) {
+                if (id !== requestId.current) return;
+                setError(errorMessage(e));
+            } finally {
+                if (id === requestId.current) {
+                    setLoading(false);
+                    setLoadingMore(false);
+                    setRefreshing(false);
+                }
+            }
+        },
+        [session, kind, debouncedSearch, tags, sort, status, mine, posts.length],
+    );
+
+    // new search, filter, or tab → start from the top
+    useEffect(() => {
+        load("replace");
+    }, [session, kind, debouncedSearch, tags, sort, status, mine]);
+
+    // coming back from a post (created, edited, deleted) → refresh quietly
+    const loadRef = useRef(load);
+    loadRef.current = load;
+    useFocusEffect(
+        useCallback(() => {
+            if (loadedOnce.current) loadRef.current("refresh");
+        }, []),
+    );
+
+    const changeKind = (next: SkillKind) => {
+        if (next === kind) return;
+        setKind(next);
+        setStatus(null);
+        setExpanded(new Set());
+    };
+
+    const toggleExpanded = (postId: number) => {
+        setExpanded((current) => {
+            const next = new Set(current);
+            if (next.has(postId)) next.delete(postId);
+            else next.add(postId);
+            return next;
+        });
+    };
 
     const clearFilters = () => {
-        setCategory("All");
-        setSkill("All");
-        setLocation("All");
-        setExchangeType("All");
+        setTags([]);
+        setSort("newest");
+        setStatus(null);
+        setMine(false);
     };
+
+    const activeFilters: { key: string; label: string; remove: () => void }[] = [
+        ...tags.map((tag) => ({ key: `tag-${tag}`, label: tag, remove: () => setTags(tags.filter((t) => t !== tag)) })),
+        ...(status
+            ? [{ key: "status", label: STATUS_FILTERS[kind].find((s) => s.value === status)?.label ?? status, remove: () => setStatus(null) }]
+            : []),
+        ...(mine ? [{ key: "mine", label: "My posts", remove: () => setMine(false) }] : []),
+        ...(sort !== "newest"
+            ? [{ key: "sort", label: `Sort: ${SORTS.find((s) => s.value === sort)?.label}`, remove: () => setSort("newest") }]
+            : []),
+    ];
+    const filtering = Boolean(debouncedSearch) || activeFilters.length > 0;
+    const noun = kind === "request" ? "requests" : "offers";
 
     return (
         <View style={styles.container}>
@@ -37,185 +183,185 @@ export default function SkillExchangeScreen() {
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.content}
+                keyboardShouldPersistTaps="handled"
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={() => {
+                            setRefreshing(true);
+                            load("refresh");
+                        }}
+                    />
+                }
             >
                 {/* Header */}
                 <View style={styles.header}>
-                    <View>
-                        <Text style={styles.headerTitle}>Skill Exchange</Text>
-                        <Text style={styles.headerSubtitle}>Share your skills and connect with others</Text>
+                    <View style={styles.headerTop}>
+                        <View style={styles.headerText}>
+                            <Text style={styles.headerTitle} accessibilityRole="header">Skill Exchange</Text>
+                            <Text style={styles.headerSubtitle}>Share your skills and connect with others</Text>
+                        </View>
+
+                        <Pressable
+                            style={({ pressed }) => [styles.postButton, pressed && styles.pressed]}
+                            onPress={() => router.push({ pathname: "/skill/new", params: { kind } })}
+                            accessibilityRole="button"
+                            accessibilityLabel={kind === "request" ? "Post a request" : "Post an offer"}
+                        >
+                            <Text style={styles.postButtonText}>+ Post</Text>
+                        </Pressable>
                     </View>
 
-                    {/* Creating post - visuals */}
-                    <Pressable style={styles.postButton}>
-                        <Text style={styles.postButtonText}> +Post</Text>
-                    </Pressable>
+                    {/* Requests | Offers */}
+                    <View style={styles.kindToggle}>
+                        {(["request", "offer"] as const).map((k) => {
+                            const active = kind === k;
+                            return (
+                                <Pressable
+                                    key={k}
+                                    style={[styles.kindButton, active && styles.kindButtonActive]}
+                                    onPress={() => changeKind(k)}
+                                    accessibilityRole="button"
+                                    accessibilityState={{ selected: active }}
+                                    accessibilityLabel={k === "request" ? "Requests" : "Offers"}
+                                >
+                                    <Text style={[styles.kindText, active && styles.kindTextActive]}>
+                                        {k === "request" ? "REQUESTS" : "OFFERS"}
+                                    </Text>
+                                </Pressable>
+                            );
+                        })}
+                    </View>
                 </View>
 
                 {/*Search & Filter*/}
                 <View style={styles.searchSection}>
                     <View style={styles.searchBar}>
-                        <Text style={styles.searchIcon}>🔍</Text>
+                        <Text style={styles.searchIcon} importantForAccessibility="no">🔍</Text>
 
                         <TextInput
                             style={styles.searchInput}
-                            placeholder="Search skills or students..."
-                            placeholderTextColor="777B8A"
+                            placeholder={`Search ${noun} or students...`}
+                            placeholderTextColor={Brand.textMuted}
                             value={search}
                             onChangeText={setSearch}
+                            returnKeyType="search"
+                            autoCorrect={false}
+                            clearButtonMode="while-editing"
+                            maxLength={100}
+                            accessibilityLabel={`Search ${noun}`}
                         />
                     </View>
 
                     <Pressable
-                        style={styles.filterButton}
+                        style={({ pressed }) => [styles.filterButton, pressed && styles.pressed]}
                         onPress={() => setFilterVisible(true)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Filter ${noun}${activeFilters.length ? `, ${activeFilters.length} active` : ""}`}
                     >
-                        <Text style={styles.filterButtonText}>Filter</Text>
+                        <Text style={styles.filterButtonText}>
+                            Filter{activeFilters.length ? ` (${activeFilters.length})` : ""}
+                        </Text>
                     </Pressable>
                 </View>
 
-                {/* Activate filter */}
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.activeFilters}
-                >
-                    {category !== "All" && (
-                        <View style={styles.activeFilterTag}>
-                            <Text style={styles.activeFilterText}>{category}</Text>
-                        </View>
-                    )}
-
-                    {skill !== "All" && (
-                        <View style={styles.activeFilterTag}>
-                            <Text style={styles.activeFilterText}>{skill}</Text>
-                        </View>
-                    )}
-
-                    {location !== "All" && (
-                        <View style={styles.activeFilterTag}>
-                            <Text style={styles.activeFilterText}>{location}</Text>
-                        </View>
-                    )}
-
-                    {exchangeType !== "All" && (
-                        <View style={styles.activeFilterTag}>
-                            <Text style={styles.activeFilterText}>{exchangeType}</Text>
-                        </View>
-                    )}
-                </ScrollView>
+                {/* Active filters (tap to remove) */}
+                {activeFilters.length > 0 && (
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.activeFilters}
+                    >
+                        {activeFilters.map((filter) => (
+                            <Pressable
+                                key={filter.key}
+                                style={({ pressed }) => [styles.activeFilterTag, pressed && styles.pressed]}
+                                onPress={filter.remove}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Remove filter ${filter.label}`}
+                            >
+                                <Text style={styles.activeFilterText}>{filter.label} ✕</Text>
+                            </Pressable>
+                        ))}
+                        <Pressable
+                            style={({ pressed }) => [styles.clearAll, pressed && styles.pressed]}
+                            onPress={clearFilters}
+                            accessibilityRole="button"
+                            accessibilityLabel="Clear all filters"
+                        >
+                            <Text style={styles.clearAllText}>Clear all</Text>
+                        </Pressable>
+                    </ScrollView>
+                )}
 
                 {/* TITLE */}
                 <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Available Exchanges</Text>
+                    <Text style={styles.sectionTitle} accessibilityRole="header">
+                        {kind === "request" ? "Requests" : "Offers"}
+                    </Text>
+                    {!loading && !error && (
+                        <Text style={styles.sectionCount} accessibilityLiveRegion="polite">
+                            {posts.length}{hasMore ? "+" : ""} {posts.length === 1 && !hasMore ? noun.slice(0, -1) : noun}
+                        </Text>
+                    )}
                 </View>
 
-                {/* Card 1 */}
-                <View style={styles.exchangeCard}>
-                    <View style={styles.cardTop}>
-                        <View style={styles.avatar}>
-                            <Text style={styles.avatarText}>👱🏼‍♂️</Text>
-                        </View>
-
-                        <View style={styles.studentInfo}>
-                            <Text style={styles.studentName}>Ahren</Text>
-                            <Text style={styles.studentMajor}>Computer Science</Text>
-                        </View>
-                        <Text style={styles.timeText}>3hr ago</Text>
-                    </View>
-
-                    <View style={styles.exchangeRow}>
-                        <View style={styles.offeringBadge}>
-                            <Text style={styles.offeringText}>Offering</Text>
-                        </View>
-
-                        <Text style={styles.skillTitle}>Java</Text>
-                    </View>
-
-                    <Text style={styles.description}>I am able to assist with java basic and functions and help with homework</Text>
-
-                    <View style={styles.cardBottom}>
-                        <Text style={styles.locationText}>📍 Online</Text>
-
-                        <Pressable style={styles.connectButton}>
-                            <Text style={styles.connectButtonText}>Connect</Text>
+                {loading ? (
+                    <ActivityIndicator style={styles.spinner} size="large" color={Brand.primary} accessibilityLabel={`Loading ${noun}`} />
+                ) : error ? (
+                    <View style={styles.errorBox}>
+                        <Text style={styles.errorText} accessibilityRole="alert">{error}</Text>
+                        <Pressable
+                            style={({ pressed }) => [styles.retryButton, pressed && styles.pressed]}
+                            onPress={() => load("replace")}
+                            accessibilityRole="button"
+                            accessibilityLabel="Try again"
+                        >
+                            <Text style={styles.retryText}>Try again</Text>
                         </Pressable>
                     </View>
-
-                </View>
-
-                {/* card 2 */}
-                <View style={styles.exchangeCard}>
-                    <View style={styles.cardTop}>
-                        <View style={styles.avatar}>
-                            <Text style={styles.avatarText}>👱🏼‍♂️</Text>
-                        </View>
-
-                        <View style={styles.studentInfo}>
-                            <Text style={styles.studentName}>Yousha</Text>
-                            <Text style={styles.studentMajor}>Biology</Text>
-                        </View>
-
-                        <Text style={styles.timeText}>4hr ago</Text>
-                    </View>
-
-                    <View style={styles.exchangeRow}>
-                        <View style={styles.offeringBadge}>
-                            <Text style={styles.offeringText}>Offering</Text>
-                        </View>
-
-                        <Text style={styles.skillTitle}>Chem & Bio</Text>
-                    </View>
-
-                    <Text style={styles.description}> I can help with chemistry 1 & 2 and also bilogy 1 classes</Text>
-
-                    <View style={styles.cardBottom}>
-                        <Text style={styles.locationText}>📍 In Person</Text>
-
-                        <Pressable style={styles.connectButton}>
-                            <Text style={styles.connectButtonText}>Connect</Text>
-                        </Pressable>
-                    </View>
-                </View>
-
-                {/* card 3 */}
-                <View style={styles.exchangeCard}>
-                    <View style={styles.cardTop}>
-                        <View style={styles.avatar}>
-                            <Text style={styles.avatarText}>👱🏼‍♂️</Text>
-                        </View>
-
-                        <View style={styles.studentInfo}>
-                            <Text style={styles.studentName}>Anson</Text>
-                            <Text style={styles.studentMajor}>Mechanical Engineering</Text>
-                        </View>
-
-                        <Text style={styles.timeText}>2d ago</Text>
-                    </View>
-
-                    <View style={styles.exchangeRow}>
-                        <View style={styles.lookingBadge}>
-                            <Text style={styles.lookingText}>Looking for</Text>
-                        </View>
-                        <Text style={styles.skillTitle}>Calculus</Text>
-                    </View>
-
-                    <Text style={styles.description}>I am looking for someone to help me in Calculus 1</Text>
-
-                    <View style={styles.cardBottom}>
-                        <Text style={styles.locationText}>📍 Both Online & In Person</Text>
-
-                        <Pressable style={styles.connectButton}>
-                            <Text style={styles.connectButtonText}>Connect</Text>
-                        </Pressable>
-                    </View>
-
-                </View>
+                ) : posts.length === 0 ? (
+                    <EmptyState
+                        emoji={kind === "request" ? "🙋" : "🧑‍🏫"}
+                        title={filtering ? `No ${noun} match` : `No ${noun} yet`}
+                        message={
+                            filtering
+                                ? "Try a different search or fewer filters."
+                                : kind === "request"
+                                  ? "Need help with something? Tap + Post to ask."
+                                  : "Good at something? Tap + Post to offer it."
+                        }
+                    />
+                ) : (
+                    <>
+                        {posts.map((post) => (
+                            <SkillPostCard
+                                key={post.post_id}
+                                post={post}
+                                expanded={expanded.has(post.post_id)}
+                                onToggle={() => toggleExpanded(post.post_id)}
+                            />
+                        ))}
+                        {hasMore && (
+                            <Pressable
+                                style={({ pressed }) => [styles.moreButton, pressed && styles.pressed]}
+                                onPress={() => load("more")}
+                                disabled={loadingMore}
+                                accessibilityRole="button"
+                                accessibilityState={{ busy: loadingMore }}
+                                accessibilityLabel={`Load more ${noun}`}
+                            >
+                                <Text style={styles.moreText}>{loadingMore ? "Loading…" : "Load more"}</Text>
+                            </Pressable>
+                        )}
+                    </>
+                )}
 
             </ScrollView>
 
             {/* Filter Panel*/}
             <Modal
-                visible={filterVisble}
+                visible={filterVisible}
                 transparent={true}
                 animationType="slide"
                 onRequestClose={() => setFilterVisible(false)}
@@ -225,138 +371,101 @@ export default function SkillExchangeScreen() {
                     <Pressable
                         style={styles.modalOutside}
                         onPress={() => setFilterVisible(false)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Close filters"
                     />
 
-                    <View style={styles.filterModal}>
+                    <View style={styles.filterModal} accessibilityViewIsModal>
 
                         {/*Header for filter*/}
                         <View style={styles.filterHeader}>
-                            <Text style={styles.filterTitle}>Filter</Text>
+                            <Text style={styles.filterTitle} accessibilityRole="header">
+                                Filter {noun}
+                            </Text>
 
                             <Pressable
+                                style={styles.closeHit}
                                 onPress={() => setFilterVisible(false)}
+                                accessibilityRole="button"
+                                accessibilityLabel="Close filters"
                             >
-                                <Text style={styles.closeButton}>ⅹ</Text>
+                                <Text style={styles.closeButton}>✕</Text>
                             </Pressable>
                         </View>
 
                         <ScrollView
                             showsVerticalScrollIndicator={false}
+                            keyboardShouldPersistTaps="handled"
                         >
-                            {/* Category */}
-                            <Text style={styles.filterSectionTitle}>Category</Text>
+                            {/* Tags */}
+                            <TagPicker
+                                groups={tagGroups}
+                                selected={tags}
+                                onChange={setTags}
+                                label="Tags (any of)"
+                            />
 
+                            {/* Sort */}
+                            <Text style={styles.filterSectionTitle}>Sort by</Text>
                             <View style={styles.optionRow}>
-                                {categories.map((item) => (
+                                {SORTS.map((item) => (
                                     <Pressable
-                                        key={item}
-                                        style={[
-                                            styles.optionButton,
-                                            category === item &&
-                                            styles.selectedOption,
-                                        ]}
-                                        onPress={() => setCategory(item)}
+                                        key={item.value}
+                                        style={[styles.optionButton, sort === item.value && styles.selectedOption]}
+                                        onPress={() => setSort(item.value)}
+                                        accessibilityRole="button"
+                                        accessibilityState={{ selected: sort === item.value }}
+                                        accessibilityLabel={`Sort by ${item.label.toLowerCase()}`}
                                     >
-                                        <Text
-                                            style={[
-                                                styles.optionText,
-                                                    category === item &&
-                                                styles.selectedOptionText,
-                                            ]}
-                                        >
-                                            {item}
+                                        <Text style={[styles.optionText, sort === item.value && styles.selectedOptionText]}>
+                                            {item.label}
                                         </Text>
                                     </Pressable>
                                 ))}
                             </View>
 
-                            {/* Skill*/}
-                            <Text style={styles.filterSectionTitle}>Skill</Text>
-
+                            {/* Status */}
+                            <Text style={styles.filterSectionTitle}>Status</Text>
                             <View style={styles.optionRow}>
-                                {skills.map((item) => (
+                                {STATUS_FILTERS[kind].map((item) => (
                                     <Pressable
-                                        key={item}
-                                        style={[
-                                            styles.optionButton,
-                                            skill === item &&
-                                            styles.selectedOption,
-                                        ]}
-                                        onPress={() => setSkill(item)}
+                                        key={item.label}
+                                        style={[styles.optionButton, status === item.value && styles.selectedOption]}
+                                        onPress={() => setStatus(item.value)}
+                                        accessibilityRole="button"
+                                        accessibilityState={{ selected: status === item.value }}
+                                        accessibilityLabel={`Status ${item.label.toLowerCase()}`}
                                     >
-                                        <Text
-                                            style={[
-                                                styles.optionText,
-                                                skill === item &&
-                                                styles.selectedOptionText,
-                                            ]}
-                                        >
-                                            {item}
+                                        <Text style={[styles.optionText, status === item.value && styles.selectedOptionText]}>
+                                            {item.label}
                                         </Text>
                                     </Pressable>
                                 ))}
                             </View>
 
-                            {/* Location */}
-                            <Text style={styles.filterSectionTitle}>Location</Text>
-
-                            <View style={styles.optionRow}>
-                                {locations.map((item) => (
-                                    <Pressable
-                                        key={item}
-                                        style={[
-                                            styles.optionButton,
-                                            location === item &&
-                                            styles.selectedOption,
-                                        ]}
-                                        onPress={() => setLocation(item)}
-                                    >
-                                        <Text
-                                            style={[
-                                                styles.optionText,
-                                                location === item &&
-                                                styles.selectedOptionText,
-                                            ]}
-                                        >
-                                            {item}
-                                        </Text>
-                                    </Pressable>
-                                ))}
+                            {/* Mine */}
+                            <View style={styles.switchRow}>
+                                <Text style={styles.filterSectionTitleInline} nativeID="mine-label">
+                                    Only my posts
+                                </Text>
+                                <Switch
+                                    value={mine}
+                                    onValueChange={setMine}
+                                    trackColor={{ true: Brand.primary, false: "#C9CBD1" }}
+                                    thumbColor={Brand.white}
+                                    accessibilityLabel="Only my posts"
+                                    accessibilityLabelledBy="mine-label"
+                                />
                             </View>
 
-                            {/* Learn/Teach */}
-                            <Text style={styles.filterSectionTitle}>I want to</Text>
-
-                            <View style={styles.optionRow}>
-                                {exchangeTypes.map((item) => (
-                                    <Pressable
-                                        key={item}
-                                        style={[
-                                            styles.optionButton,
-                                            exchangeType === item &&
-                                            styles.selectedOption,
-                                        ]}
-                                        onPress={() => setExchangeType(item)}
-                                    >
-                                        <Text
-                                            style={[
-                                                styles.optionText,
-                                                exchangeType === item &&
-                                                styles.selectedOptionText,
-                                            ]}
-                                        >
-                                            {item}
-                                        </Text>
-                                    </Pressable>
-                                ))}
-                            </View>
-
-                            {/*Bottons at bottom*/}
+                            {/*Buttons at bottom*/}
                             <View style={styles.filterBottom}>
 
                                 <Pressable
                                     style={styles.clearButton}
                                     onPress={clearFilters}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Clear filters"
                                 >
                                     <Text style={styles.clearButtonText}>Clear</Text>
                                 </Pressable>
@@ -364,6 +473,8 @@ export default function SkillExchangeScreen() {
                                 <Pressable
                                     style={styles.showButton}
                                     onPress={() => setFilterVisible(false)}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Show results"
                                 >
                                     <Text style={styles.showButtonText}>Show Results</Text>
                                 </Pressable>
@@ -390,17 +501,32 @@ const styles = StyleSheet.create({
         paddingBottom: 40,
     },
 
+    pressed: {
+        opacity: 0.7,
+    },
+
+    spinner: {
+        marginTop: 40,
+    },
+
     /* Header */
 
     header: {
-        backgroundColor: "#0B55B7",
+        backgroundColor: Brand.primary,
         paddingTop: 60,
         paddingHorizontal: 20,
-        paddingBottom: 35,
+        paddingBottom: 24,
+    },
 
+    headerTop: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
+    },
+
+    headerText: {
+        flex: 1,
+        paddingRight: 12,
     },
 
     headerTitle: {
@@ -420,13 +546,44 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: "#FFFFFF",
         paddingHorizontal: 15,
-        paddingVertical: 9,
-        borderRadius: 20,
+        minHeight: 44,
+        justifyContent: "center",
+        borderRadius: 22,
     },
 
     postButtonText: {
         color: "#FFFFFF",
         fontWeight: "600",
+        fontSize: 15,
+    },
+
+    kindToggle: {
+        marginTop: 20,
+        flexDirection: "row",
+        backgroundColor: "#2467BD",
+        borderRadius: 10,
+        padding: 4,
+    },
+
+    kindButton: {
+        flex: 1,
+        minHeight: 40,
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 8,
+    },
+
+    kindButtonActive: {
+        backgroundColor: "#FFFFFF",
+    },
+
+    kindText: {
+        color: "#FFFFFF",
+        fontWeight: "600",
+    },
+
+    kindTextActive: {
+        color: Brand.primary,
     },
 
     /* Search */
@@ -451,18 +608,19 @@ const styles = StyleSheet.create({
     },
 
     searchIcon: {
-        fontSize: 22,
+        fontSize: 20,
         marginRight: 8,
     },
 
     searchInput: {
         flex: 1,
-        fontSize: 14,
+        minHeight: 44,
+        fontSize: 15,
         color: "#171717",
     },
 
     filterButton: {
-        backgroundColor: "#0B55B7",
+        backgroundColor: Brand.primary,
         paddingHorizontal: 15,
         height: 50,
         borderRadius: 14,
@@ -481,19 +639,33 @@ const styles = StyleSheet.create({
         paddingHorizontal: 18,
         marginTop: 12,
         gap: 8,
+        alignItems: "center",
     },
 
     activeFilterTag: {
         backgroundColor: "#EAF3FF",
         paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 15,
+        minHeight: 36,
+        justifyContent: "center",
+        borderRadius: 18,
     },
 
     activeFilterText: {
-        color: "#0B55B7",
-        fontSize: 12,
+        color: Brand.primary,
+        fontSize: 13,
         fontWeight: "600",
+    },
+
+    clearAll: {
+        minHeight: 36,
+        justifyContent: "center",
+        paddingHorizontal: 8,
+    },
+
+    clearAllText: {
+        color: Brand.textMuted,
+        fontSize: 13,
+        textDecorationLine: "underline",
     },
 
     /* Cards */
@@ -502,6 +674,9 @@ const styles = StyleSheet.create({
         marginHorizontal: 18,
         marginTop: 25,
         marginBottom: 12,
+        flexDirection: "row",
+        alignItems: "baseline",
+        justifyContent: "space-between",
     },
 
     sectionTitle: {
@@ -510,135 +685,52 @@ const styles = StyleSheet.create({
         color: "#171717",
     },
 
-    exchangeCard: {
+    sectionCount: {
+        fontSize: 13,
+        color: Brand.textMuted,
+    },
+
+    errorBox: {
         marginHorizontal: 18,
-        marginBottom: 14,
-
-        padding: 16,
-
-        borderWidth: 1,
-        borderColor: "#E1E3E7",
-        borderRadius: 16,
-
-        backgroundColor: "#FFFFFF",
-    },
-
-    cardTop: {
-        flexDirection: "row",
         alignItems: "center",
+        paddingVertical: 24,
     },
 
-    avatar: {
-        width: 50,
-        height: 50,
+    errorText: {
+        color: "#C62828",
+        fontSize: 15,
+        textAlign: "center",
+        marginBottom: 12,
+    },
 
-        borderRadius: 25,
+    retryButton: {
+        minHeight: 44,
+        paddingHorizontal: 20,
+        borderRadius: 12,
+        borderWidth: 1.5,
+        borderColor: Brand.primary,
+        justifyContent: "center",
+    },
 
-        backgroundColor: "#F1F1F3",
+    retryText: {
+        color: Brand.primary,
+        fontWeight: "600",
+    },
 
+    moreButton: {
+        marginHorizontal: 18,
+        minHeight: 48,
+        borderRadius: 12,
+        borderWidth: 1.5,
+        borderColor: Brand.primary,
         alignItems: "center",
         justifyContent: "center",
-
-        marginRight: 12,
     },
 
-    avatarText: {
-        fontSize: 26,
-    },
-
-    studentInfo: {
-        flex: 1,
-    },
-
-    studentName: {
-        fontSize: 16,
-        fontWeight: "bold",
-        color: "#171717",
-    },
-
-    studentMajor: {
-        fontSize: 12,
-        color: "#777B8A",
-        marginTop: 3,
-    },
-
-    timeText: {
-        color: "#9296A3",
-        fontSize: 11,
-    },
-
-    exchangeRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginTop: 15,
-        gap: 9,
-    },
-
-    offeringBadge: {
-        backgroundColor: "#DDF8E8",
-        borderRadius: 12,
-        paddingHorizontal: 9,
-        paddingVertical: 5,
-    },
-
-    offeringText: {
-        color: "#18864B",
-        fontSize: 12,
+    moreText: {
+        color: Brand.primary,
         fontWeight: "600",
-    },
-
-    lookingBadge: {
-        backgroundColor: "#E5EFFF",
-        borderRadius: 12,
-        paddingHorizontal: 9,
-        paddingVertical: 5,
-    },
-
-    lookingText: {
-        color: "#0B55B7",
-        fontSize: 12,
-        fontWeight: "600",
-    },
-
-    skillTitle: {
-        fontSize: 16,
-        fontWeight: "bold",
-        color: "#171717",
-    },
-
-    description: {
-        color: "#555B69",
-        fontSize: 13,
-        lineHeight: 19,
-        marginTop: 10,
-    },
-
-    cardBottom: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-
-        marginTop: 15,
-    },
-
-    locationText: {
-        fontSize: 12,
-        color: "#777B8A",
-    },
-
-    connectButton: {
-        backgroundColor: "#0B55B7",
-
-        paddingHorizontal: 18,
-        paddingVertical: 9,
-
-        borderRadius: 10,
-    },
-
-    connectButtonText: {
-        color: "#FFFFFF",
-        fontSize: 13,
-        fontWeight: "600",
+        fontSize: 15,
     },
 
     /* Filter Modal */
@@ -660,7 +752,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 22,
         paddingTop: 18,
         paddingBottom: 35,
-        maxHeight: "82%",
+        maxHeight: "85%",
     },
 
     filterHeader: {
@@ -677,9 +769,16 @@ const styles = StyleSheet.create({
         color: "#171717",
     },
 
+    closeHit: {
+        minWidth: 44,
+        minHeight: 44,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+
     closeButton: {
         fontSize: 22,
-        color: "#777B8A",
+        color: Brand.textMuted,
     },
 
     filterSectionTitle: {
@@ -687,8 +786,22 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         color: "#171717",
 
-        marginTop: 22,
+        marginTop: 16,
         marginBottom: 12,
+    },
+
+    filterSectionTitleInline: {
+        fontSize: 16,
+        fontWeight: "600",
+        color: "#171717",
+    },
+
+    switchRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        minHeight: 48,
+        marginTop: 16,
     },
 
     optionRow: {
@@ -702,13 +815,14 @@ const styles = StyleSheet.create({
         backgroundColor: "#F1F1F3",
 
         paddingHorizontal: 14,
-        paddingVertical: 9,
+        minHeight: 40,
+        justifyContent: "center",
 
-        borderRadius: 16,
+        borderRadius: 20,
     },
 
     selectedOption: {
-        backgroundColor: "#0B55B7",
+        backgroundColor: Brand.primary,
     },
 
     optionText: {
@@ -727,16 +841,17 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         gap: 10,
 
-        marginTop: 35,
+        marginTop: 28,
     },
 
     clearButton: {
         flex: 1,
 
         borderWidth: 1,
-        borderColor: "#0B55B7",
+        borderColor: Brand.primary,
 
-        paddingVertical: 14,
+        minHeight: 48,
+        justifyContent: "center",
 
         borderRadius: 12,
 
@@ -744,7 +859,7 @@ const styles = StyleSheet.create({
     },
 
     clearButtonText: {
-        color: "#0B55B7",
+        color: Brand.primary,
         fontSize: 15,
         fontWeight: "600",
     },
@@ -752,9 +867,10 @@ const styles = StyleSheet.create({
     showButton: {
         flex: 2,
 
-        backgroundColor: "#0B55B7",
+        backgroundColor: Brand.primary,
 
-        paddingVertical: 14,
+        minHeight: 48,
+        justifyContent: "center",
 
         borderRadius: 12,
 
@@ -767,5 +883,3 @@ const styles = StyleSheet.create({
         fontWeight: "600",
     },
 });
-
-

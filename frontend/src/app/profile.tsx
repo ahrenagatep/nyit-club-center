@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import {
     View,
@@ -12,7 +12,7 @@ import {
     Platform,
 } from "react-native";
 
-import { router, type Href } from "expo-router";
+import { router, type Href, useFocusEffect } from "expo-router";
 
 import { openClub, openEvent } from "@/components/club-cards";
 import { Brand } from "@/constants/brand";
@@ -23,7 +23,8 @@ import {
     getUpcomingEvents,
     type Club,
 } from "@/data/mock-data";
-import { ApiError, PROFILE_LIMITS, SCHOOL_YEARS, usersApi, type SchoolYear } from "@/lib/api";
+import { ApiError, PROFILE_LIMITS, SCHOOL_YEARS, skillApi, usersApi, type SchoolYear, type SkillSummary } from "@/lib/api";
+import { KIND_LABEL, STATUS_LABEL, openSkillPost } from "@/components/skill-cards";
 import { useAppState } from "@/state/app-state";
 import { useAuth } from "@/state/auth";
 
@@ -85,6 +86,18 @@ export default function ProfileScreen() {
             cancelled = true;
         };
     }, [session, updateUser]);
+
+    // Skill Exchange numbers (post count, Kudos, recent posts), refreshed whenever Profile opens
+    const [skillSummary, setSkillSummary] = useState<SkillSummary | null>(null);
+    useFocusEffect(
+        useCallback(() => {
+            if (!session) return;
+            skillApi
+                .summary(session.access_token)
+                .then(setSkillSummary)
+                .catch(() => {});
+        }, [session]),
+    );
 
     // Controls whether the edit profile form is open
     const [editVisible, setEditVisible] = useState(false);
@@ -151,8 +164,7 @@ export default function ProfileScreen() {
     const stats: { icon: string; count: number; label: string; href: Href }[] = [
         { icon: "👥", count: joinedClubIds.length, label: "Clubs Joined", href: "/my-clubs" },
         { icon: "📅", count: rsvpEventIds.length, label: "Events Going", href: "/events" },
-        // Skill Exchange posts aren't saved anywhere yet
-        { icon: "🧠", count: 0, label: "Skill Posts", href: "/skill-exchange" },
+        { icon: "🧠", count: skillSummary?.post_count ?? 0, label: "Skill Posts", href: "/skill-exchange" },
     ];
 
     return (
@@ -225,6 +237,17 @@ export default function ProfileScreen() {
                     <View style={styles.infoRow} accessible accessibilityLabel={`Email: ${email}`}>
                         <Text style={styles.infoIcon}>✉️</Text>
                         <Text style={styles.infoText}>{email}</Text>
+                    </View>
+
+                    <View
+                        style={styles.infoRow}
+                        accessible
+                        accessibilityLabel={`${skillSummary?.kudos ?? 0} Kudos: Skill Exchange requests and offers fulfilled`}
+                    >
+                        <Text style={styles.infoIcon}>⭐</Text>
+                        <Text style={styles.infoText}>
+                            {skillSummary?.kudos ?? 0} Kudos (requests and offers fulfilled)
+                        </Text>
                     </View>
 
                     <View
@@ -324,12 +347,25 @@ export default function ProfileScreen() {
                     onViewAll={() => router.navigate("/skill-exchange")}
                 />
 
-                <ActivityRow
-                    icon="🧠"
-                    title="Share a skill"
-                    subtitle="You haven't posted on Skill Exchange yet"
-                    onPress={() => router.navigate("/skill-exchange")}
-                />
+                {skillSummary?.recent.length ? (
+                    skillSummary.recent.map((post) => (
+                        <ActivityRow
+                            key={post.post_id}
+                            icon={post.kind === "offer" ? "🧑‍🏫" : "🙋"}
+                            title={post.title}
+                            subtitle={`${KIND_LABEL[post.kind]} · ${STATUS_LABEL[post.status]}`}
+                            hint="Opens the post"
+                            onPress={() => openSkillPost(post.post_id)}
+                        />
+                    ))
+                ) : (
+                    <ActivityRow
+                        icon="🧠"
+                        title="Share a skill"
+                        subtitle="You haven't posted on Skill Exchange yet"
+                        onPress={() => router.navigate("/skill-exchange")}
+                    />
+                )}
 
                 <Pressable
                     onPress={signOut}

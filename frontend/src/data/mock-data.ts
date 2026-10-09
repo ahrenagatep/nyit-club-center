@@ -2,7 +2,7 @@
  * TEMPORARY mock data for the mobile client.
  *
  * Field names mirror the PostgreSQL schema in backend/sql (clubs, events,
- * memberships, notifications) so that swapping these arrays for real API
+ * memberships) so that swapping these arrays for real API
  * calls (e.g. GET /clubs, GET /clubs/:id) only changes where the data comes
  * from, not how screens read it.
  *
@@ -43,18 +43,6 @@ export type MembershipRole = 'member' | 'officer' | 'president';
 export type Membership = {
   club_id: number;
   role: MembershipRole;
-};
-
-export type NotificationType = 'general' | 'event_reminder' | 'announcement' | 'message_alert';
-
-export type AppNotification = {
-  notification_id: number;
-  title: string;
-  message: string;
-  type: NotificationType;
-  sent_at: string; // ISO timestamp
-  club_id?: number; // UI-only: lets the notification link to a club
-  event_id?: number; // UI-only: lets the notification link to an event
 };
 
 export type CurrentUser = {
@@ -311,32 +299,6 @@ export const RECOMMENDED_CLUB_IDS: number[] = [1, 2, 3];
 
 /** Club IDs shown under "Trending" on Explore (placeholder until there's a trending query). */
 export const TRENDING_CLUB_IDS: number[] = [1, 2];
-
-export const NOTIFICATIONS: AppNotification[] = [
-  {
-    notification_id: 1,
-    title: 'Event reminder',
-    message: 'Tech Talk: Rise of AI is coming up soon in Room 301.',
-    type: 'event_reminder',
-    sent_at: daysFromNow(-1, 9),
-    event_id: 1,
-  },
-  {
-    notification_id: 2,
-    title: 'New announcement',
-    message: 'Arts Club: open studio night moved to Thursday this week.',
-    type: 'announcement',
-    sent_at: daysFromNow(-2, 14, 30),
-    club_id: 5,
-  },
-  {
-    notification_id: 3,
-    title: 'Welcome to NYIT Club Center',
-    message: 'Browse clubs on the Explore tab and RSVP to events to get reminders.',
-    type: 'general',
-    sent_at: daysFromNow(-3, 12),
-  },
-];
 
 // ---------- Lookup helpers ----------
 
