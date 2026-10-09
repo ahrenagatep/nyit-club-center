@@ -328,6 +328,10 @@ export type SkillPost = {
   author: SkillAuthor;
   tags: string[];
   comment_count: number;
+  /** The next (up to) 3 dates that haven't ended, soonest first. */
+  upcoming_slots: SkillSlot[];
+  /** How many dates haven't ended yet in all. */
+  upcoming_slot_count: number;
   is_owner: boolean;
   /** Only on a single post (GET /skill-exchange/posts/:id, create, update). */
   slots?: SkillSlot[];

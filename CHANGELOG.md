@@ -1,4 +1,22 @@
 # Changelog
+## 2026-10-10
+### Backend
+#### Anthony Dominguez
+- Skill Exchange list cards: each post in `GET /skill-exchange/posts` (and the single post) gains `upcoming_slots` (the next 3 dates that haven't ended, soonest first) and `upcoming_slot_count` (additive; nothing removed). No DB changes
+- API error messages call `extras` "Additional information" (e.g. "Additional information must be 500 characters or fewer"); the field name is unchanged
+- Tested: posts 29/29 (new: card dates), comments 17, agreements 20, Kudos 9, users 21, controller 7
+### Frontend
+#### Anthony Dominguez
+- Skill Exchange UX round
+    - **The tab bar stays on every Skill Exchange screen**: the post, post form, "I can help", and agreement screens moved inside the Skill Exchange tab (`app/(tabs)/skill-exchange/`, with its own stack). Web addresses changed from `/skill/…` to `/skill-exchange/…` (`/skill-exchange/5`, `/skill-exchange/new`, `/skill-exchange/interest?id=5`, `/skill-exchange/engagement/7`). Tapping the tab returns to the list; screens opened from Notifications or Profile go Back to where they came from
+    - 🔔 with the unread badge on the Skill Exchange tab header and on the post screen (`ScreenHeader` takes an optional `right` element and `onBack`)
+    - post screen: "✎ Edit" and "Delete" sit at the top right of the post (Delete still asks first, right under the title); an offer's "Available" switch moved up under the title; the "Your post" box at the bottom is gone
+    - "In exchange" / "Extras" renamed **"Additional information"** everywhere (not every post is a trade; some are free); new placeholder examples say so
+    - **Different times on different dates**: with 2+ dates picked, turning off "Same time on every date" gives each date its own All day / start / end (e.g. Mon 2:00–3:00 PM, Wed 12:30–1:30 PM); weekly repeats keep each date's time. No API change (each date was already its own start/end)
+    - **List cards** show the location, the next 2 dates (+ "N more dates"), and the start of the description without opening them; a long description is cut after about 3 lines and fades out. "Show details" (only shown when there's more) reveals the whole description and Additional information
+    - **Everything fits the screen**: tag groups in the tag picker (post form and Filter sheet), the Skill Exchange filter chips, and the category chips on Home, Explore, and Events wrap onto more lines instead of scrolling sideways (a hidden sideways scroller can't be scrolled with a mouse on web). The club card carousels on Home and Explore still swipe, and now show a scrollbar on web
+    - accessibility: the time steppers keep normal capitals in their names ("Later start time for Tue, Oct 13") and show a short visible label
+- Tested: `tsc`; web (29 routes) + Android exports; date helpers 60/60 in six phone time zones (new: per-date times); new UX click-through 17/17 including a width check (nothing past the screen edge on 12 screens at 360, 390, 768, and 1280 px); Skill Exchange 22, comments 14, agreements 15, Kudos 11, navigation 37, auth 27, forgot password 15, Profile 31 still pass
 ## 2026-10-09
 ### Backend
 #### Anthony Dominguez

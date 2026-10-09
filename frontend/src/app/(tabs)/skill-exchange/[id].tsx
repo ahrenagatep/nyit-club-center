@@ -1,14 +1,15 @@
 /**
- * One Skill Exchange post (/skill/5): everything about it, its dates, the
+ * One Skill Exchange post (/skill-exchange/5): everything about it, its dates, the
  * "I can help" / "Request this offer" button (or the viewer's response), the
  * poster's responses list and tools (edit, available/unavailable, delete), and comments.
- * /skill/5?focus=comments (from a comment notification) scrolls to the comments.
+ * /skill-exchange/5?focus=comments (from a comment notification) scrolls to the comments.
  */
 import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 
 import { EmptyState } from '@/components/club-cards';
+import { NotificationBell } from '@/components/notification-bell';
 import { ScreenHeader } from '@/components/screen-header';
 import {
   AuthorRow,
@@ -19,6 +20,7 @@ import {
   StatusBadge,
   TagChips,
   authorName,
+  backToOrigin,
 } from '@/components/skill-cards';
 import { SkillComments } from '@/components/skill-comments';
 import { Brand } from '@/constants/brand';
@@ -35,7 +37,7 @@ function errorMessage(error: unknown): string {
 }
 
 function openEngagement(engagementId: number) {
-  router.push({ pathname: '/skill/engagement/[id]', params: { id: String(engagementId) } });
+  router.push({ pathname: '/skill-exchange/engagement/[id]', params: { id: String(engagementId) } });
 }
 
 function leave() {
@@ -44,7 +46,7 @@ function leave() {
 }
 
 export default function SkillPostScreen() {
-  const { id, focus } = useLocalSearchParams<{ id: string; focus?: string }>();
+  const { id, focus, from } = useLocalSearchParams<{ id: string; focus?: string; from?: string }>();
   const postId = /^\d+$/.test(id ?? '') ? Number(id) : null;
   const { session, user } = useAuth();
 
@@ -139,7 +141,7 @@ export default function SkillPostScreen() {
   if (loading || notFound || (!post && loadError)) {
     return (
       <View style={styles.container}>
-        <ScreenHeader title="Skill Exchange" />
+        <ScreenHeader title="Skill Exchange" onBack={backToOrigin(from)} />
         {loading ? (
           <ActivityIndicator style={styles.spinner} size="large" color={Brand.primary} accessibilityLabel="Loading post" />
         ) : notFound ? (
@@ -194,16 +196,96 @@ export default function SkillPostScreen() {
           }}
         />
       }>
-      <ScreenHeader title={post.kind === 'offer' ? 'Offer' : 'Request'} subtitle="Skill Exchange" />
+      <ScreenHeader
+        title={post.kind === 'offer' ? 'Offer' : 'Request'}
+        subtitle="Skill Exchange"
+        onBack={backToOrigin(from)}
+        right={<NotificationBell style={styles.bellButton} pressedStyle={styles.pressed} iconStyle={styles.bellIcon} />}
+      />
 
       <View style={styles.body} onLayout={(e) => (bodyY.current = e.nativeEvent.layout.y)}>
-        <View style={styles.badgeRow}>
-          <KindBadge kind={post.kind} />
-          <StatusBadge status={post.status} />
+        <View style={styles.topRow}>
+          <View style={styles.badgeRow}>
+            <KindBadge kind={post.kind} />
+            <StatusBadge status={post.status} />
+          </View>
+          {(post.is_owner || canDelete) && (
+            <View style={styles.tools}>
+              {post.is_owner && (
+                <Pressable
+                  onPress={() => router.push({ pathname: '/skill-exchange/new', params: { id: String(post.post_id) } })}
+                  style={({ pressed }) => [styles.toolButton, pressed && styles.pressed]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Edit post">
+                  <Text style={styles.toolText}>✎ Edit</Text>
+                </Pressable>
+              )}
+              {canDelete && (
+                <Pressable
+                  onPress={() => setConfirmingDelete(true)}
+                  style={({ pressed }) => [styles.toolButton, pressed && styles.pressed]}
+                  accessibilityRole="button"
+                  accessibilityLabel={post.is_owner ? 'Delete post' : 'Delete post (admin)'}>
+                  <Text style={[styles.toolText, styles.toolDanger]}>Delete</Text>
+                </Pressable>
+              )}
+            </View>
+          )}
         </View>
         <Text style={styles.title} accessibilityRole="header">
           {post.title}
         </Text>
+
+        {confirmingDelete && (
+          <View style={styles.confirm} accessibilityLiveRegion="polite">
+            <Text style={styles.confirmText}>Delete this {KIND_LABEL[post.kind].toLowerCase()} post? This can't be undone.</Text>
+            <View style={styles.confirmButtons}>
+              <Pressable
+                onPress={() => setConfirmingDelete(false)}
+                disabled={busy === 'delete'}
+                style={({ pressed }) => [styles.secondaryButton, styles.confirmButton, pressed && styles.pressed]}
+                accessibilityRole="button"
+                accessibilityLabel="Keep post">
+                <Text style={styles.secondaryButtonText}>Keep</Text>
+              </Pressable>
+              <Pressable
+                onPress={deletePost}
+                disabled={busy === 'delete'}
+                style={({ pressed }) => [styles.dangerButton, styles.confirmButton, pressed && styles.pressed]}
+                accessibilityRole="button"
+                accessibilityState={{ busy: busy === 'delete' }}
+                accessibilityLabel="Yes, delete post">
+                <Text style={styles.dangerButtonText}>{busy === 'delete' ? 'Deleting…' : 'Delete'}</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+
+        {post.is_owner && post.kind === 'offer' && (
+          <View style={styles.switchRow}>
+            <View style={styles.switchText}>
+              <Text style={styles.switchLabel} nativeID="available-label">
+                Available
+              </Text>
+              <Text style={styles.meta}>Turn off to stop new requests for this offer.</Text>
+            </View>
+            <Switch
+              value={post.status === 'available'}
+              onValueChange={setAvailability}
+              disabled={busy !== null}
+              trackColor={{ true: Brand.primary, false: '#C9CBD1' }}
+              thumbColor={Brand.white}
+              accessibilityLabel="Available"
+              accessibilityLabelledBy="available-label"
+            />
+          </View>
+        )}
+
+        {actionError ? (
+          <Text style={styles.errorText} accessibilityRole="alert">
+            {actionError}
+          </Text>
+        ) : null}
 
         <View style={styles.section}>
           <AuthorRow author={post.author} postedAt={post.created_at} />
@@ -223,7 +305,7 @@ export default function SkillPostScreen() {
         {post.extras ? (
           <>
             <Text style={styles.sectionTitle} accessibilityRole="header">
-              In exchange
+              Additional information
             </Text>
             <Text style={styles.text}>{post.extras}</Text>
           </>
@@ -293,7 +375,7 @@ export default function SkillPostScreen() {
             ) : canRespond ? (
               <>
                 <Pressable
-                  onPress={() => router.push({ pathname: '/skill/interest', params: { id: String(post.post_id) } })}
+                  onPress={() => router.push({ pathname: '/skill-exchange/interest', params: { id: String(post.post_id) } })}
                   style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
                   accessibilityRole="button"
                   accessibilityLabel={post.kind === 'request' ? 'I can help' : 'Request this offer'}>
@@ -365,82 +447,6 @@ export default function SkillPostScreen() {
           </View>
         )}
 
-        {(post.is_owner || canDelete) && (
-          <View style={styles.ownerBox}>
-            <Text style={styles.ownerTitle} accessibilityRole="header">
-              {post.is_owner ? 'Your post' : 'Admin'}
-            </Text>
-
-            {post.is_owner && post.kind === 'offer' && (
-              <View style={styles.switchRow}>
-                <View style={styles.switchText}>
-                  <Text style={styles.switchLabel} nativeID="available-label">
-                    Available
-                  </Text>
-                  <Text style={styles.meta}>Turn off to stop new requests for this offer.</Text>
-                </View>
-                <Switch
-                  value={post.status === 'available'}
-                  onValueChange={setAvailability}
-                  disabled={busy !== null}
-                  trackColor={{ true: Brand.primary, false: '#C9CBD1' }}
-                  thumbColor={Brand.white}
-                  accessibilityLabel="Available"
-                  accessibilityLabelledBy="available-label"
-                />
-              </View>
-            )}
-
-            {post.is_owner && (
-              <Pressable
-                onPress={() => router.push({ pathname: '/skill/new', params: { id: String(post.post_id) } })}
-                style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}
-                accessibilityRole="button"
-                accessibilityLabel="Edit post">
-                <Text style={styles.secondaryButtonText}>✎ Edit description, tags, extras</Text>
-              </Pressable>
-            )}
-
-            {canDelete &&
-              (confirmingDelete ? (
-                <View style={styles.confirm} accessibilityLiveRegion="polite">
-                  <Text style={styles.confirmText}>Delete this {KIND_LABEL[post.kind].toLowerCase()} post? This can't be undone.</Text>
-                  <View style={styles.confirmButtons}>
-                    <Pressable
-                      onPress={() => setConfirmingDelete(false)}
-                      disabled={busy === 'delete'}
-                      style={({ pressed }) => [styles.secondaryButton, styles.confirmButton, pressed && styles.pressed]}
-                      accessibilityRole="button"
-                      accessibilityLabel="Keep post">
-                      <Text style={styles.secondaryButtonText}>Keep</Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={deletePost}
-                      disabled={busy === 'delete'}
-                      style={({ pressed }) => [styles.dangerButton, styles.confirmButton, pressed && styles.pressed]}
-                      accessibilityRole="button"
-                      accessibilityState={{ busy: busy === 'delete' }}
-                      accessibilityLabel="Yes, delete post">
-                      <Text style={styles.dangerButtonText}>{busy === 'delete' ? 'Deleting…' : 'Delete'}</Text>
-                    </Pressable>
-                  </View>
-                </View>
-              ) : (
-                <Pressable
-                  onPress={() => setConfirmingDelete(true)}
-                  style={({ pressed }) => [styles.deleteLink, pressed && styles.pressed]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Delete post">
-                  <Text style={styles.deleteLinkText}>Delete post</Text>
-                </Pressable>
-              ))}
-
-            <Text style={styles.errorText} accessibilityLiveRegion="polite">
-              {actionError ?? ''}
-            </Text>
-          </View>
-        )}
-
         <View onLayout={(e) => (commentsY.current = e.nativeEvent.layout.y)}>
           <SkillComments
             post={post}
@@ -476,9 +482,51 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
   },
+  bellButton: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+  },
+  bellIcon: {
+    fontSize: 24,
+  },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
   badgeRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
+    flexShrink: 1,
+  },
+  tools: {
+    flexDirection: 'row',
+    gap: 6,
+    marginLeft: 'auto',
+  },
+  toolButton: {
+    minHeight: 44,
+    minWidth: 44,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Brand.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  toolText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Brand.primary,
+  },
+  toolDanger: {
+    color: Brand.danger,
   },
   title: {
     fontSize: 22,
@@ -600,23 +648,14 @@ const styles = StyleSheet.create({
     color: Brand.primary,
     marginTop: 6,
   },
-  ownerBox: {
-    marginTop: 28,
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Brand.border,
-    gap: 10,
-  },
-  ownerTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Brand.text,
-  },
   switchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: Brand.chip,
   },
   switchText: {
     flex: 1,
@@ -641,20 +680,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
-  deleteLink: {
-    minHeight: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  deleteLinkText: {
-    color: Brand.danger,
-    fontSize: 15,
-    fontWeight: '600',
-  },
   confirm: {
     backgroundColor: '#FDECEA',
     borderRadius: 12,
     padding: 14,
+    marginTop: 12,
   },
   confirmText: {
     fontSize: 15,
@@ -684,6 +714,7 @@ const styles = StyleSheet.create({
     color: '#C62828',
     fontSize: 14,
     textAlign: 'center',
+    marginTop: 8,
     marginBottom: 12,
   },
 });

@@ -80,15 +80,21 @@ export function lastSelectableKey(): string {
 
 // ---------- building slots ----------
 
+export type TimeWindow = { start: number; end: number };
+
 export type SlotSelection =
   | {
       mode: 'dates';
       /** Selected days, any order. */
       dates: string[];
-      /** null = all day. */
-      window: { start: number; end: number } | null;
+      /** The time on every date (null = all day), unless perDay is on. */
+      window: TimeWindow | null;
       /** Also add the same weekday every week up to this many weeks after each date (0 = no repeat). */
       repeatWeeks: number;
+      /** Each picked date has its own time (windows), e.g. Mon 2–3 PM and Wed 12:30–1:30 PM. */
+      perDay?: boolean;
+      /** perDay: the time for each picked date (null = all day); a date missing here uses window. */
+      windows?: Record<string, TimeWindow | null>;
     }
   | {
       /** Requests: "any time from now until the end of this day". */
@@ -110,19 +116,35 @@ export function selectedDays(selection: SlotSelection): string[] {
   return [...days].sort();
 }
 
-/** The slots to send to the API; times that have already ended today are left out. */
-export function buildSlots(selection: SlotSelection): SkillSlot[] {
+/** The time for one picked date (null = all day). Weekly repeats use the same time. */
+export function windowForDate(selection: Extract<SlotSelection, { mode: 'dates' }>, date: string): TimeWindow | null {
+  if (selection.perDay && selection.windows && date in selection.windows) return selection.windows[date];
+  return selection.window;
+}
+
+// every slot the selection describes, including ones that already ended
+function allSlots(selection: SlotSelection): SkillSlot[] {
   if (selection.mode === 'deadline') {
     if (!selection.deadline) return [];
     return [{ starts_at: campusTimeToIso(todayKey(), 0), ends_at: campusTimeToIso(selection.deadline, 1440) }];
   }
-  const { start, end } = selection.window ?? { start: 0, end: 1440 };
-  return upcomingSlots(
-    selectedDays(selection).map((day) => ({
-      starts_at: campusTimeToIso(day, start),
-      ends_at: campusTimeToIso(day, end),
-    })),
-  );
+  const last = lastSelectableKey();
+  const unique = new Map<string, SkillSlot>();
+  for (const date of selection.dates) {
+    const { start, end } = windowForDate(selection, date) ?? { start: 0, end: 1440 };
+    for (let week = 0; week <= selection.repeatWeeks; week++) {
+      const day = addDays(date, week * 7);
+      if (day > last) break;
+      const slot = { starts_at: campusTimeToIso(day, start), ends_at: campusTimeToIso(day, end) };
+      unique.set(`${slot.starts_at}|${slot.ends_at}`, slot);
+    }
+  }
+  return [...unique.values()].sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+}
+
+/** The slots to send to the API; times that have already ended today are left out. */
+export function buildSlots(selection: SlotSelection): SkillSlot[] {
+  return upcomingSlots(allSlots(selection));
 }
 
 /** Problem with a selection, or null when it can be posted. */
@@ -131,10 +153,15 @@ export function slotSelectionError(selection: SlotSelection, maxSlots: number): 
     return selection.deadline ? null : 'Pick the date you need help by.';
   }
   if (!selection.dates.length) return 'Pick at least one date.';
-  if (selection.window && selection.window.end <= selection.window.start) {
-    return 'The end time must be after the start time.';
+  for (const date of [...selection.dates].sort()) {
+    const w = windowForDate(selection, date);
+    if (w && w.end <= w.start) {
+      return selection.perDay
+        ? `On ${formatDayKey(date)}, the end time must be after the start time.`
+        : 'The end time must be after the start time.';
+    }
   }
-  const count = selectedDays(selection).length;
+  const count = allSlots(selection).length;
   if (count > maxSlots) return `That's ${count} dates; the limit is ${maxSlots}. Pick fewer dates or weeks.`;
   if (!buildSlots(selection).length) return 'That time has already passed today. Pick a later time or another date.';
   return null;

@@ -3,7 +3,7 @@
  * type your own. Used by the post form and the Requests/Offers filter.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Brand } from '@/constants/brand';
 import { SKILL_LIMITS, skillApi, type SkillTagGroup } from '@/lib/api';
@@ -182,7 +182,7 @@ export function TagPicker({
       ) : cleaned ? null : groups ? (
         <>
           <Text style={styles.browseLabel}>Browse tags</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.groupRow}>
+          <View style={styles.groupRow}>
             {groups.map((group) => {
               const open = openGroup === group.name;
               return (
@@ -197,7 +197,7 @@ export function TagPicker({
                 </Pressable>
               );
             })}
-          </ScrollView>
+          </View>
           {openGroup && (
             <View style={styles.chipRow}>
               {groupTags.map((tag) => {
@@ -245,6 +245,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   chip: {
+    maxWidth: '100%',
     backgroundColor: Brand.chip,
     borderRadius: 16,
     paddingHorizontal: 12,
@@ -301,11 +302,15 @@ const styles = StyleSheet.create({
     color: Brand.textMuted,
     marginBottom: 6,
   },
+  // wraps instead of scrolling sideways: a hidden horizontal scroller can't be scrolled with a mouse on web
   groupRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
     paddingBottom: 10,
   },
   groupChip: {
+    maxWidth: '100%',
     borderWidth: 1,
     borderColor: Brand.border,
     borderRadius: 16,
