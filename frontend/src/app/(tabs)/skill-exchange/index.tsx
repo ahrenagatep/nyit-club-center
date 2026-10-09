@@ -15,6 +15,7 @@ import {
 import { router, useFocusEffect } from "expo-router";
 
 import { EmptyState } from "@/components/club-cards";
+import { NotificationBell } from "@/components/notification-bell";
 import { SkillPostCard } from "@/components/skill-cards";
 import { TagPicker, useSkillTagGroups } from "@/components/tag-picker";
 import { Brand } from "@/constants/brand";
@@ -202,9 +203,15 @@ export default function SkillExchangeScreen() {
                             <Text style={styles.headerSubtitle}>Share your skills and connect with others</Text>
                         </View>
 
+                        <NotificationBell
+                            style={styles.bellButton}
+                            pressedStyle={styles.pressed}
+                            iconStyle={styles.bellIcon}
+                        />
+
                         <Pressable
                             style={({ pressed }) => [styles.postButton, pressed && styles.pressed]}
-                            onPress={() => router.push({ pathname: "/skill/new", params: { kind } })}
+                            onPress={() => router.push({ pathname: "/skill-exchange/new", params: { kind } })}
                             accessibilityRole="button"
                             accessibilityLabel={kind === "request" ? "Post a request" : "Post an offer"}
                         >
@@ -267,11 +274,7 @@ export default function SkillExchangeScreen() {
 
                 {/* Active filters (tap to remove) */}
                 {activeFilters.length > 0 && (
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.activeFilters}
-                    >
+                    <View style={styles.activeFilters}>
                         {activeFilters.map((filter) => (
                             <Pressable
                                 key={filter.key}
@@ -291,7 +294,7 @@ export default function SkillExchangeScreen() {
                         >
                             <Text style={styles.clearAllText}>Clear all</Text>
                         </Pressable>
-                    </ScrollView>
+                    </View>
                 )}
 
                 {/* TITLE */}
@@ -542,6 +545,18 @@ const styles = StyleSheet.create({
         maxWidth: 250,
     },
 
+    bellButton: {
+        minWidth: 44,
+        minHeight: 44,
+        alignItems: "center",
+        justifyContent: "center",
+        marginRight: 8,
+    },
+
+    bellIcon: {
+        fontSize: 24,
+    },
+
     postButton: {
         borderWidth: 1,
         borderColor: "#FFFFFF",
@@ -635,7 +650,10 @@ const styles = StyleSheet.create({
 
     /* Active Filter */
 
+    // wraps onto more lines instead of scrolling sideways (not scrollable with a mouse on web)
     activeFilters: {
+        flexDirection: "row",
+        flexWrap: "wrap",
         paddingHorizontal: 18,
         marginTop: 12,
         gap: 8,

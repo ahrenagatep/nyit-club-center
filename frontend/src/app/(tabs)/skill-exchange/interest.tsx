@@ -1,5 +1,5 @@
 /**
- * "I can help" (requests) / "Request this offer" (offers): /skill/interest?id=5
+ * "I can help" (requests) / "Request this offer" (offers): /skill-exchange/interest?id=5
  * Pick a time inside the poster's dates (offers: not a booked time), optionally a
  * different place (only if the post's location is flexible or empty) and a message,
  * then confirm. The poster gets a notification and accepts or declines.
@@ -30,7 +30,7 @@ function errorMessage(error: unknown): string {
 }
 
 function openPost(postId: number) {
-  router.replace({ pathname: '/skill/[id]', params: { id: String(postId) } });
+  router.replace({ pathname: '/skill-exchange/[id]', params: { id: String(postId) } });
 }
 
 export default function InterestScreen() {

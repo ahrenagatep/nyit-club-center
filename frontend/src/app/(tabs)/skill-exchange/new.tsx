@@ -1,5 +1,5 @@
 /**
- * New Skill Exchange post (/skill/new?kind=request|offer), or edit one (/skill/new?id=5).
+ * New Skill Exchange post (/skill-exchange/new?kind=request|offer), or edit one (/skill-exchange/new?id=5).
  * After posting, the title, location, and dates are locked; only the
  * description, tags, and extras can be edited.
  */
@@ -29,7 +29,7 @@ function errorMessage(error: unknown, action: string): string {
 
 function goBackOr(postId?: number) {
   if (router.canGoBack()) router.back();
-  else if (postId) router.replace({ pathname: '/skill/[id]', params: { id: String(postId) } });
+  else if (postId) router.replace({ pathname: '/skill-exchange/[id]', params: { id: String(postId) } });
   else router.replace('/skill-exchange');
 }
 
@@ -104,7 +104,7 @@ export default function SkillPostFormScreen() {
     }
     if (!description.trim()) next.description = 'Add a description.';
     else if (description.trim().length > SKILL_LIMITS.description) next.description = `Keep the description to ${SKILL_LIMITS.description} characters.`;
-    if (extras.trim().length > SKILL_LIMITS.extras) next.extras = `Keep extras to ${SKILL_LIMITS.extras} characters.`;
+    if (extras.trim().length > SKILL_LIMITS.extras) next.extras = `Keep additional information to ${SKILL_LIMITS.extras} characters.`;
     if (!tags.length) next.tags = 'Add at least one tag.';
     return next;
   };
@@ -137,7 +137,7 @@ export default function SkillPostFormScreen() {
           slots: buildSlots(selection),
         });
         // the new post takes the form's place, so Back returns to the list
-        router.replace({ pathname: '/skill/[id]', params: { id: String(post.post_id) } });
+        router.replace({ pathname: '/skill-exchange/[id]', params: { id: String(post.post_id) } });
       }
     } catch (error) {
       setFormError(errorMessage(error, editId ? 'save changes' : 'post'));
@@ -295,13 +295,13 @@ export default function SkillPostFormScreen() {
           )}
 
           <FormField
-            label="Extras (optional)"
+            label="Additional information (optional)"
             value={extras}
             onChangeText={(t) => {
               setExtras(t);
               setErrors((e) => ({ ...e, extras: undefined }));
             }}
-            placeholder={kind === 'offer' ? "e.g. I'm looking for a math tutor in exchange" : 'e.g. I can help you with math in exchange'}
+            placeholder={kind === 'offer' ? 'e.g. Free for freshmen, or happy to swap for math tutoring' : 'e.g. Happy to swap for help with math, or just a thank-you'}
             multiline
             textAlignVertical="top"
             style={styles.multilineSmall}

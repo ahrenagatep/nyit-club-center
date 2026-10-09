@@ -11,6 +11,10 @@ type ScreenHeaderProps = {
   showBack?: boolean;
   /** Extra content rendered under the title, e.g. a search bar. */
   children?: ReactNode;
+  /** Shown at the right end of the title row, e.g. <NotificationBell />. */
+  right?: ReactNode;
+  /** Replaces the default Back (previous screen, or Home). */
+  onBack?: () => void;
 };
 
 /**
@@ -18,8 +22,9 @@ type ScreenHeaderProps = {
  * Home tab's header style. The back button falls back to Home when there
  * is no screen to go back to (e.g. after a deep link or web refresh).
  */
-export function ScreenHeader({ title, subtitle, showBack = true, children }: ScreenHeaderProps) {
+export function ScreenHeader({ title, subtitle, showBack = true, children, right, onBack }: ScreenHeaderProps) {
   const goBack = () => {
+    if (onBack) return onBack();
     if (router.canGoBack()) {
       router.back();
     } else {
@@ -47,6 +52,8 @@ export function ScreenHeader({ title, subtitle, showBack = true, children }: Scr
           </Text>
           {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
         </View>
+
+        {right}
       </View>
 
       {children}

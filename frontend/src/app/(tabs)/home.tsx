@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
+  Platform,
 } from "react-native";
 import { router } from "expo-router";
 import { NotificationBell } from "@/components/notification-bell";
@@ -143,11 +144,7 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryRow}
-        >
+        <View style={styles.categoryRow}>
           <CategoryChip
             label="All"
             accessibilityLabel="All clubs"
@@ -164,7 +161,7 @@ export default function HomeScreen() {
               onPress={() => openExplore({ category })}
             />
           ))}
-        </ScrollView>
+        </View>
       </View>
 
       {/* RECOMMENDED FOR YOU */}
@@ -186,7 +183,7 @@ export default function HomeScreen() {
 
       <ScrollView
         horizontal
-        showsHorizontalScrollIndicator={false}
+        showsHorizontalScrollIndicator={Platform.OS === "web"}
         contentContainerStyle={styles.clubRow}
       >
         {recommendedClubs.map((club) => {
@@ -395,8 +392,11 @@ const styles = StyleSheet.create({
     fontSize: 21,
   },
 
+  // wraps instead of scrolling sideways, so every category fits any screen width
   categoryRow: {
     marginTop: 18,
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 10,
   },
 
