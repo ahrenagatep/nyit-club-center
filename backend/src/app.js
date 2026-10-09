@@ -6,6 +6,7 @@ const cors = require('cors');
 const pool = require('./config/db'); // shared connection pool from db.js for executing queries
 const authRoutes = require('./routes/auth');
 const clubsRoutes = require('./routes/clubs');
+const usersRoutes = require('./routes/users');
 const path = require('path'); 
 
 const app = express();
@@ -15,6 +16,7 @@ app.use(express.json());    // parses incoming JSON requests and puts into in re
 
 app.use('/auth', authRoutes);
 app.use('/clubs', clubsRoutes);
+app.use('/users', usersRoutes);
 
 app.get('/health', async (req, res) => {
   try {

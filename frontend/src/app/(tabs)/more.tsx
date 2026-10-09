@@ -10,7 +10,15 @@ import {
 
 import { router } from "expo-router";
 
+import { Brand } from "@/constants/brand";
+import { useAuth } from "@/state/auth";
+
 export default function MoreScreen() {
+    const { user, signOut } = useAuth();
+    // user is briefly null while signing out, before the redirect to Login.
+    const fullName =
+        [user?.first_name, user?.last_name].filter(Boolean).join(" ") || user?.username || "Student";
+
     return (
         <ScrollView
             style={styles.container}
@@ -19,28 +27,31 @@ export default function MoreScreen() {
         >
             {/*Header*/}
             <View style={styles.header}>
-                <Text style={styles.headerSubtitle}>Manage Account</Text>
+                <Text style={styles.headerSubtitle} accessibilityRole="header">Manage Account</Text>
             </View>
 
             {/* Profile */}
             <View style={styles.profileCard}>
                 <View style={styles.profileTop}>
                     <View style={styles.avatar}>
-                        <Text style={styles.avatarIcon}>👤</Text>
+                        <Text style={styles.avatarIcon} importantForAccessibility="no">👤</Text>
                     </View>
 
                     <View style={styles.profileInfo}>
-                        <Text style={styles.name}>Yousha Raiyan</Text>
-                        <Text style={styles.major}>Computer Science</Text>
+                        <Text style={styles.name}>{fullName}</Text>
+                        <Text style={styles.major}>{user?.nyit_email ?? ""}</Text>
                     </View>
                 </View>
 
                 <Pressable
-                    style={styles.viewProfileButton}
+                    style={({ pressed }) => [styles.viewProfileButton, pressed && styles.pressed]}
                     onPress={() => router.push("/profile")}
+                    accessibilityRole="button"
+                    accessibilityLabel="View Profile"
+                    accessibilityHint="See your profile info"
                 >
                     <View>
-                        <Text style={styles.viewProfileTitle}> View Profile</Text>
+                        <Text style={styles.viewProfileTitle}>View Profile</Text>
                         <Text style={styles.viewProfileSubtitle}>see your profile info</Text>
                     </View>
 
@@ -53,6 +64,15 @@ export default function MoreScreen() {
                 <Text style={styles.futureTitle}>More coming soon</Text>
                 <Text style={styles.futureText}> Features coming soon</Text>
             </View>
+
+            <Pressable
+                onPress={signOut}
+                style={({ pressed }) => [styles.signOut, pressed && styles.pressed]}
+                accessibilityRole="button"
+                accessibilityLabel="Sign out"
+            >
+                <Text style={styles.signOutText}>Sign out</Text>
+            </Pressable>
         </ScrollView>
     );
 }
@@ -130,7 +150,7 @@ const styles = StyleSheet.create({
 
     major: {
         fontSize: 14,
-        color: "#777B8A",
+        color: Brand.textMuted,
         marginTop: 4,
     },
 
@@ -153,13 +173,13 @@ const styles = StyleSheet.create({
 
     viewProfileSubtitle: {
         fontSize: 12,
-        color: "#777B8A",
+        color: Brand.textMuted,
         marginTop: 4,
     },
 
     arrow: {
         fontSize: 30,
-        color: "#777B8A",
+        color: Brand.textMuted,
     },
 
     futureCard: {
@@ -178,9 +198,30 @@ const styles = StyleSheet.create({
 
     futureText: {
         fontSize: 13,
-        color: "#777B8A",
+        color: Brand.textMuted,
         marginTop: 5,
         lineHeight: 18,
+    },
+
+    pressed: {
+        opacity: 0.7,
+    },
+
+    signOut: {
+        marginHorizontal: 18,
+        marginTop: 20,
+        minHeight: 52,
+        borderRadius: 16,
+        borderWidth: 2,
+        borderColor: Brand.danger,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+
+    signOutText: {
+        color: Brand.danger,
+        fontSize: 16,
+        fontWeight: "bold",
     },
 
 });

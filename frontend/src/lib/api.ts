@@ -131,7 +131,7 @@ export class ApiError extends Error {
 const serverLabel = __DEV__ ? `the server at ${API_URL}` : 'the server';
 
 type RequestOptions = {
-  method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   body?: unknown;
   /** Supabase access token for protected routes. */
   token?: string;
@@ -193,7 +193,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
 // ---------- Auth (/auth) ----------
 
-/** Row from the local users table, as returned by /auth/register and /auth/login. */
+/** Row from the local users table, as returned by /auth/register, /auth/login, and /users/me. */
 export type AuthUser = {
   user_id?: number;
   auth_user_id?: string;
@@ -202,7 +202,18 @@ export type AuthUser = {
   first_name?: string;
   last_name?: string;
   role: 'student' | 'moderator' | 'admin';
+  /** Edited from Profile (PATCH /users/me); null until set. Missing from sessions saved before these existed. */
+  major?: string | null;
+  school_year?: SchoolYear | null;
+  bio?: string | null;
 };
+
+/** Allowed school_year values (sql/011, PATCH /users/me). */
+export const SCHOOL_YEARS = ['Freshman', 'Sophomore', 'Junior', 'Senior'] as const;
+export type SchoolYear = (typeof SCHOOL_YEARS)[number];
+
+/** Limits shared with the API and sql/011. */
+export const PROFILE_LIMITS = { major: 80, bio: 200 } as const;
 
 export type AuthSession = {
   access_token: string;
@@ -258,5 +269,26 @@ export const authApi = {
     apiRequest<{ message: string }>('/auth/reset-password', {
       method: 'POST',
       body: { nyit_email, token, new_password },
+    }),
+};
+
+// ---------- Users (/users) ----------
+
+/** Fields a user can change about themselves. Omitted fields stay the same; "" or null clears one. */
+export type ProfileUpdate = {
+  major?: string | null;
+  school_year?: SchoolYear | null;
+  bio?: string | null;
+};
+
+export const usersApi = {
+  /** The signed-in user's row, e.g. to pick up edits made on another device. */
+  me: (token: string) => apiRequest<{ user: AuthUser }>('/users/me', { token }),
+
+  updateMe: (token: string, update: ProfileUpdate) =>
+    apiRequest<{ message: string; user: AuthUser }>('/users/me', {
+      method: 'PATCH',
+      body: update,
+      token,
     }),
 };

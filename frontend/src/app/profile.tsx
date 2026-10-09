@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 import {
     View,
@@ -12,35 +12,148 @@ import {
     Platform,
 } from "react-native";
 
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 
+import { openClub, openEvent } from "@/components/club-cards";
+import { Brand } from "@/constants/brand";
+import {
+    formatEventDate,
+    getClubById,
+    getMemberCount,
+    getUpcomingEvents,
+    type Club,
+} from "@/data/mock-data";
+import { ApiError, PROFILE_LIMITS, SCHOOL_YEARS, usersApi, type SchoolYear } from "@/lib/api";
+import { useAppState } from "@/state/app-state";
+import { useAuth } from "@/state/auth";
+
+/** How many clubs/events each section shows before "View All". */
+const PREVIEW_COUNT = 2;
+
+// Previous screen, or Home when there is none (deep link or web refresh), like ScreenHeader.
+function goBack() {
+    if (router.canGoBack()) {
+        router.back();
+    } else {
+        router.replace("/home");
+    }
+}
+
+/**
+ * Profile (Home → 👤, More → View Profile). Shows the signed-in user, their
+ * clubs and RSVPs, and Sign out. Major, school year, and bio are edited in the
+ * pop-up and saved to the account (PATCH /users/me).
+ */
 export default function ProfileScreen() {
+    const { user, session, signOut, updateUser } = useAuth();
+    const { joinedClubIds, rsvpEventIds } = useAppState();
 
-    const [major, setMajor] = useState("Computer Science");
-    const [schoolYear, setSchoolYear] = useState("Senior");
-    const [bio, setBio] = useState("I am interested in tech, love campus activities, and learn new skills");
-    // Controls wheter the edit profile form is open
+    // user is briefly null while signing out, before the redirect to Login.
+    const fullName =
+        [user?.first_name, user?.last_name].filter(Boolean).join(" ") || user?.username || "Student";
+    const email = user?.nyit_email ?? "";
+    const role = user?.role ?? "student";
+    const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
+
+    // Most recently joined first
+    const recentClubs = [...joinedClubIds]
+        .reverse()
+        .map(getClubById)
+        .filter((club): club is Club => club !== undefined)
+        .slice(0, PREVIEW_COUNT);
+    // Soonest RSVP'd events that haven't ended
+    const upcomingEvents = getUpcomingEvents()
+        .filter((event) => rsvpEventIds.includes(event.event_id))
+        .slice(0, PREVIEW_COUNT);
+
+    const major = user?.major ?? "";
+    const schoolYear = user?.school_year ?? "";
+    const bio = user?.bio ?? "";
+
+    // Picks up edits made on another device (and fills in sessions saved before
+    // these fields existed). Keeps the saved copy if the request fails.
+    useEffect(() => {
+        if (!session) return;
+        let cancelled = false;
+        usersApi
+            .me(session.access_token)
+            .then(({ user: fresh }) => {
+                if (!cancelled) updateUser(fresh);
+            })
+            .catch(() => {});
+        return () => {
+            cancelled = true;
+        };
+    }, [session, updateUser]);
+
+    // Controls whether the edit profile form is open
     const [editVisible, setEditVisible] = useState(false);
+    // Controls whether the settings sheet is open
+    const [settingsVisible, setSettingsVisible] = useState(false);
     //Temp values while user is editing
     const [editMajor, setEditMajor] = useState(major);
-    const [editYear, setEditYear] = useState(schoolYear);
+    const [editYear, setEditYear] = useState<SchoolYear | "">(schoolYear);
     const [editBio, setEditBio] = useState(bio);
-    //school year options to be selected
-    const schoolYears = ["Freshmen", "Sophomore", "Junior", "Senior"];
-    //this opnes the edit popup
+    const [saving, setSaving] = useState(false);
+    const [saveError, setSaveError] = useState("");
+    //this opens the edit popup
     const openEditProfile = () => {
         setEditMajor(major);
         setEditYear(schoolYear);
         setEditBio(bio);
+        setSaveError("");
         setEditVisible(true);
     };
-    //saves edited options into the profile page
-    const saveProfile = () => {
-        setMajor(editMajor);
-        setSchoolYear(editYear);
-        setBio(editBio);
-        setEditVisible(false);
+    //saves edited options to the account, then shows them on the profile page
+    const saveProfile = async () => {
+        if (!session || saving) return;
+        setSaving(true);
+        setSaveError("");
+        try {
+            const { user: saved } = await usersApi.updateMe(session.access_token, {
+                major: editMajor.trim() || null,
+                school_year: editYear || null,
+                bio: editBio.trim() || null,
+            });
+            await updateUser(saved);
+            setEditVisible(false);
+        } catch (error) {
+            setSaveError(
+                error instanceof ApiError && error.status === 401
+                    ? "Your session has expired. Sign out and log in again to save changes."
+                    : error instanceof Error
+                      ? error.message
+                      : "Couldn't save your profile. Please try again.",
+            );
+        } finally {
+            setSaving(false);
+        }
     }
+
+    // Leaving the screen while the settings sheet is still sliding away leaves it
+    // stuck open on web, so iOS and web navigate once onDismiss fires. Android
+    // never calls onDismiss and closes the sheet on its own, so it goes right away.
+    const pendingHref = useRef<Href | null>(null);
+    const openFromSettings = (href: Href) => {
+        setSettingsVisible(false);
+        if (Platform.OS === "android") {
+            router.push(href);
+        } else {
+            pendingHref.current = href;
+        }
+    };
+    const onSettingsDismissed = () => {
+        const href = pendingHref.current;
+        pendingHref.current = null;
+        if (href) router.push(href);
+    };
+
+    const stats: { icon: string; count: number; label: string; href: Href }[] = [
+        { icon: "👥", count: joinedClubIds.length, label: "Clubs Joined", href: "/my-clubs" },
+        { icon: "📅", count: rsvpEventIds.length, label: "Events Going", href: "/events" },
+        // Skill Exchange posts aren't saved anywhere yet
+        { icon: "🧠", count: 0, label: "Skill Posts", href: "/skill-exchange" },
+    ];
 
     return (
         <>
@@ -51,13 +164,25 @@ export default function ProfileScreen() {
             >
                 {/*Header - user can go back to previous page*/}
                 <View style={styles.header}>
-                    <Pressable onPress={() => router.back()}> 
+                    <Pressable
+                        onPress={goBack}
+                        style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}
+                        hitSlop={8}
+                        accessibilityRole="button"
+                        accessibilityLabel="Go back"
+                    >
                         <Text style={styles.backArrow}>‹</Text>
                     </Pressable>
 
-                    <Text style={styles.headerTitle}>Profile</Text>
+                    <Text style={styles.headerTitle} accessibilityRole="header">Profile</Text>
 
-                    <Pressable>
+                    <Pressable
+                        onPress={() => setSettingsVisible(true)}
+                        style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}
+                        hitSlop={8}
+                        accessibilityRole="button"
+                        accessibilityLabel="Settings"
+                    >
                         <Text style={styles.settingsIcon}>⚙️</Text>
                     </Pressable>
                 </View>
@@ -66,147 +191,154 @@ export default function ProfileScreen() {
                 <View style={styles.profileCard}>
                     <View style={styles.profileTop}>
                         <View style={styles.avatar}>
-                            <Text style={styles.avatarIcon}>👤</Text>
+                            <Text style={styles.avatarIcon} importantForAccessibility="no">👤</Text>
                         </View>
 
                         <View style={styles.profileInfo}>
-                            <Text style={styles.name}>Yousha Raiyan</Text>
-                            <Text style={styles.major}>{major}</Text>
-                            <Text style={styles.year}>{schoolYear}</Text>
+                            <Text style={styles.name}>{fullName}</Text>
+                            {major ? <Text style={styles.major}>{major}</Text> : null}
+                            {schoolYear ? <Text style={styles.year}>{schoolYear}</Text> : null}
+                            <View style={styles.roleTag}>
+                                <Text style={styles.roleText}>{roleLabel}</Text>
+                            </View>
                         </View>
                         {/* Opens and let users edit their bio and informations */}
-                        <Pressable onPress={openEditProfile}>
+                        <Pressable
+                            onPress={openEditProfile}
+                            style={({ pressed }) => [styles.editButton, pressed && styles.pressed]}
+                            hitSlop={8}
+                            accessibilityRole="button"
+                            accessibilityLabel="Edit profile"
+                        >
                             <Text style={styles.editIcon}>✎</Text>
                         </Pressable>
                     </View>
 
-                    <Text style={styles.bio}>{bio}</Text>
+                    {bio ? (
+                        <Text style={styles.bio}>{bio}</Text>
+                    ) : (
+                        <Text style={[styles.bio, styles.placeholder]}>
+                            No bio yet. Use ✎ to add your major, school year, and a short bio.
+                        </Text>
+                    )}
 
-                    <View style={styles.infoRow}>
-                        <Text style={styles.infoIcon}>ℹ️</Text>
-                        <Text style={styles.infoText}>raiyanyousha@gmail.com</Text>
+                    <View style={styles.infoRow} accessible accessibilityLabel={`Email: ${email}`}>
+                        <Text style={styles.infoIcon}>✉️</Text>
+                        <Text style={styles.infoText}>{email}</Text>
                     </View>
 
-                    <View style={styles.infoRow}>
+                    <View
+                        style={styles.infoRow}
+                        accessible
+                        accessibilityLabel="School: New York Institute of Technology"
+                    >
                         <Text style={styles.infoIcon}>🎓</Text>
                         <Text style={styles.infoText}>New York Institute of Technology</Text>
                     </View>
                 </View>
 
                 {/*Involved*/}
-                <Text style={styles.sectionTitle}>My Involvement</Text>
-                {/* Stats Row - # of clubs joined */}
+                <Text style={styles.sectionTitle} accessibilityRole="header">My Involvement</Text>
+                {/* Stats Row - clubs joined, events going, skill posts; each opens its list */}
                 <View style={styles.statsRow}>
-                    <View style={styles.statCard}>
-                        <Text style={styles.statIcon}>👥</Text>
-                        <Text style={styles.statNumber}>4</Text>
-                        <Text style={styles.statLabel}>Clubs Joined</Text>
-                    </View>
-                    {/* Stats Row - # of events attended */}
-                    <View style={styles.statCard}>
-                        <Text style={styles.statIcon}>📅</Text>
-                        <Text style={styles.statNumber}>9</Text>
-                        <Text style={styles.statLabel}>Events Attended</Text>
-                    </View>
-                    {/* Stats Row - # of skills*/}
-                    <View style={styles.statCard}>
-                        <Text style={styles.statIcon}>🧠</Text>
-                        <Text style={styles.statNumber}>5</Text>
-                        <Text style={styles.statLabel}>Skill Posts</Text>
-                    </View>
+                    {stats.map((stat) => (
+                        <Pressable
+                            key={stat.label}
+                            onPress={() => router.navigate(stat.href)}
+                            style={({ pressed }) => [styles.statCard, pressed && styles.pressed]}
+                            accessibilityRole="button"
+                            accessibilityLabel={`${stat.count} ${stat.label}`}
+                        >
+                            <Text style={styles.statIcon}>{stat.icon}</Text>
+                            <Text style={styles.statNumber}>{stat.count}</Text>
+                            <Text style={styles.statLabel}>{stat.label}</Text>
+                        </Pressable>
+                    ))}
                 </View>
 
                 {/* Recent Clubs */}
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitleNoMargin}>Recent Clubs</Text>
+                <SectionHeader
+                    title="Recent Clubs"
+                    viewAllLabel="View all your clubs"
+                    onViewAll={() => router.navigate("/my-clubs")}
+                />
 
-                    <Pressable>
-                        <Text style={styles.viewAll}>View All</Text>
-                    </Pressable>
-                </View>
+                {recentClubs.length > 0 ? (
+                    recentClubs.map((club) => {
+                        const members = `${getMemberCount(club, true)} members`;
+                        return (
+                            <ActivityRow
+                                key={club.club_id}
+                                icon={club.emoji}
+                                title={club.name}
+                                subtitle={members}
+                                hint="Opens the club page"
+                                onPress={() => openClub(club.club_id)}
+                            />
+                        );
+                    })
+                ) : (
+                    <ActivityRow
+                        icon="🔍"
+                        title="Find clubs to join"
+                        subtitle="You haven't joined any clubs yet"
+                        onPress={() => router.navigate("/explore")}
+                    />
+                )}
 
-                <View style={styles.activityCard}>
-                    <View style={styles.activityIconBox}>
-                        <Text style={styles.activityIcon}>💻</Text>
-                    </View>
+                {/*Upcoming Events*/}
+                <SectionHeader
+                    title="Upcoming Events"
+                    viewAllLabel="View all events"
+                    onViewAll={() => router.navigate("/events")}
+                />
 
-                    <View style={styles.activityInfo}>
-                        <Text style={styles.activityTitle}>Computer Science Club</Text>
-                        <Text style={styles.activitySubtitle}>10 members</Text>
-                    </View>
-
-                    <Text style={styles.arrow}>›</Text>
-                </View>
-
-                <View style={styles.activityCard}>
-                    <View style={styles.activityIconBox}>
-                        <Text style={styles.activityIcon}>♟️</Text>
-                    </View>
-
-                    <View style={styles.activityInfo}>
-                        <Text style={styles.activityTitle}>Chess Club</Text>
-                        <Text style={styles.activitySubtitle}>25 members</Text>
-                    </View>
-
-                    <Text style={styles.arrow}>›</Text>
-                </View>
-
-                {/*Recent Events*/}
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitleNoMargin}>Recent Events</Text>
-
-                    <Pressable>
-                        <Text style={styles.viewAll}>View All</Text>
-                    </Pressable>
-                </View>
-
-                <View style={styles.activityCard}>
-                    <View style={styles.activityIconBox}>
-                        <Text style={styles.activityIcon}>🤖</Text>
-                    </View>
-
-                    <View style={styles.activityInfo}>
-                        <Text style={styles.activityTitle}>Tech Talk: AI Revolution</Text>
-                        <Text style={styles.activitySubtitle}>Computer Science Club</Text>
-                    </View>
-
-                    <Text style={styles.arrow}>›</Text>
-                </View>
-
-                <View style={styles.activityCard}>
-                    <View style={styles.activityIconBox}>
-                        <Text style={styles.activityIcon}>🎵</Text>
-                    </View>
-
-                    <View style={styles.activityInfo}>
-                        <Text style={styles.activityTitle}>Spring Concert</Text>
-                        <Text style={styles.activitySubtitle}>Music Club</Text>
-                    </View>
-
-                    <Text style={styles.arrow}>›</Text>
-                </View>
+                {upcomingEvents.length > 0 ? (
+                    upcomingEvents.map((event) => {
+                        const club = getClubById(event.club_id);
+                        const when = formatEventDate(event.event_date);
+                        return (
+                            <ActivityRow
+                                key={event.event_id}
+                                icon={club?.emoji ?? "📅"}
+                                title={event.title}
+                                subtitle={club ? `${club.name} · ${when}` : when}
+                                hint="Opens the event page"
+                                onPress={() => openEvent(event.event_id)}
+                            />
+                        );
+                    })
+                ) : (
+                    <ActivityRow
+                        icon="📅"
+                        title="Browse events"
+                        subtitle="You haven't RSVP'd to any upcoming events"
+                        onPress={() => router.navigate("/events")}
+                    />
+                )}
 
                 {/*Recent skill exchange*/}
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitleNoMargin}>Skill Exchange</Text>
+                <SectionHeader
+                    title="Skill Exchange"
+                    viewAllLabel="View all skill posts"
+                    onViewAll={() => router.navigate("/skill-exchange")}
+                />
 
-                    <Pressable>
-                        <Text style={styles.viewAll}>View All</Text>
-                    </Pressable>
-                </View>
+                <ActivityRow
+                    icon="🧠"
+                    title="Share a skill"
+                    subtitle="You haven't posted on Skill Exchange yet"
+                    onPress={() => router.navigate("/skill-exchange")}
+                />
 
-                <View style={styles.activityCard}>
-                    <View style={styles.activityIconBox}>
-                        <Text style={styles.activityIcon}>💻</Text>
-                    </View>
-
-                    <View style={styles.activityInfo}>
-                        <Text style={styles.activityTitle}>Offering Java Help</Text>
-                        <Text style={styles.activitySubtitle}>Online</Text>
-                    </View>
-
-                    <Text style={styles.arrow}>›</Text>
-                </View>
+                <Pressable
+                    onPress={signOut}
+                    style={({ pressed }) => [styles.signOut, pressed && styles.pressed]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Sign out"
+                >
+                    <Text style={styles.signOutText}>Sign out</Text>
+                </Pressable>
             </ScrollView>
 
             <Modal
@@ -222,7 +354,7 @@ export default function ProfileScreen() {
                     behavior={Platform.OS === "ios" ? "padding" : "height"}
                 >
 
-                    <View style={styles.editModal}>
+                    <View style={styles.editModal} accessibilityViewIsModal>
 
                         {/* Makes the popup scrollable while keyboard is open */}
                         <ScrollView
@@ -235,13 +367,17 @@ export default function ProfileScreen() {
                             {/* Edit Profile Header */}
                             <View style={styles.editHeader}>
 
-                                <Text style={styles.editTitle}>Edit Profile</Text>
+                                <Text style={styles.editTitle} accessibilityRole="header">Edit Profile</Text>
 
                                 {/* Closes popup without saving */}
                                 <Pressable
                                     onPress={() =>
                                         setEditVisible(false)
                                     }
+                                    style={styles.closeButtonArea}
+                                    hitSlop={8}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Close without saving"
                                 >
                                     <Text style={styles.closeButton}>✕</Text>
                                 </Pressable>
@@ -254,8 +390,11 @@ export default function ProfileScreen() {
                             <TextInput
                                 style={styles.majorInput}
                                 placeholder="Enter your major"
+                                placeholderTextColor={Brand.textMuted}
                                 value={editMajor}
                                 onChangeText={setEditMajor}
+                                accessibilityLabel="Major"
+                                maxLength={PROFILE_LIMITS.major}
                             />
 
 
@@ -264,7 +403,7 @@ export default function ProfileScreen() {
 
                             <View style={styles.optionRow}>
                                 {/*map() creates one selectable button for each school year*/}
-                                {schoolYears.map((item) => (
+                                {SCHOOL_YEARS.map((item) => (
 
                                     <Pressable
                                         key={item}
@@ -275,7 +414,11 @@ export default function ProfileScreen() {
                                             styles.selectedOption,
                                         ]}
 
-                                        onPress={() => setEditYear(item)}
+                                        // tapping the selected year again clears it
+                                        onPress={() => setEditYear(editYear === item ? "" : item)}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={`School year: ${item}`}
+                                        accessibilityState={{ selected: editYear === item }}
                                     >
 
                                         <Text
@@ -305,28 +448,165 @@ export default function ProfileScreen() {
                                 // Allows multiple lines of text
                                 multiline={true}
                                 placeholder="Tell us about yourself..."
+                                placeholderTextColor={Brand.textMuted}
                                 value={editBio}
                                 onChangeText={setEditBio}
-                                maxLength={200}
+                                maxLength={PROFILE_LIMITS.bio}
+                                accessibilityLabel="Bio"
                             />
+
+                            {saveError ? (
+                                <Text
+                                    style={styles.saveError}
+                                    accessibilityRole="alert"
+                                    accessibilityLiveRegion="polite"
+                                >
+                                    {saveError}
+                                </Text>
+                            ) : null}
 
 
                             {/* Save Button */}
                             <Pressable
-                                style={styles.saveButton}
+                                style={({ pressed }) => [
+                                    styles.saveButton,
+                                    (pressed || saving) && styles.pressed,
+                                ]}
                                 onPress={saveProfile}
+                                disabled={saving}
+                                accessibilityRole="button"
+                                accessibilityState={{ disabled: saving, busy: saving }}
                             >
 
                                 <Text style={styles.saveButtonText}>
-                                    Save Changes
+                                    {saving ? "Saving…" : "Save Changes"}
                                 </Text>
                             </Pressable>
                         </ScrollView>
                     </View>
                 </KeyboardAvoidingView>
             </Modal>
+
+            {/* Settings sheet (⚙️) - same look as the edit popup */}
+            <Modal
+                visible={settingsVisible}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setSettingsVisible(false)}
+                onDismiss={onSettingsDismissed}
+            >
+                <View style={styles.modalBackground}>
+                    <View style={styles.editModal} accessibilityViewIsModal>
+                        <View style={styles.editHeader}>
+                            <Text style={styles.editTitle} accessibilityRole="header">Settings</Text>
+
+                            <Pressable
+                                onPress={() => setSettingsVisible(false)}
+                                style={styles.closeButtonArea}
+                                hitSlop={8}
+                                accessibilityRole="button"
+                                accessibilityLabel="Close settings"
+                            >
+                                <Text style={styles.closeButton}>✕</Text>
+                            </Pressable>
+                        </View>
+
+                        <Pressable
+                            onPress={() => openFromSettings("/notifications")}
+                            style={({ pressed }) => [styles.settingsRow, pressed && styles.pressed]}
+                            accessibilityRole="button"
+                            accessibilityLabel="Notifications"
+                        >
+                            <Text style={styles.settingsRowIcon}>🔔</Text>
+                            <Text style={styles.settingsRowLabel}>Notifications</Text>
+                            <Text style={styles.arrow}>›</Text>
+                        </Pressable>
+
+                        {/* Not built yet (FR-8) */}
+                        {[
+                            { icon: "⭐", label: "Favorites" },
+                            { icon: "🎨", label: "Themes" },
+                        ].map((item) => (
+                            <View
+                                key={item.label}
+                                style={[styles.settingsRow, styles.settingsRowDisabled]}
+                                accessible
+                                accessibilityState={{ disabled: true }}
+                                accessibilityLabel={`${item.label}, coming soon`}
+                            >
+                                <Text style={styles.settingsRowIcon}>{item.icon}</Text>
+                                <Text style={styles.settingsRowLabel}>{item.label}</Text>
+                                <Text style={styles.comingSoon}>Coming soon</Text>
+                            </View>
+                        ))}
+                    </View>
+                </View>
+            </Modal>
         </>
 
+    );
+}
+
+/** Section title with a "View All" link on the right. */
+function SectionHeader({
+    title,
+    viewAllLabel,
+    onViewAll,
+}: {
+    title: string;
+    viewAllLabel: string;
+    onViewAll: () => void;
+}) {
+    return (
+        <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitleNoMargin} accessibilityRole="header">{title}</Text>
+
+            <Pressable
+                onPress={onViewAll}
+                style={({ pressed }) => [styles.viewAllButton, pressed && styles.pressed]}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={viewAllLabel}
+            >
+                <Text style={styles.viewAll}>View All</Text>
+            </Pressable>
+        </View>
+    );
+}
+
+/** One tappable card in the Recent Clubs / Upcoming Events / Skill Exchange lists. */
+function ActivityRow({
+    icon,
+    title,
+    subtitle,
+    hint,
+    onPress,
+}: {
+    icon: string;
+    title: string;
+    subtitle: string;
+    hint?: string;
+    onPress: () => void;
+}) {
+    return (
+        <Pressable
+            onPress={onPress}
+            style={({ pressed }) => [styles.activityCard, pressed && styles.pressed]}
+            accessibilityRole="button"
+            accessibilityLabel={`${title}, ${subtitle}`}
+            accessibilityHint={hint}
+        >
+            <View style={styles.activityIconBox}>
+                <Text style={styles.activityIcon}>{icon}</Text>
+            </View>
+
+            <View style={styles.activityInfo}>
+                <Text style={styles.activityTitle}>{title}</Text>
+                <Text style={styles.activitySubtitle}>{subtitle}</Text>
+            </View>
+
+            <Text style={styles.arrow}>›</Text>
+        </Pressable>
     );
 }
 
@@ -338,6 +618,10 @@ const styles = StyleSheet.create({
 
     content: {
         paddingBottom: 40,
+    },
+
+    pressed: {
+        opacity: 0.7,
     },
 
     // Dark background behind the popup
@@ -373,9 +657,16 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         color: "#171717",
     },
+    // 44x44 touch target around the ✕
+    closeButtonArea: {
+        minWidth: 44,
+        minHeight: 44,
+        alignItems: "center",
+        justifyContent: "center",
+    },
     closeButton: {
         fontSize: 22,
-        color: "#777B8A",
+        color: Brand.textMuted,
     },
     // Label for Major, School Year, and Bio
     formLabel: {
@@ -406,6 +697,8 @@ const styles = StyleSheet.create({
         backgroundColor: "#F1F1F3",
         paddingHorizontal: 14,
         paddingVertical: 9,
+        minHeight: 44,
+        justifyContent: "center",
         borderRadius: 16,
     },
     // Blue style for the selected school year
@@ -448,6 +741,47 @@ const styles = StyleSheet.create({
         fontWeight: "600",
     },
 
+    saveError: {
+        color: Brand.danger,
+        fontSize: 14,
+        marginTop: 16,
+    },
+
+    /* Settings sheet */
+
+    settingsRow: {
+        minHeight: 56,
+        marginTop: 10,
+        paddingHorizontal: 15,
+        borderWidth: 1,
+        borderColor: "#E0E2E6",
+        borderRadius: 15,
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#FFFFFF",
+    },
+
+    settingsRowDisabled: {
+        backgroundColor: "#F1F1F3",
+    },
+
+    settingsRowIcon: {
+        fontSize: 20,
+        width: 34,
+    },
+
+    settingsRowLabel: {
+        flex: 1,
+        fontSize: 15,
+        fontWeight: "600",
+        color: "#171717",
+    },
+
+    comingSoon: {
+        fontSize: 13,
+        color: Brand.textMuted,
+    },
+
 
     /* HEADER */
 
@@ -459,6 +793,14 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
+    },
+
+    // 44x44 touch target for the back and settings buttons
+    headerButton: {
+        minWidth: 44,
+        minHeight: 44,
+        alignItems: "center",
+        justifyContent: "center",
     },
 
     backArrow: {
@@ -532,8 +874,30 @@ const styles = StyleSheet.create({
 
     year: {
         fontSize: 14,
-        color: "#777B8A",
+        color: Brand.textMuted,
         marginTop: 3,
+    },
+
+    roleTag: {
+        alignSelf: "flex-start",
+        marginTop: 8,
+        backgroundColor: Brand.tagBackground,
+        borderRadius: 12,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+    },
+
+    roleText: {
+        color: Brand.primary,
+        fontSize: 13,
+        fontWeight: "600",
+    },
+
+    editButton: {
+        minWidth: 44,
+        minHeight: 44,
+        alignItems: "center",
+        justifyContent: "center",
     },
 
     editIcon: {
@@ -549,6 +913,10 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
 
+    placeholder: {
+        fontStyle: "italic",
+    },
+
     infoRow: {
         flexDirection: "row",
         alignItems: "center",
@@ -561,6 +929,7 @@ const styles = StyleSheet.create({
     },
 
     infoText: {
+        flexShrink: 1,
         fontSize: 13,
         color: "#666A78",
     },
@@ -614,7 +983,7 @@ const styles = StyleSheet.create({
 
     statLabel: {
         fontSize: 11,
-        color: "#777B8A",
+        color: Brand.textMuted,
         textAlign: "center",
         marginTop: 4,
     },
@@ -628,6 +997,11 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
+    },
+
+    viewAllButton: {
+        minHeight: 44,
+        justifyContent: "center",
     },
 
     viewAll: {
@@ -674,13 +1048,32 @@ const styles = StyleSheet.create({
 
     activitySubtitle: {
         fontSize: 12,
-        color: "#777B8A",
+        color: Brand.textMuted,
         marginTop: 4,
     },
 
     arrow: {
         fontSize: 27,
-        color: "#777B8A",
+        color: Brand.textMuted,
+    },
+
+    /* Sign out */
+
+    signOut: {
+        marginHorizontal: 18,
+        marginTop: 28,
+        minHeight: 52,
+        borderRadius: 15,
+        borderWidth: 2,
+        borderColor: Brand.danger,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+
+    signOutText: {
+        color: Brand.danger,
+        fontSize: 16,
+        fontWeight: "bold",
     },
 
 });
