@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -7,318 +7,464 @@ import {
   ScrollView,
   Pressable,
 } from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
 
+import { EmptyState, EventCard, openClub } from "@/components/club-cards";
+import {
+  CATEGORIES,
+  CLUBS,
+  TRENDING_CLUB_IDS,
+  getClubById,
+  getMemberCount,
+  getUpcomingEvents,
+  isCategory,
+  searchClubs,
+  type Club,
+} from "@/data/mock-data";
+import { useAppState } from "@/state/app-state";
+
+type SortOption = "name" | "members" | "rating";
+
+const SORT_LABELS: Record<SortOption, string> = {
+  name: "Name (A–Z)",
+  members: "Most members",
+  rating: "Top rated",
+};
+
+/**
+ * Explore tab: browse, search, and filter clubs (FR-2).
+ *
+ * Home drives it through route params:
+ *   category=<Category>  pre-selects a category chip
+ *   q=<text>             fills in the search box (Home's search bar)
+ *   filters=1            opens the sort panel (Home's ▽ button)
+ * `q` and `filters` are one-shot and cleared after they're applied.
+ */
 export default function ExploreScreen() {
+  const params = useLocalSearchParams<{
+    category?: string;
+    q?: string;
+    filters?: string;
+  }>();
+  const category = isCategory(params.category) ? params.category : null;
+
   const [search, setSearch] = useState("");
-  const [joinedRobotics, setJoinedRobotics] = useState(false);
-  const [joinedPhotography, setJoinedPhotography] = useState(false);
+  const [sort, setSort] = useState<SortOption>("name");
+  const [showFilters, setShowFilters] = useState(false);
+  const { isJoined, toggleJoin, joinedClubIds } = useAppState();
+
+  const scrollRef = useRef<ScrollView>(null);
+  const discoverY = useRef(0);
+
+  useEffect(() => {
+    if (params.q !== undefined) {
+      setSearch(params.q);
+      router.setParams({ q: undefined });
+    }
+  }, [params.q]);
+
+  useEffect(() => {
+    if (params.filters === "1") {
+      setShowFilters(true);
+      router.setParams({ filters: undefined });
+    }
+  }, [params.filters]);
+
+  const query = search.trim();
+  // "Your Clubs" and "Trending" only show while browsing, not while filtering.
+  const browsing = query === "" && category === null;
+
+  const yourClubs = CLUBS.filter((club) =>
+    joinedClubIds.includes(club.club_id),
+  );
+  const trendingClubs = TRENDING_CLUB_IDS.map(getClubById).filter(
+    (club): club is Club => club !== undefined,
+  );
+
+  const discoverClubs = useMemo(() => {
+    const results = [...searchClubs(query, category)];
+    if (sort === "members") {
+      return results.sort((a, b) => b.member_count - a.member_count);
+    }
+    if (sort === "rating") {
+      return results.sort((a, b) => b.rating - a.rating);
+    }
+    return results.sort((a, b) => a.name.localeCompare(b.name));
+  }, [query, category, sort]);
+
+  // Upcoming events whose title or host club matches the search text.
+  const matchingEvents = useMemo(() => {
+    const q = query.toLowerCase();
+    if (!q) return [];
+    return getUpcomingEvents().filter((event) => {
+      const club = getClubById(event.club_id);
+      const inCategory = category === null || club?.category === category;
+      const matches =
+        event.title.toLowerCase().includes(q) ||
+        (club?.name.toLowerCase().includes(q) ?? false);
+      return inCategory && matches;
+    });
+  }, [query, category]);
+
+  const selectCategory = (next: string | null) => {
+    router.setParams({ category: next ?? undefined });
+  };
+
+  // Trending → "See all": rank every club by rating and jump to the list.
+  const showAllTrending = () => {
+    setSort("rating");
+    scrollRef.current?.scrollTo({ y: discoverY.current, animated: true });
+  };
+
+  const categoryChips: { label: string; value: string | null }[] = [
+    { label: "All", value: null },
+    ...CATEGORIES.map((item) => ({ label: item, value: item })),
+  ];
 
   return (
     <ScrollView
+      ref={scrollRef}
       style={styles.container}
       contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
     >
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Explore Clubs</Text>
+        <Text style={styles.headerTitle} accessibilityRole="header">
+          Explore Clubs
+        </Text>
 
-        <Pressable>
+        <Pressable
+          onPress={() => router.push("/notifications")}
+          style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Notifications"
+        >
           <Text style={styles.notificationIcon}>🔔</Text>
         </Pressable>
-      </View> 
+      </View>
 
       {/* Search */}
       <View style={styles.searchCard}>
         <View style={styles.searchBar}>
-          <Text style={styles.searchIcon}>🔍</Text>
+          <Text style={styles.searchIcon} importantForAccessibility="no">
+            🔍
+          </Text>
 
           <TextInput
-          style={styles.searchInput}
-          placeholder="search..."
-          placeholderTextColor="#7A7E8C"
-          value={search}
-          onChangeText={setSearch}
+            style={styles.searchInput}
+            placeholder="Search clubs and events..."
+            placeholderTextColor="#696C7A"
+            value={search}
+            onChangeText={setSearch}
+            returnKeyType="search"
+            autoCorrect={false}
+            clearButtonMode="while-editing"
+            accessibilityLabel="Search clubs and events"
           />
 
-          <Pressable>
+          <Pressable
+            onPress={() => setShowFilters((open) => !open)}
+            style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: showFilters }}
+            accessibilityLabel="Sort clubs"
+          >
             <Text style={styles.filterIcon}>▽</Text>
-          </Pressable>  
+          </Pressable>
         </View>
+
+        {/* Sort options (▽) */}
+        {showFilters && (
+          <View style={styles.sortPanel}>
+            <Text style={styles.sortLabel}>Sort by</Text>
+            <View style={styles.sortRow}>
+              {(Object.keys(SORT_LABELS) as SortOption[]).map((option) => (
+                <Pressable
+                  key={option}
+                  onPress={() => setSort(option)}
+                  style={({ pressed }) => [
+                    styles.categoryButton,
+                    sort === option && styles.activeCategoryButton,
+                    pressed && styles.pressed,
+                  ]}
+                  hitSlop={4}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: sort === option }}
+                  accessibilityLabel={`Sort by ${SORT_LABELS[option]}`}
+                >
+                  <Text
+                    style={
+                      sort === option
+                        ? styles.activeCategoryText
+                        : styles.categoryText
+                    }
+                  >
+                    {SORT_LABELS[option]}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        )}
 
         {/* category Buttons */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.categoryRow}
-         >
-          <Pressable
-          style={[
-            styles.categoryButton,
-            styles.activeCategoryButton,
-          ]}
+        >
+          {categoryChips.map(({ label, value }) => {
+            const active = category === value;
+            return (
+              <Pressable
+                key={label}
+                onPress={() => selectCategory(value)}
+                style={({ pressed }) => [
+                  styles.categoryButton,
+                  active && styles.activeCategoryButton,
+                  pressed && styles.pressed,
+                ]}
+                hitSlop={4}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+                accessibilityLabel={`${label} clubs`}
+              >
+                <Text
+                  style={active ? styles.activeCategoryText : styles.categoryText}
+                >
+                  {label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
+
+      {browsing && (
+        <>
+          {/* Your Clubs */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle} accessibilityRole="header">
+              Your Clubs
+            </Text>
+
+            <Pressable
+              onPress={() => router.push("/my-clubs")}
+              style={styles.linkButton}
+              hitSlop={8}
+              accessibilityRole="link"
+              accessibilityLabel="See all of your clubs"
+            >
+              <Text style={styles.sectionLink}>See all ›</Text>
+            </Pressable>
+          </View>
+
+          {yourClubs.length === 0 ? (
+            <Text style={styles.emptyRowText}>
+              Clubs you join will show up here.
+            </Text>
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalCards}
+            >
+              {yourClubs.map((club) => {
+                const members = getMemberCount(club, true);
+                return (
+                  <Pressable
+                    key={club.club_id}
+                    onPress={() => openClub(club.club_id)}
+                    style={({ pressed }) => [
+                      styles.smallClubCard,
+                      pressed && styles.pressed,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${club.name}, ${members} members, ${club.category}`}
+                    accessibilityHint="Opens the club page"
+                  >
+                    <Text style={styles.clubEmoji}>{club.emoji}</Text>
+                    <Text style={styles.smallClubName}>{club.name}</Text>
+                    <Text style={styles.clubMembers}>{members} members</Text>
+
+                    <View style={styles.tag}>
+                      <Text style={styles.tagText}>{club.category}</Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          )}
+
+          {/* Trending */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle} accessibilityRole="header">
+              Trending
+            </Text>
+
+            <Pressable
+              onPress={showAllTrending}
+              style={styles.linkButton}
+              hitSlop={8}
+              accessibilityRole="link"
+              accessibilityLabel="See all clubs, top rated first"
+            >
+              <Text style={styles.sectionLink}>See all ›</Text>
+            </Pressable>
+          </View>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.horizontalCards}
           >
-            <Text style={styles.activeCategoryText}>All</Text>
-          </Pressable>
-
-          <Pressable style={styles.categoryButton}>
-            <Text style={styles.categoryText}>Academic</Text>
-          </Pressable>  
-
-          <Pressable style={styles.categoryButton}>
-            <Text style={styles.categoryText}>Sports</Text>
-          </Pressable>
-
-          <Pressable style={styles.categoryButton}>
-            <Text style={styles.categoryText}>Arts</Text>
-          </Pressable>
-
-          <Pressable style={styles.categoryButton}>
-            <Text style={styles.categoryText}>Tech</Text>
-          </Pressable>
-        </ScrollView> 
-      </View>
-
-      {/* Your Clubs */}
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}> Your Clubs</Text>
-
-        <Pressable>
-          <Text style={styles.sectionLink}>See all ,</Text>
-        </Pressable>
-      </View>
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.horizontalCards}
-      >
-        <View style={styles.smallClubCard}>
-          <Text style={styles.clubEmoji}>💻</Text>
-          <Text style={styles.smallClubName}>Computer Science Club</Text>
-          <Text style={styles.clubMembers}>145 members</Text>
-
-          <View style={styles.tag}>
-            <Text style={styles.tagText}>Academic</Text>
-          </View>
-        </View>
-
-        <View style={styles.smallClubCard}>
-          <Text style={styles.clubEmoji}>🎮</Text>
-          <Text style={styles.smallClubName}>Gaming Club</Text>
-          <Text style={styles.clubMembers}>102 members</Text>
-
-          <View style={styles.tag}>
-            <Text style={styles.tagText}>Social</Text>
-          </View>
-        </View>
-
-        <View style={styles.smallClubCard}>
-          <Text style={styles.clubEmoji}>🎨</Text>
-          <Text style={styles.smallClubName}>Arts Club</Text>
-          <Text style={styles.clubMembers}>84 members</Text>
-
-          <View style={styles.tag}>
-            <Text style={styles.tagText}>Arts</Text>
-          </View>
-        </View>
-      </ScrollView>
-
-      {/* Trending */}
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Trending</Text>
-
-        <Pressable>
-          <Text style={styles.sectionLink}>See all ,</Text>
-        </Pressable>
-      </View>
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.horizontalCards}
-      >
-        <View style={styles.trendingCard}>
-          <Text style={styles.clubEmoji}>🤖</Text>
-          <Text style={styles.trendingName}>Robotics Club</Text>
-          <Text style={styles.clubDescription}>Design robots and learn automation</Text>
-          <Text style={styles.trendingInfo}>⭐️ 4.8  •  15 members</Text>
-        </View>
-
-        <View style={styles.trendingCard}>
-          <Text style={styles.clubEmoji}>📷</Text>
-          <Text style={styles.trendingName}>Photography Club</Text>
-          <Text style={styles.clubDescription}>Learn photography and capture campus life.</Text>
-          <Text style={styles.trendingInfo}>⭐ 4.2  •  25 members</Text>
-        </View>
-      </ScrollView>
+            {trendingClubs.map((club) => {
+              const members = getMemberCount(club, isJoined(club.club_id));
+              return (
+                <Pressable
+                  key={club.club_id}
+                  onPress={() => openClub(club.club_id)}
+                  style={({ pressed }) => [
+                    styles.trendingCard,
+                    pressed && styles.pressed,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${club.name}, rated ${club.rating}, ${members} members`}
+                  accessibilityHint="Opens the club page"
+                >
+                  <Text style={styles.clubEmoji}>{club.emoji}</Text>
+                  <Text style={styles.trendingName}>{club.name}</Text>
+                  <Text style={styles.clubDescription} numberOfLines={3}>
+                    {club.description}
+                  </Text>
+                  <Text style={styles.trendingInfo}>
+                    ⭐ {club.rating.toFixed(1)}  •  {members} members
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </>
+      )}
 
       {/* All Clubs */}
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Discover Clubs</Text>
+      <View
+        style={styles.sectionHeader}
+        onLayout={(e) => {
+          discoverY.current = e.nativeEvent.layout.y;
+        }}
+      >
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          Discover Clubs
+        </Text>
+
+        {!browsing && (
+          <Text style={styles.resultCount} accessibilityLiveRegion="polite">
+            {discoverClubs.length}{" "}
+            {discoverClubs.length === 1 ? "club" : "clubs"}
+            {category ? ` in ${category}` : ""}
+          </Text>
+        )}
       </View>
 
-      {/* Robitics */}
-      <View style={styles.largeClubCard}>
-        <View style={styles.clubTopRow}>
-          <View style={styles.largeEmojiBox}>
-            <Text style={styles.largeEmoji}>🤖</Text>
-          </View>
+      {discoverClubs.length === 0 ? (
+        <EmptyState
+          emoji="🔍"
+          title="No clubs found"
+          message="Try a different search or pick another category."
+        />
+      ) : (
+        discoverClubs.map((club) => {
+          const joined = isJoined(club.club_id);
+          const members = getMemberCount(club, joined);
 
-          <View style={styles.clubInformation}>
-            <Text style={styles.largeClubName}>Robotics Club</Text>
-            <Text style={styles.clubDescription}>Build robots, learn programming, and compete in engineering challenges.</Text>
+          return (
+            <View key={club.club_id} style={styles.largeClubCard}>
+              <View
+                style={styles.clubTopRow}
+                accessible
+                accessibilityLabel={`${club.name}. ${club.description} ${members} members, rated ${club.rating}, ${club.category}`}
+              >
+                <View style={styles.largeEmojiBox}>
+                  <Text style={styles.largeEmoji}>{club.emoji}</Text>
+                </View>
 
-            <View style={styles.clubStats}>
-              <Text style={styles.statText}>👥 124 members</Text>
-              <Text style={styles.statText}> ⭐ 4.9</Text>
+                <View style={styles.clubInformation}>
+                  <Text style={styles.largeClubName}>{club.name}</Text>
+                  <Text style={styles.clubDescription}>{club.description}</Text>
+
+                  <View style={styles.clubStats}>
+                    <Text style={styles.statText}>👥 {members} members</Text>
+                    <Text style={styles.statText}>
+                      ⭐ {club.rating.toFixed(1)}
+                    </Text>
+                  </View>
+
+                  <View style={styles.tag}>
+                    <Text style={styles.tagText}>{club.category}</Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.actionRow}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.joinButton,
+                    joined && styles.leaveButton,
+                    pressed && styles.pressed,
+                  ]}
+                  onPress={() => toggleJoin(club.club_id)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: joined }}
+                  accessibilityLabel={
+                    joined ? `Leave ${club.name}` : `Join ${club.name}`
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.joinButtonText,
+                      joined && styles.leaveButtonText,
+                    ]}
+                  >
+                    {joined ? "Leave" : "Join"}
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.viewButton,
+                    pressed && styles.pressed,
+                  ]}
+                  onPress={() => openClub(club.club_id)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`View ${club.name}`}
+                >
+                  <Text style={styles.viewButtonText}>View</Text>
+                </Pressable>
+              </View>
             </View>
+          );
+        })
+      )}
 
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>Tech</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.actionRow}>
-          <Pressable 
-          style={[
-            styles.joinButton,
-            joinedRobotics && styles.leaveButton,
-          ]}
-          onPress={() =>
-            setJoinedRobotics(!joinedRobotics) 
-          }
-        >
-          <Text
-            style={[
-              styles.joinButtonText,
-              joinedRobotics && styles.leaveButtonText,
-            ]}
-          >
-            {joinedRobotics ? "Leave" : "Join"}
-            </Text>  
-          </Pressable>
-
-          <Pressable style={styles.viewButton}>
-            <Text style={styles.viewButtonText}>View</Text>
-          </Pressable>  
-        </View>
-      </View>
-
-      {/* Photography */}
-      <View style={styles.largeClubCard}>
-        <View style={styles.clubTopRow}>
-          <View style={styles.largeEmojiBox}>
-            <Text style={styles.largeEmoji}>📷</Text>
-          </View>
-
-          <View style={styles.clubInformation}>
-            <Text style={styles.largeClubName}>Photography Club</Text>
-            <Text style={styles.clubDescription}>Learn photography, edit photos, and explore creative visual storytelling.</Text>
-
-            <View style={styles.clubStats}>
-              <Text style={styles.statText}>👥 30 members</Text>
-              <Text style={styles.statText}>⭐ 3.8</Text>
-            </View>
-
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>Arts</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.actionRow}>
-          <Pressable
-            style={[
-              styles.joinButton,
-              joinedPhotography && styles.leaveButton,
-            ]}
-            onPress={() =>
-              setJoinedPhotography(!joinedPhotography)
-            }
-          >
-            <Text
-              style={[
-                styles.joinButtonText,
-                joinedPhotography && styles.leaveButtonText,
-              ]}
-            >
-              {joinedPhotography ? "Leave" : "Join"}
+      {/* Events matching the search */}
+      {matchingEvents.length > 0 && (
+        <>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle} accessibilityRole="header">
+              Events
             </Text>
-          </Pressable>
-
-          <Pressable style={styles.viewButton}>
-            <Text style={styles.viewButtonText}>View</Text>
-          </Pressable>
-        </View>
-      </View>
-
-      {/* Debate */}
-      <View style={styles.largeClubCard}>
-        <View style={styles.clubTopRow}>
-          <View style={styles.largeEmojiBox}>
-            <Text style={styles.largeEmoji}>🎤</Text>
           </View>
 
-          <View style={styles.clubInformation}>
-            <Text style={styles.largeClubName}>Debate Team</Text>
-            <Text style={styles.clubDescription}>Practice public speaking, debate topics, and participate in competitions</Text>
-
-            <View style={styles.clubStats}>
-              <Text style={styles.statText}>👥 56 members</Text>
-              <Text style={styles.statText}>⭐ 3.4</Text>
-            </View>
-
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>Academic</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.actionRow}>
-          <Pressable style={styles.joinButton}>
-            <Text style={styles.joinButtonText}>Join</Text>
-          </Pressable>
-
-          <Pressable style={styles.viewButton}>
-            <Text style={styles.viewButtonText}>View</Text>
-          </Pressable>
-        </View>
-      </View>
-
-      {/* Basketball */}
-      <View style={styles.largeClubCard}>
-        <View style={styles.clubTopRow}>
-          <View style={styles.largeEmojiBox}>
-            <Text style={styles.largeEmoji}>🏀</Text>
-          </View>
-          
-          <View style={styles.clubInformation}>
-            <Text style={styles.largeClubName}>Basketball Club</Text>
-            <Text style={styles.clubDescription}> Meet players and have fun in intramural sports</Text>
-
-            <View style={styles.clubStats}>
-              <Text style={styles.statText}>👥 25 members</Text>
-              <Text style={styles. statText}>⭐️ 4.5</Text>
-            </View>
-
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>Sports</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.actionRow}>
-          <Pressable style={styles.joinButton}>
-            <Text style={styles.joinButtonText}>Join</Text>
-          </Pressable>
-
-          <Pressable style={styles.viewButton}>
-            <Text style={styles.viewButtonText}>View</Text>
-          </Pressable>
-        </View>
-      </View>
+          {matchingEvents.map((event) => (
+            <EventCard key={event.event_id} event={event} />
+          ))}
+        </>
+      )}
     </ScrollView>
   );
 }
@@ -326,11 +472,27 @@ export default function ExploreScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF", 
+    backgroundColor: "#FFFFFF",
   },
 
   content: {
     paddingBottom: 40,
+  },
+
+  pressed: {
+    opacity: 0.7,
+  },
+
+  iconButton: {
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  linkButton: {
+    minHeight: 44,
+    justifyContent: "center",
   },
 
   header: {
@@ -370,7 +532,7 @@ const styles = StyleSheet.create({
 
     elevation: 5,
   },
-  
+
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -383,12 +545,30 @@ const styles = StyleSheet.create({
 
   searchInput: {
     flex: 1,
+    minHeight: 44,
     fontSize: 17,
     color: "#171717",
   },
 
   filterIcon: {
     fontSize: 21,
+  },
+
+  sortPanel: {
+    marginTop: 14,
+  },
+
+  sortLabel: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#171717",
+    marginBottom: 10,
+  },
+
+  sortRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
   },
 
   categoryRow: {
@@ -440,6 +620,17 @@ const styles = StyleSheet.create({
     color: "#0B55B7",
   },
 
+  resultCount: {
+    fontSize: 15,
+    color: "#696C7A",
+  },
+
+  emptyRowText: {
+    marginHorizontal: 20,
+    fontSize: 15,
+    color: "#696C7A",
+  },
+
   horizontalCards: {
     paddingHorizontal: 20,
     gap: 14,
@@ -467,7 +658,7 @@ const styles = StyleSheet.create({
   },
 
   clubMembers: {
-    color: "#777B8A",
+    color: "#696C7A",
     fontSize: 14,
     marginTop: 8,
   },
@@ -507,13 +698,13 @@ const styles = StyleSheet.create({
   clubDescription: {
     fontSize: 14,
     lineHeight: 20,
-    color: "#777B8A",
+    color: "#696C7A",
   },
 
   trendingInfo: {
     marginTop: 15,
     fontSize: 14,
-    color: "#777B8A",
+    color: "#696C7A",
   },
 
   largeClubCard: {
@@ -564,7 +755,7 @@ const styles = StyleSheet.create({
 
   statText: {
     fontSize: 13,
-    color: "#777B8A",
+    color: "#696C7A",
   },
 
   actionRow: {
@@ -576,7 +767,8 @@ const styles = StyleSheet.create({
   joinButton: {
     flex: 1,
     backgroundColor: "#0B55B7",
-    paddingVertical: 12,
+    minHeight: 44,
+    justifyContent: "center",
     borderRadius: 11,
     alignItems: "center",
   },
@@ -600,7 +792,8 @@ const styles = StyleSheet.create({
   viewButton: {
     flex: 1,
     backgroundColor: "#FFFFFF",
-    paddingVertical: 12,
+    minHeight: 44,
+    justifyContent: "center",
     borderRadius: 11,
     alignItems: "center",
     borderWidth: 1,
