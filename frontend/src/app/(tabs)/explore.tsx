@@ -8,6 +8,7 @@ import {
   Pressable,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import { NotificationBell } from "@/components/notification-bell";
 
 import { EmptyState, EventCard, openClub } from "@/components/club-cards";
 import {
@@ -135,15 +136,11 @@ export default function ExploreScreen() {
           Explore Clubs
         </Text>
 
-        <Pressable
-          onPress={() => router.push("/notifications")}
-          style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel="Notifications"
-        >
-          <Text style={styles.notificationIcon}>🔔</Text>
-        </Pressable>
+        <NotificationBell
+          style={styles.iconButton}
+          pressedStyle={styles.pressed}
+          iconStyle={styles.notificationIcon}
+        />
       </View>
 
       {/* Search */}

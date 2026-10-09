@@ -16,6 +16,7 @@ import {
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
 import { AppStateProvider } from "@/state/app-state";
 import { AuthProvider, useAuth } from "@/state/auth";
+import { NotificationsProvider } from "@/state/notifications";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -24,14 +25,16 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <AppStateProvider>
-        <ThemeProvider
-          value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-        >
-          <AnimatedSplashOverlay />
-          <RootStack />
-        </ThemeProvider>
-      </AppStateProvider>
+      <NotificationsProvider>
+        <AppStateProvider>
+          <ThemeProvider
+            value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+          >
+            <AnimatedSplashOverlay />
+            <RootStack />
+          </ThemeProvider>
+        </AppStateProvider>
+      </NotificationsProvider>
     </AuthProvider>
   );
 }
@@ -72,6 +75,10 @@ function RootStack() {
           <Stack.Screen name="my-clubs" />
           <Stack.Screen name="notifications" />
           <Stack.Screen name="profile" />
+          <Stack.Screen name="skill/[id]" />
+          <Stack.Screen name="skill/new" />
+          <Stack.Screen name="skill/interest" />
+          <Stack.Screen name="skill/engagement/[id]" />
         </Stack.Protected>
       </Stack>
 

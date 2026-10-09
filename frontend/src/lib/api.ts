@@ -292,3 +292,328 @@ export const usersApi = {
       token,
     }),
 };
+
+// ---------- Skill Exchange (/skill-exchange) ----------
+
+export type SkillKind = 'request' | 'offer';
+export type RequestStatus = 'open' | 'closed' | 'complete';
+export type OfferStatus = 'available' | 'unavailable';
+export type SkillStatus = RequestStatus | OfferStatus;
+export type SkillSort = 'newest' | 'oldest' | 'soonest';
+
+/** A time the poster is available (offers) or needs help by (requests). ISO 8601. */
+export type SkillSlot = { slot_id?: number; starts_at: string; ends_at: string };
+
+export type SkillAuthor = {
+  user_id: number;
+  username: string;
+  first_name: string;
+  last_name: string;
+  nyit_email: string;
+  /** Requests and offers this person has fulfilled. */
+  kudos: number;
+};
+
+export type SkillPost = {
+  post_id: number;
+  kind: SkillKind;
+  title: string;
+  description: string;
+  extras: string | null;
+  location: string | null;
+  location_flexible: boolean;
+  status: SkillStatus;
+  created_at: string;
+  updated_at: string;
+  author: SkillAuthor;
+  tags: string[];
+  comment_count: number;
+  is_owner: boolean;
+  /** Only on a single post (GET /skill-exchange/posts/:id, create, update). */
+  slots?: SkillSlot[];
+  /** Offers, GET /skill-exchange/posts/:id: times already booked (no names). */
+  busy?: SkillSlot[];
+  /** GET /skill-exchange/posts/:id: the viewer's pending or accepted response, or null. */
+  my_engagement?: MyEngagement | null;
+};
+
+export type EngagementStatus = 'pending' | 'accepted' | 'declined' | 'cancelled' | 'completed';
+
+export type MyEngagement = {
+  engagement_id: number;
+  status: 'pending' | 'accepted';
+  starts_at: string;
+  ends_at: string;
+  location: string | null;
+};
+
+export type SkillTagGroup = { name: string; tags: string[] };
+
+export type SkillPostQuery = {
+  kind: SkillKind;
+  q?: string;
+  tags?: string[];
+  status?: SkillStatus;
+  mine?: boolean;
+  sort?: SkillSort;
+  limit?: number;
+  offset?: number;
+};
+
+export type NewSkillPost = {
+  kind: SkillKind;
+  title: string;
+  description: string;
+  extras?: string | null;
+  location?: string | null;
+  location_flexible?: boolean;
+  tags: string[];
+  slots: SkillSlot[];
+};
+
+/** Title, location, and dates are locked after posting; status is offers only. */
+export type SkillPostUpdate = {
+  description?: string;
+  extras?: string | null;
+  tags?: string[];
+  status?: OfferStatus;
+};
+
+/** Same limits as the API and sql/013. */
+export const SKILL_LIMITS = {
+  title: 100,
+  description: 2000,
+  extras: 500,
+  location: 150,
+  tag: 30,
+  tags: 10,
+  slots: 100,
+} as const;
+
+function skillQueryString(query: SkillPostQuery): string {
+  const params: string[] = [`kind=${query.kind}`];
+  const add = (key: string, value: string | number | undefined) => {
+    if (value !== undefined && value !== '') params.push(`${key}=${encodeURIComponent(value)}`);
+  };
+  add('q', query.q?.trim());
+  add('tags', query.tags?.length ? query.tags.join(',') : undefined);
+  add('status', query.status);
+  add('mine', query.mine ? 'true' : undefined);
+  add('sort', query.sort);
+  add('limit', query.limit);
+  add('offset', query.offset);
+  return params.join('&');
+}
+
+export const skillApi = {
+  tags: (token: string) => apiRequest<{ groups: SkillTagGroup[] }>('/skill-exchange/tags', { token }),
+
+  list: (token: string, query: SkillPostQuery) =>
+    apiRequest<{ posts: SkillPost[]; limit: number; offset: number; has_more: boolean }>(
+      `/skill-exchange/posts?${skillQueryString(query)}`,
+      { token },
+    ),
+
+  get: (token: string, postId: number) =>
+    apiRequest<{ post: SkillPost }>(`/skill-exchange/posts/${postId}`, { token }),
+
+  create: (token: string, post: NewSkillPost) =>
+    apiRequest<{ message: string; post: SkillPost }>('/skill-exchange/posts', {
+      method: 'POST',
+      body: post,
+      token,
+    }),
+
+  update: (token: string, postId: number, update: SkillPostUpdate) =>
+    apiRequest<{ message: string; post: SkillPost }>(`/skill-exchange/posts/${postId}`, {
+      method: 'PATCH',
+      body: update,
+      token,
+    }),
+
+  remove: (token: string, postId: number) =>
+    apiRequest<{ message: string; post_id: number }>(`/skill-exchange/posts/${postId}`, {
+      method: 'DELETE',
+      token,
+    }),
+
+  summary: (token: string) => apiRequest<SkillSummary>('/skill-exchange/summary', { token }),
+};
+
+export type SkillComment = {
+  comment_id: number;
+  post_id: number;
+  /** Set on the poster's replies; replies are one level deep. */
+  parent_comment_id: number | null;
+  body: string;
+  created_at: string;
+  author: SkillAuthor;
+  is_mine: boolean;
+};
+
+export const COMMENT_MAX_LENGTH = 1000;
+
+export const skillCommentsApi = {
+  list: (token: string, postId: number) =>
+    apiRequest<{ comments: SkillComment[] }>(`/skill-exchange/posts/${postId}/comments`, { token }),
+
+  /** parentCommentId: only the post's owner can reply to a (top-level) comment. */
+  add: (token: string, postId: number, body: string, parentCommentId?: number) =>
+    apiRequest<{ message: string; comment: SkillComment }>(`/skill-exchange/posts/${postId}/comments`, {
+      method: 'POST',
+      body: { body, ...(parentCommentId && { parent_comment_id: parentCommentId }) },
+      token,
+    }),
+
+  remove: (token: string, commentId: number) =>
+    apiRequest<{ message: string; comment_id: number }>(`/skill-exchange/comments/${commentId}`, {
+      method: 'DELETE',
+      token,
+    }),
+};
+
+// ---------- Notifications (/notifications) ----------
+
+export type NotificationType =
+  | 'general'
+  | 'event_reminder'
+  | 'announcement'
+  | 'message_alert'
+  | 'skill_comment'
+  | 'skill_reply'
+  | 'skill_interest'
+  | 'skill_accepted'
+  | 'skill_declined'
+  | 'skill_cancelled'
+  | 'skill_kudos_request';
+
+export type AppNotification = {
+  notification_id: number;
+  type: NotificationType;
+  title: string;
+  message: string;
+  sent_at: string;
+  is_read: boolean;
+  /** null if the notification isn't about a post, or the post was deleted. */
+  post_id: number | null;
+  /** null when the linked post no longer exists. */
+  post_kind: SkillKind | null;
+  engagement_id: number | null;
+  actor: Pick<SkillAuthor, 'user_id' | 'username' | 'first_name' | 'last_name'> | null;
+};
+
+export const notificationsApi = {
+  list: (token: string, options: { limit?: number; offset?: number; unread?: boolean } = {}) => {
+    const params = [
+      options.limit !== undefined && `limit=${options.limit}`,
+      options.offset !== undefined && `offset=${options.offset}`,
+      options.unread && 'unread=true',
+    ].filter(Boolean);
+    return apiRequest<{
+      notifications: AppNotification[];
+      unread_count: number;
+      limit: number;
+      offset: number;
+      has_more: boolean;
+    }>(`/notifications${params.length ? `?${params.join('&')}` : ''}`, { token });
+  },
+
+  markRead: (token: string, notificationId: number) =>
+    apiRequest<{ notification_id: number; unread_count: number }>(`/notifications/${notificationId}/read`, {
+      method: 'POST',
+      token,
+    }),
+
+  markAllRead: (token: string) =>
+    apiRequest<{ updated: number; unread_count: number }>('/notifications/read-all', { method: 'POST', token }),
+};
+
+// ---------- Skill Exchange agreements ("engagements") ----------
+
+/** Someone's response to a post ("I can help" / "I'd like this") and, once accepted, the agreement. */
+export type SkillEngagement = {
+  engagement_id: number;
+  post_id: number;
+  status: EngagementStatus;
+  starts_at: string;
+  ends_at: string;
+  location: string | null;
+  /** From the person who responded. */
+  message: string | null;
+  /** The poster's note when accepting or declining. */
+  response_message: string | null;
+  cancel_message: string | null;
+  cancelled_by: number | null;
+  /** Offers: when the poster marked it complete and asked for Kudos. */
+  kudos_requested_at: string | null;
+  /** Kudos was given for this agreement (at most once). */
+  kudos_given: boolean;
+  created_at: string;
+  updated_at: string;
+  /** The person who responded. */
+  user: SkillAuthor;
+  post: {
+    post_id: number;
+    kind: SkillKind;
+    title: string;
+    status: SkillStatus;
+    location: string | null;
+    location_flexible: boolean;
+    author: SkillAuthor;
+  };
+  /** The viewer wrote the post. */
+  is_poster: boolean;
+  /** The viewer is the person who responded. */
+  is_requester: boolean;
+};
+
+export const ENGAGEMENT_MESSAGE_MAX = 300;
+
+type EngagementResponse = { message: string; engagement: SkillEngagement };
+
+export const engagementsApi = {
+  /** Not on your own post; the time must sit inside one of the post's dates (and, for offers, not overlap a booked time). */
+  interest: (token: string, postId: number, input: { starts_at: string; ends_at: string; location?: string | null; message?: string | null }) =>
+    apiRequest<EngagementResponse>(`/skill-exchange/posts/${postId}/interest`, { method: 'POST', body: input, token }),
+
+  /** The poster gets every response; anyone else only their own. */
+  forPost: (token: string, postId: number) =>
+    apiRequest<{ engagements: SkillEngagement[] }>(`/skill-exchange/posts/${postId}/engagements`, { token }),
+
+  get: (token: string, engagementId: number) =>
+    apiRequest<{ engagement: SkillEngagement }>(`/skill-exchange/engagements/${engagementId}`, { token }),
+
+  accept: (token: string, engagementId: number, message?: string | null) =>
+    apiRequest<EngagementResponse>(`/skill-exchange/engagements/${engagementId}/accept`, { method: 'POST', body: { message: message || null }, token }),
+
+  /** The other person is only told if there's a message. */
+  decline: (token: string, engagementId: number, message?: string | null) =>
+    apiRequest<EngagementResponse>(`/skill-exchange/engagements/${engagementId}/decline`, { method: 'POST', body: { message: message || null }, token }),
+
+  /** Accepted: either person cancels (the other is told). Pending: the sender withdraws it. */
+  cancel: (token: string, engagementId: number, message?: string | null) =>
+    apiRequest<EngagementResponse>(`/skill-exchange/engagements/${engagementId}/cancel`, { method: 'POST', body: { message: message || null }, token }),
+
+  /** Poster, accepted only. Requests: the request becomes complete (awardKudos thanks the helper). Offers: asks the other person for Kudos. */
+  complete: (token: string, engagementId: number, awardKudos?: boolean) =>
+    apiRequest<EngagementResponse>(`/skill-exchange/engagements/${engagementId}/complete`, {
+      method: 'POST',
+      body: awardKudos === undefined ? {} : { award_kudos: awardKudos },
+      token,
+    }),
+
+  /** Completed only, once. Requests: the poster gives it. Offers: the person who was helped gives it. */
+  kudos: (token: string, engagementId: number) =>
+    apiRequest<EngagementResponse>(`/skill-exchange/engagements/${engagementId}/kudos`, { method: 'POST', body: {}, token }),
+};
+
+/** The signed-in user's Skill Exchange numbers (Profile). */
+export type SkillSummary = {
+  post_count: number;
+  request_count: number;
+  offer_count: number;
+  /** Kudos received: requests and offers fulfilled. */
+  kudos: number;
+  /** Newest 3 of their posts. */
+  recent: Pick<SkillPost, 'post_id' | 'kind' | 'title' | 'status' | 'created_at'>[];
+};

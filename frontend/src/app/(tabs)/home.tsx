@@ -8,6 +8,7 @@ import {
   Pressable,
 } from "react-native";
 import { router } from "expo-router";
+import { NotificationBell } from "@/components/notification-bell";
 
 import {
   CategoryChip,
@@ -78,18 +79,11 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.headerIcons}>
-          <Pressable
-            onPress={() => router.push("/notifications")}
-            style={({ pressed }) => [
-              styles.iconButton,
-              pressed && styles.pressed,
-            ]}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="Notifications"
-          >
-            <Text style={styles.notificationIcon}>🔔</Text>
-          </Pressable>
+          <NotificationBell
+            style={styles.iconButton}
+            pressedStyle={styles.pressed}
+            iconStyle={styles.notificationIcon}
+          />
 
           <Pressable
             onPress={() => router.push("/profile")}

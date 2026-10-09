@@ -7,7 +7,7 @@ import {
     ScrollView,
     StyleSheet,
 } from "react-native";
-import { router } from "expo-router";
+import { NotificationBell } from "@/components/notification-bell";
 
 import { EmptyState, openEvent } from "@/components/club-cards";
 import {
@@ -21,47 +21,22 @@ import {
     type ClubEvent,
     type EventCategory,
 } from "@/data/mock-data";
+import {
+    WEEK_DAYS,
+    dayKey,
+    monthWeeks,
+    pad,
+    shiftMonth,
+    type CalendarMonth,
+} from "@/lib/calendar";
 import { useAppState } from "@/state/app-state";
 
 type ViewMode = "list" | "calendar";
-type CalendarMonth = { year: number; month: number }; // month is 0-11
-
-const WEEK_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-function pad(n: number): string {
-    return String(n).padStart(2, "0");
-}
-
-function dayKey(year: number, month: number, day: number): string {
-    return `${year}-${pad(month + 1)}-${pad(day)}`;
-}
 
 /** The month that contains today, in campus time. */
 function currentMonth(): CalendarMonth {
     const [year, month] = campusDateKey(new Date().toISOString()).split("-");
     return { year: Number(year), month: Number(month) - 1 };
-}
-
-function shiftMonth({ year, month }: CalendarMonth, delta: number): CalendarMonth {
-    const date = new Date(year, month + delta, 1);
-    return { year: date.getFullYear(), month: date.getMonth() };
-}
-
-/** Day numbers for a month laid out Sun-Sat, padded with nulls, split into weeks. */
-function monthWeeks({ year, month }: CalendarMonth): (number | null)[][] {
-    const firstWeekday = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const cells: (number | null)[] = [
-        ...Array<null>(firstWeekday).fill(null),
-        ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
-    ];
-    while (cells.length % 7 !== 0) cells.push(null);
-
-    const weeks: (number | null)[][] = [];
-    for (let i = 0; i < cells.length; i += 7) {
-        weeks.push(cells.slice(i, i + 7));
-    }
-    return weeks;
 }
 
 /** Events tab: upcoming events as a list or a month calendar (FR-9). */
@@ -141,15 +116,11 @@ export default function EventsScreen() {
                     <Text style={styles.headerTitle} accessibilityRole="header">
                         Events
                     </Text>
-                    <Pressable
-                        onPress={() => router.push("/notifications")}
-                        style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
-                        hitSlop={8}
-                        accessibilityRole="button"
-                        accessibilityLabel="Notifications"
-                    >
-                        <Text style={styles.bellIcon}>🔔</Text>
-                    </Pressable>
+                    <NotificationBell
+                        style={styles.iconButton}
+                        pressedStyle={styles.pressed}
+                        iconStyle={styles.bellIcon}
+                    />
                 </View>
 
                 {/* List & Calender */}

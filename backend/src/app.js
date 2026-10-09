@@ -7,6 +7,8 @@ const pool = require('./config/db'); // shared connection pool from db.js for ex
 const authRoutes = require('./routes/auth');
 const clubsRoutes = require('./routes/clubs');
 const usersRoutes = require('./routes/users');
+const skillExchangeRoutes = require('./routes/skillExchange');
+const notificationsRoutes = require('./routes/notifications');
 const path = require('path'); 
 
 const app = express();
@@ -17,6 +19,8 @@ app.use(express.json());    // parses incoming JSON requests and puts into in re
 app.use('/auth', authRoutes);
 app.use('/clubs', clubsRoutes);
 app.use('/users', usersRoutes);
+app.use('/skill-exchange', skillExchangeRoutes);
+app.use('/notifications', notificationsRoutes);
 
 app.get('/health', async (req, res) => {
   try {
