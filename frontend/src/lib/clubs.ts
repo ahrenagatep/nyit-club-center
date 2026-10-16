@@ -41,7 +41,7 @@ function toClub(row: ApiClub): Club {
     category,
     emoji: CATEGORY_EMOJI[category],
     member_count: row.member_count,
-    rating: 0, // no ratings in the database; the screens hide a rating of 0
+    rating: 0, // no ratings in the database; defaults to 0 for now, add ratings later
   };
 }
 

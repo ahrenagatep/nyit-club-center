@@ -97,7 +97,7 @@ const { clubs, loading, error } = useClubs();
       return results.sort((a, b) => b.rating - a.rating);
     }
     return results.sort((a, b) => a.name.localeCompare(b.name));
-  }, [query, category, clubs]);
+  }, [query, category, sort, clubs]);
 
   // Upcoming events whose title or host club matches the search text.
   const matchingEvents = useMemo(() => {

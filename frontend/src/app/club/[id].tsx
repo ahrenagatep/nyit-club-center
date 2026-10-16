@@ -4,7 +4,6 @@ import { useLocalSearchParams } from 'expo-router';
 import { EmptyState, cardStyles } from '@/components/club-cards';
 import { ScreenHeader } from '@/components/screen-header';
 import { Brand } from '@/constants/brand';
-import { getClubById, getEventsForClub, getMemberCount } from '@/data/mock-data';
 import { useAppState } from '@/state/app-state';
 import { useClub } from '@/lib/clubs';
 
@@ -37,7 +36,7 @@ export default function ClubScreen() {
 
   const joined = isJoined(club.club_id);
   // const events = getEventsForClub(club.club_id);
-  const memberCount = getMemberCount(club, joined);
+  const memberCount = club.member_count;
 
   return (
     <ScrollView

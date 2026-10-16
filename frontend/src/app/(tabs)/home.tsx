@@ -24,11 +24,8 @@ import {
   CURRENT_USER,
   getMemberCount,
   getMembershipRoleLabel,
-  // RECOMMENDED_CLUB_IDS,
-  getClubById,
   getUpcomingEvents,
   type Category,
-  type Club,
 } from "@/data/mock-data";
 
 import { useClubs } from "@/lib/clubs";
