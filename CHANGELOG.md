@@ -1,4 +1,17 @@
 # Changelog
+## 2026-10-15
+### Frontend
+#### Ahren Agatep
+- Added `clubsApi` in `api.ts` to call `GET /clubs` and `GET /clubs/:id`
+- Created lib/clubs.ts with two hooks that load clubs and track loading and error states
+    - `useClubs`
+    - `useClub`
+- Converted database rows to the shape the screens use
+    - Category becomes an emoji
+    - Rating defaults to 0 due to backend not having a rating system
+- Explore’s Discover list, Home’s Recommended for You, and the club detail page now show clubs from the backend instead of mock data
+- Left on mock data for now: Join/Leave, Your Clubs, Trending, and events
+    - Club page shows "No upcoming events"
 ## 2026-10-10
 ### Backend
 #### Anthony Dominguez
