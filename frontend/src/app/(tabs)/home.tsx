@@ -9,6 +9,7 @@ import {
   Platform,
 } from "react-native";
 import { router } from "expo-router";
+import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import { NotificationBell } from "@/components/notification-bell";
 
 import {
@@ -81,6 +82,8 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.headerIcons}>
+          <DarkModeToggle />
+
           <NotificationBell
             style={styles.iconButton}
             pressedStyle={styles.pressed}
