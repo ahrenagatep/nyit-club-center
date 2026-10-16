@@ -12,6 +12,7 @@ import {
 
 import { router } from "expo-router";
 
+import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import { FormField } from "@/components/form-field";
 import { ApiError, authApi } from "@/lib/api";
 import {
@@ -136,6 +137,8 @@ export default function SignUpScreen() {
 
       {/* Header */}
       <View style={styles.header}>
+        <DarkModeToggle style={styles.themeToggle} />
+
         <View style={styles.logoBox}>
           <Text style={styles.logoEmoji}>🎓</Text>
         </View>
@@ -294,6 +297,12 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingBottom: 40,
+  },
+
+  themeToggle: {
+    position: "absolute",
+    top: 60,
+    right: 20,
   },
 
   header: {

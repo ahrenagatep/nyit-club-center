@@ -14,8 +14,10 @@ import {
 } from "react-native";
 
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
+import { DarkModeOverlay } from "@/components/dark-mode-overlay";
 import { AppStateProvider } from "@/state/app-state";
 import { AuthProvider, useAuth } from "@/state/auth";
+import { DarkModeProvider } from "@/state/dark-mode";
 import { NotificationsProvider } from "@/state/notifications";
 
 SplashScreen.preventAutoHideAsync();
@@ -27,12 +29,18 @@ export default function RootLayout() {
     <AuthProvider>
       <NotificationsProvider>
         <AppStateProvider>
-          <ThemeProvider
-            value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-          >
-            <AnimatedSplashOverlay />
-            <RootStack />
-          </ThemeProvider>
+          <DarkModeProvider>
+            <ThemeProvider
+              value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+            >
+              {/* Every screen draws inside this view, so dark mode covers them all */}
+              <View style={styles.app} collapsable={false}>
+                <AnimatedSplashOverlay />
+                <RootStack />
+                <DarkModeOverlay />
+              </View>
+            </ThemeProvider>
+          </DarkModeProvider>
         </AppStateProvider>
       </NotificationsProvider>
     </AuthProvider>
@@ -92,6 +100,12 @@ function RootStack() {
 }
 
 const styles = StyleSheet.create({
+  app: {
+    flex: 1,
+    // Opaque base and its own blending group, so DarkModeOverlay inverts the screens
+    backgroundColor: "#FFFFFF",
+    isolation: "isolate",
+  },
   loading: {
     position: "absolute",
     top: 0,

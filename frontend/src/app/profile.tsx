@@ -15,6 +15,8 @@ import {
 import { router, type Href, useFocusEffect } from "expo-router";
 
 import { openClub, openEvent } from "@/components/club-cards";
+import { DarkModeOverlay } from "@/components/dark-mode-overlay";
+import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import { Brand } from "@/constants/brand";
 import {
     formatEventDate,
@@ -188,15 +190,19 @@ export default function ProfileScreen() {
 
                     <Text style={styles.headerTitle} accessibilityRole="header">Profile</Text>
 
-                    <Pressable
-                        onPress={() => setSettingsVisible(true)}
-                        style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}
-                        hitSlop={8}
-                        accessibilityRole="button"
-                        accessibilityLabel="Settings"
-                    >
-                        <Text style={styles.settingsIcon}>⚙️</Text>
-                    </Pressable>
+                    <View style={styles.headerRight}>
+                        <DarkModeToggle />
+
+                        <Pressable
+                            onPress={() => setSettingsVisible(true)}
+                            style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}
+                            hitSlop={8}
+                            accessibilityRole="button"
+                            accessibilityLabel="Settings"
+                        >
+                            <Text style={styles.settingsIcon}>⚙️</Text>
+                        </Pressable>
+                    </View>
                 </View>
 
                 {/* Profile */}
@@ -519,6 +525,8 @@ export default function ProfileScreen() {
                                 </Text>
                             </Pressable>
                         </ScrollView>
+
+                        <DarkModeOverlay style={styles.modalOverlay} />
                     </View>
                 </KeyboardAvoidingView>
             </Modal>
@@ -575,6 +583,8 @@ export default function ProfileScreen() {
                                 <Text style={styles.comingSoon}>Coming soon</Text>
                             </View>
                         ))}
+
+                        <DarkModeOverlay style={styles.modalOverlay} />
                     </View>
                 </View>
             </Modal>
@@ -665,6 +675,11 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: "rgba(0,0,0,0.35)",
         justifyContent: "flex-end",
+    },
+    // Dark mode for the popups; a Modal draws above the root layout's overlay
+    modalOverlay: {
+        borderTopLeftRadius: 25,
+        borderTopRightRadius: 25,
     },
     // White popup that slides up from the bottom
     editModal: {
@@ -832,6 +847,12 @@ const styles = StyleSheet.create({
     },
 
     // 44x44 touch target for the back and settings buttons
+    headerRight: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+    },
+
     headerButton: {
         minWidth: 44,
         minHeight: 44,
