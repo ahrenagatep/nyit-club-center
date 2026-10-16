@@ -342,9 +342,9 @@ export function isCategory(value: unknown): value is Category {
 }
 
 /** Case-insensitive name/description search plus optional category filter (mirrors GET /clubs?search=&category=). */
-export function searchClubs(query: string, category: Category | null): Club[] {
+export function searchClubs(query: string, category: Category | null, clubs: Club[] = CLUBS): Club[] {
   const q = query.trim().toLowerCase();
-  return CLUBS.filter((club) => {
+  return clubs.filter((club) => {
     const matchesCategory = category === null || club.category === category;
     const matchesQuery =
       q === '' || club.name.toLowerCase().includes(q) || club.description.toLowerCase().includes(q);

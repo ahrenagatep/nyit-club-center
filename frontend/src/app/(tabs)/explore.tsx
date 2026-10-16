@@ -23,6 +23,8 @@ import {
   searchClubs,
   type Club,
 } from "@/data/mock-data";
+
+import { useClubs } from "@/lib/clubs";
 import { useAppState } from "@/state/app-state";
 
 type SortOption = "name" | "members" | "rating";
@@ -55,6 +57,9 @@ export default function ExploreScreen() {
   const [showFilters, setShowFilters] = useState(false);
   const { isJoined, toggleJoin, joinedClubIds } = useAppState();
 
+// clubs for the Discover list fetched from the backend (GET /clubs) 
+const { clubs, loading, error } = useClubs();
+
   const scrollRef = useRef<ScrollView>(null);
   const discoverY = useRef(0);
 
@@ -84,7 +89,7 @@ export default function ExploreScreen() {
   );
 
   const discoverClubs = useMemo(() => {
-    const results = [...searchClubs(query, category)];
+    const results = [...searchClubs(query, category, clubs)];
     if (sort === "members") {
       return results.sort((a, b) => b.member_count - a.member_count);
     }
@@ -92,7 +97,7 @@ export default function ExploreScreen() {
       return results.sort((a, b) => b.rating - a.rating);
     }
     return results.sort((a, b) => a.name.localeCompare(b.name));
-  }, [query, category, sort]);
+  }, [query, category, clubs]);
 
   // Upcoming events whose title or host club matches the search text.
   const matchingEvents = useMemo(() => {
@@ -365,7 +370,11 @@ export default function ExploreScreen() {
         )}
       </View>
 
-      {discoverClubs.length === 0 ? (
+      {loading ? (
+        <Text style={styles.emptyRowText}>Loading clubs...</Text>
+      ) : error ? (
+        <Text style={styles.emptyRowText} accessibilityRole="alert">{error}</Text>
+      ) : discoverClubs.length === 0 ? (
         <EmptyState
           emoji="🔍"
           title="No clubs found"
@@ -381,7 +390,7 @@ export default function ExploreScreen() {
               <View
                 style={styles.clubTopRow}
                 accessible
-                accessibilityLabel={`${club.name}. ${club.description} ${members} members, rated ${club.rating}, ${club.category}`}
+                accessibilityLabel={`${club.name}. ${club.description} ${members} members, rated ${club.rating}, ${club.category}`} // club rating will be 0 because backend has no club ratings... as of now
               >
                 <View style={styles.largeEmojiBox}>
                   <Text style={styles.largeEmoji}>{club.emoji}</Text>

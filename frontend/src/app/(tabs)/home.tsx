@@ -24,12 +24,15 @@ import {
   CURRENT_USER,
   getMemberCount,
   getMembershipRoleLabel,
-  RECOMMENDED_CLUB_IDS,
+  // RECOMMENDED_CLUB_IDS,
   getClubById,
   getUpcomingEvents,
   type Category,
   type Club,
 } from "@/data/mock-data";
+
+import { useClubs } from "@/lib/clubs";
+
 import { useAppState } from "@/state/app-state";
 import { useAuth } from "@/state/auth";
 
@@ -48,9 +51,10 @@ export default function HomeScreen() {
   const { joinedClubIds } = useAppState();
   const { user } = useAuth();
 
-  const recommendedClubs = RECOMMENDED_CLUB_IDS.map(getClubById).filter(
-    (club): club is Club => club !== undefined,
-  );
+  // backend has no recommendations yet, so just show the first 3 clubs for now
+  const { clubs, loading, error } = useClubs();
+  const recommendedClubs = clubs.slice(0, 3);
+
   const upcomingEvents = getUpcomingEvents().slice(0, HOME_EVENT_LIMIT);
   const yourClubs = CLUBS.filter((club) =>
     joinedClubIds.includes(club.club_id),
@@ -186,6 +190,8 @@ export default function HomeScreen() {
         showsHorizontalScrollIndicator={Platform.OS === "web"}
         contentContainerStyle={styles.clubRow}
       >
+        {loading && <Text style={styles.recommendedMessage}>Loading clubs...</Text>}
+        {!loading && error && (<Text style={styles.recommendedMessage} accessibilityRole="alert">{error}</Text>)}
         {recommendedClubs.map((club) => {
           const members = getMemberCount(
             club,
@@ -277,6 +283,13 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+
+  recommendedMessage: {
+    fontSize: 17,
+    color: "#696C7A",
+    marginLeft: 20,
+  },
+
   pressed: {
     opacity: 0.7,
   },

@@ -293,6 +293,23 @@ export const usersApi = {
     }),
 };
 
+// ---------- Clubs (/clubs) ----------
+
+export type ApiClub = {
+  club_id: number;
+  president_id: number;
+  name: string;
+  description: string;
+  category: string | null;
+  created_at: string;
+  member_count: number;
+};
+
+export const clubsApi = {
+  list: () => apiRequest<ApiClub[]>('/clubs'),
+  get: (id: number) => apiRequest<ApiClub>(`/clubs/${id}`)
+};
+
 // ---------- Skill Exchange (/skill-exchange) ----------
 
 export type SkillKind = 'request' | 'offer';

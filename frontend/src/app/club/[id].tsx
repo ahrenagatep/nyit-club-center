@@ -1,17 +1,26 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 
-import { EmptyState, EventCard, cardStyles } from '@/components/club-cards';
+import { EmptyState, cardStyles } from '@/components/club-cards';
 import { ScreenHeader } from '@/components/screen-header';
 import { Brand } from '@/constants/brand';
 import { getClubById, getEventsForClub, getMemberCount } from '@/data/mock-data';
 import { useAppState } from '@/state/app-state';
+import { useClub } from '@/lib/clubs';
 
 /** Club detail: about, join/leave, and the club's upcoming events. */
 export default function ClubScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const club = getClubById(Number(id));
+  const { club, loading, error } = useClub(Number(id));
   const { isJoined, toggleJoin } = useAppState();
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <ScreenHeader title="Loading…" />
+      </View>
+    );
+  }
 
   if (!club) {
     return (
@@ -27,7 +36,7 @@ export default function ClubScreen() {
   }
 
   const joined = isJoined(club.club_id);
-  const events = getEventsForClub(club.club_id);
+  // const events = getEventsForClub(club.club_id);
   const memberCount = getMemberCount(club, joined);
 
   return (
@@ -69,14 +78,12 @@ export default function ClubScreen() {
       <Text style={cardStyles.sectionTitle} accessibilityRole="header">
         Upcoming Events
       </Text>
-      {events.length === 0 ? (
+      {(  // add back events.length === 0 ? when we get events endpoint working
         <EmptyState
           emoji="📅"
           title="No upcoming events"
           message="Check back later for new events from this club."
         />
-      ) : (
-        events.map((event) => <EventCard key={event.event_id} event={event} showClub={false} />)
       )}
     </ScrollView>
   );
