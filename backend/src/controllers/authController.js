@@ -7,8 +7,8 @@ const pool = require('../config/db');
 const { isNyitEmail, normalizeEmail } = require('../utils/nyitEmail');
 const { USER_COLUMNS } = require('../utils/userColumns');
 
-// where the link in the confirmation email sends the user after Supabase verifies them
-const EMAIL_REDIRECT_URL = 'http://localhost:3000/verified';
+// confirmation-email link target for register() and resend(); validated at startup (see config/emailRedirect.js)
+const EMAIL_REDIRECT_URL = require('../config/emailRedirect');
 
 function missingFields(body, fields) {
   return fields.filter((field) => {
