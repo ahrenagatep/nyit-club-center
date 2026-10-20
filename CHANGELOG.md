@@ -1,4 +1,13 @@
 # Changelog
+## 2026-10-16
+### Backend
+#### Anthony Dominguez
+- Deploy prep (Render needs these; nothing changes for local development)
+    - `npm start` runs `node server.js` (Render runs `npm start`; nodemon is a dev-only tool). `engines` says Node 20 or newer
+    - the confirmation-email link target comes from the `EMAIL_REDIRECT_URL` env var (new `src/config/emailRedirect.js`). Unset, it stays `http://localhost:<PORT>/verified`, so local setups need no change. A value that isn't a full http(s) URL stops the server at startup instead of sending broken links
+    - new `backend/.env.example` lists every setting the backend reads
+    - `.gitignore` also ignores `.env.*` copies such as `.env.bak` (except `.env.example`), so credentials can't be committed by accident
+- When deploying: set `EMAIL_REDIRECT_URL=https://<api>.onrender.com/verified` and add it to Supabase → Authentication → URL Configuration → Redirect URLs
 ## 2026-10-15
 ### Frontend
 #### Ahren Agatep

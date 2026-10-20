@@ -1,2 +1,8 @@
 node_modules/
+
+# real credentials, plus any copy of them (.env.bak, .env.local, ...)
 .env
+.env.*
+
+# but keep the template (must come after .env.* since the last matching rule takes priority)
+!.env.example
