@@ -9,6 +9,7 @@ const clubsRoutes = require('./routes/clubs');
 const usersRoutes = require('./routes/users');
 const skillExchangeRoutes = require('./routes/skillExchange');
 const notificationsRoutes = require('./routes/notifications');
+const membershipsRoutes = require('./routes/memberships');
 const path = require('path'); 
 
 const app = express();
@@ -18,6 +19,7 @@ app.use(express.json());    // parses incoming JSON requests and puts into in re
 
 app.use('/auth', authRoutes);
 app.use('/clubs', clubsRoutes);
+app.use('/users/me/memberships', membershipsRoutes);
 app.use('/users', usersRoutes);
 app.use('/skill-exchange', skillExchangeRoutes);
 app.use('/notifications', notificationsRoutes);
