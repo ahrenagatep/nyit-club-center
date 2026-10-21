@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
     View,
     Text,
@@ -7,95 +7,243 @@ import {
     ScrollView,
     StyleSheet,
 } from "react-native";
+import { router } from "expo-router";
 
-export default function EventsScreen() {
-    const [viewMode, setViewMode] = useState("list"); //remove if needed
-    const [search, setSearch] = useState("");
-    const [selectedCategory, setSelectedCategory] = useState("All");
+import { EmptyState, openEvent } from "@/components/club-cards";
+import {
+    EVENT_CATEGORIES,
+    campusDateKey,
+    formatEventDateLong,
+    formatEventMonthDay,
+    formatEventTimeRange,
+    getClubById,
+    getUpcomingEvents,
+    type ClubEvent,
+    type EventCategory,
+} from "@/data/mock-data";
+import { useAppState } from "@/state/app-state";
 
-    const [clubMixerRSVP, setClubMixerRSVP] = useState(false);
-    const [stemRSVP, setStemRSVP] = useState(false);
-    const [openMicRSVP, setOpenMicRSVP] = useState(false);
+type ViewMode = "list" | "calendar";
+type CalendarMonth = { year: number; month: number }; // month is 0-11
 
+const WEEK_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-    const categories = [
-        "All",
-        "Academic",
-        "Sports",
-        "Arts",
-        "Tech",
-        "Social",
-        "Workshop",
+function pad(n: number): string {
+    return String(n).padStart(2, "0");
+}
+
+function dayKey(year: number, month: number, day: number): string {
+    return `${year}-${pad(month + 1)}-${pad(day)}`;
+}
+
+/** The month that contains today, in campus time. */
+function currentMonth(): CalendarMonth {
+    const [year, month] = campusDateKey(new Date().toISOString()).split("-");
+    return { year: Number(year), month: Number(month) - 1 };
+}
+
+function shiftMonth({ year, month }: CalendarMonth, delta: number): CalendarMonth {
+    const date = new Date(year, month + delta, 1);
+    return { year: date.getFullYear(), month: date.getMonth() };
+}
+
+/** Day numbers for a month laid out Sun-Sat, padded with nulls, split into weeks. */
+function monthWeeks({ year, month }: CalendarMonth): (number | null)[][] {
+    const firstWeekday = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const cells: (number | null)[] = [
+        ...Array<null>(firstWeekday).fill(null),
+        ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
     ];
+    while (cells.length % 7 !== 0) cells.push(null);
+
+    const weeks: (number | null)[][] = [];
+    for (let i = 0; i < cells.length; i += 7) {
+        weeks.push(cells.slice(i, i + 7));
+    }
+    return weeks;
+}
+
+/** Events tab: upcoming events as a list or a month calendar (FR-9). */
+export default function EventsScreen() {
+    const [viewMode, setViewMode] = useState<ViewMode>("list");
+    const [search, setSearch] = useState("");
+    const [selectedCategory, setSelectedCategory] = useState<EventCategory | "All">("All");
+    const [showFilters, setShowFilters] = useState(false);
+    const [goingOnly, setGoingOnly] = useState(false);
+    const [month, setMonth] = useState<CalendarMonth>(currentMonth);
+    const [selectedDay, setSelectedDay] = useState<string | null>(null);
+    const { hasRsvp, toggleRsvp } = useAppState();
+
+    const categories: (EventCategory | "All")[] = ["All", ...EVENT_CATEGORIES];
+
+    const events = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        return getUpcomingEvents().filter((event) => {
+            const club = getClubById(event.club_id);
+            const matchesQuery =
+                q === "" ||
+                event.title.toLowerCase().includes(q) ||
+                event.location.toLowerCase().includes(q) ||
+                (club?.name.toLowerCase().includes(q) ?? false);
+            const matchesCategory =
+                selectedCategory === "All" || event.category === selectedCategory;
+            const matchesGoing = !goingOnly || hasRsvp(event.event_id);
+            return matchesQuery && matchesCategory && matchesGoing;
+        });
+    }, [search, selectedCategory, goingOnly, hasRsvp]);
+
+    const eventsByDay = useMemo(() => {
+        const map = new Map<string, ClubEvent[]>();
+        for (const event of events) {
+            const key = campusDateKey(event.event_date);
+            map.set(key, [...(map.get(key) ?? []), event]);
+        }
+        return map;
+    }, [events]);
+
+    const monthPrefix = `${month.year}-${pad(month.month + 1)}-`;
+    const monthName = new Date(month.year, month.month, 1).toLocaleDateString("en-US", {
+        month: "long",
+        year: "numeric",
+    });
+    const calendarEvents = selectedDay
+        ? eventsByDay.get(selectedDay) ?? []
+        : events.filter((event) => campusDateKey(event.event_date).startsWith(monthPrefix));
+
+    const changeMonth = (delta: number) => {
+        setMonth((current) => shiftMonth(current, delta));
+        setSelectedDay(null);
+    };
+
+    const emptyState = (
+        <EmptyState
+            emoji="📅"
+            title={goingOnly ? "You haven't RSVP'd yet" : "No events found"}
+            message={
+                goingOnly
+                    ? "Tap RSVP on an event to see it here."
+                    : "Try a different search or category."
+            }
+        />
+    );
 
     return (
         <ScrollView
             style={styles.container}
             contentContainerStyle={styles.content}
+            keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
         >
             {/* Header */}
             <View style={styles.header}>
                 <View style={styles.headerTop}>
-                    <Text style={styles.headerTitle}>Events</Text>
-                    <Text style={styles.bellIcon}>🔔</Text>
+                    <Text style={styles.headerTitle} accessibilityRole="header">
+                        Events
+                    </Text>
+                    <Pressable
+                        onPress={() => router.push("/notifications")}
+                        style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
+                        hitSlop={8}
+                        accessibilityRole="button"
+                        accessibilityLabel="Notifications"
+                    >
+                        <Text style={styles.bellIcon}>🔔</Text>
+                    </Pressable>
                 </View>
 
                 {/* List & Calender */}
                 <View style={styles.viewToggle}>
-                    <Pressable
-                        style={[
-                            styles.inactiveToggle,
-                            viewMode === "list" && styles.activeToggle,
-                        ]}
-                        onPress={() => setViewMode("list")}
-                    >
-                        <Text
-                            style={[
-                                styles.inactiveToggleText,
-                                viewMode === "list" && styles.activeToggleText,
-                            ]}
-                        >
-                            LISTS
-                        </Text>
-                    </Pressable>
-
-                    <Pressable
-                        style={[
-                            styles.inactiveToggle,
-                            viewMode === "calendar" && styles.activeToggle,
-                        ]}
-                        onPress={() => setViewMode("calendar")}
-                    >
-                        <Text
-                            style={[
-                                styles.inactiveToggleText,
-                                viewMode === "calendar" && styles.activeToggleText,
-                            ]}
-                        >
-                            CALENDAR
-                        </Text>
-                    </Pressable>
+                    {(["list", "calendar"] as const).map((mode) => {
+                        const active = viewMode === mode;
+                        return (
+                            <Pressable
+                                key={mode}
+                                style={[styles.inactiveToggle, active && styles.activeToggle]}
+                                onPress={() => setViewMode(mode)}
+                                accessibilityRole="button"
+                                accessibilityState={{ selected: active }}
+                                accessibilityLabel={mode === "list" ? "List view" : "Calendar view"}
+                            >
+                                <Text
+                                    style={[
+                                        styles.inactiveToggleText,
+                                        active && styles.activeToggleText,
+                                    ]}
+                                >
+                                    {mode === "list" ? "LISTS" : "CALENDAR"}
+                                </Text>
+                            </Pressable>
+                        );
+                    })}
                 </View>
             </View>
 
             {/* Search & Filter card */}
             <View style={styles.searchCard}>
                 <View style={styles.searchBar}>
-                    <Text style={styles.searchIcon}>🔍</Text>
+                    <Text style={styles.searchIcon} importantForAccessibility="no">
+                        🔍
+                    </Text>
 
                     <TextInput
                         style={styles.searchInput}
                         placeholder="search events..."
-                        placeholderTextColor="#777B8A"
+                        placeholderTextColor="#696C7A"
                         value={search}
                         onChangeText={setSearch}
+                        returnKeyType="search"
+                        autoCorrect={false}
+                        clearButtonMode="while-editing"
+                        accessibilityLabel="Search events"
                     />
 
-                    <Pressable>
+                    <Pressable
+                        onPress={() => setShowFilters((open) => !open)}
+                        style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
+                        hitSlop={8}
+                        accessibilityRole="button"
+                        accessibilityState={{ expanded: showFilters }}
+                        accessibilityLabel="Filter events"
+                    >
                         <Text style={styles.filterIcon}>▽</Text>
                     </Pressable>
                 </View>
+
+                {/* Going filter (▽) */}
+                {showFilters && (
+                    <View style={styles.filterRow}>
+                        {[
+                            { label: "All events", value: false },
+                            { label: "Going", value: true },
+                        ].map(({ label, value }) => {
+                            const active = goingOnly === value;
+                            return (
+                                <Pressable
+                                    key={label}
+                                    style={[
+                                        styles.categoryButton,
+                                        active && styles.activeCategoryButton,
+                                    ]}
+                                    onPress={() => setGoingOnly(value)}
+                                    hitSlop={6}
+                                    accessibilityRole="button"
+                                    accessibilityState={{ selected: active }}
+                                    accessibilityLabel={`Show ${label.toLowerCase()}`}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.categoryText,
+                                            active && styles.activeCategoryText,
+                                        ]}
+                                    >
+                                        {label}
+                                    </Text>
+                                </Pressable>
+                            );
+                        })}
+                    </View>
+                )}
 
                 {/* Categories */}
                 <ScrollView
@@ -112,6 +260,10 @@ export default function EventsScreen() {
                                 styles.activeCategoryButton,
                             ]}
                             onPress={() => setSelectedCategory(category)}
+                            hitSlop={6}
+                            accessibilityRole="button"
+                            accessibilityState={{ selected: selectedCategory === category }}
+                            accessibilityLabel={`${category} events`}
                         >
                             <Text
                                 style={[
@@ -127,113 +279,86 @@ export default function EventsScreen() {
                 </ScrollView>
             </View>
 
-            {/* Event Title */}
-
-            <Text style={styles.sectionTitle}>UPcoming Events</Text>
             {viewMode === "list" ? (
                 <>
-                    {/* Club Mixer card*/}
-                    <View style={styles.eventCard}>
-                        <View style={styles.eventTop}>
-                            <View style={styles.eventInfo}>
-                                <Text style={styles.eventTitle}>Club Mixer Night</Text>
-                                <Text style={styles.clubName}>Student Council</Text>
-                            </View>
+                    {/* Event Title */}
+                    <Text style={styles.sectionTitle} accessibilityRole="header">
+                        Upcoming Events
+                    </Text>
 
-                            <View style={styles.dateBadge}>
-                                <Text style={styles.dateMonth}>Oct</Text>
-                                <Text style={styles.dateDay}>6</Text>
-                            </View>
-                        </View>
+                    {events.length === 0
+                        ? emptyState
+                        : events.map((event) => {
+                              const club = getClubById(event.club_id);
+                              const going = hasRsvp(event.event_id);
+                              const { month: badgeMonth, day: badgeDay } = formatEventMonthDay(
+                                  event.event_date,
+                              );
+                              const time = formatEventTimeRange(event);
 
-                        <Text style={styles.detailText}>🕔 6:00 PM - 9:00 PM</Text>
-                        <Text style={styles.detailText}>📍 SAC</Text>
+                              // Card body and RSVP are siblings so each is its own touch target.
+                              return (
+                                  <View key={event.event_id} style={styles.eventCard}>
+                                      <Pressable
+                                          onPress={() => openEvent(event.event_id)}
+                                          style={({ pressed }) => pressed && styles.pressed}
+                                          accessibilityRole="button"
+                                          accessibilityLabel={`${event.title}${club ? `, hosted by ${club.name}` : ""}, ${badgeMonth} ${badgeDay}, ${time}, ${event.location}`}
+                                          accessibilityHint="Opens the event details"
+                                      >
+                                          <View style={styles.eventTop}>
+                                              <View style={styles.eventInfo}>
+                                                  <Text style={styles.eventTitle}>{event.title}</Text>
+                                                  {club ? (
+                                                      <Text style={styles.clubName}>{club.name}</Text>
+                                                  ) : null}
+                                              </View>
 
-                        <View style={styles.eventBottom}>
-                            <Pressable
-                                style={[styles.rsvpButton, clubMixerRSVP && styles.rsvpActiveButton]}
+                                              <View style={styles.dateBadge}>
+                                                  <Text style={styles.dateMonth}>{badgeMonth}</Text>
+                                                  <Text style={styles.dateDay}>{badgeDay}</Text>
+                                              </View>
+                                          </View>
 
-                                onPress={() =>
-                                    setClubMixerRSVP(!clubMixerRSVP)
-                                }
-                            >
-                                <Text style={styles.rsvpText}>{clubMixerRSVP ? "RSVP'd" : "RSVP"}</Text>
-                            </Pressable>
+                                          <Text style={styles.detailText}>🕔 {time}</Text>
+                                          <Text style={styles.detailText}>📍 {event.location}</Text>
+                                      </Pressable>
 
-                            <View style={styles.eventCategory}>
-                                <Text style={styles.eventCategoryText}>Social</Text>
-                            </View>
-                        </View>
-                    </View>
+                                      <View style={styles.eventBottom}>
+                                          <Pressable
+                                              style={({ pressed }) => [
+                                                  styles.rsvpButton,
+                                                  going && styles.rsvpActiveButton,
+                                                  pressed && styles.pressed,
+                                              ]}
+                                              onPress={() => toggleRsvp(event.event_id)}
+                                              accessibilityRole="button"
+                                              accessibilityState={{ selected: going }}
+                                              accessibilityLabel={
+                                                  going
+                                                      ? `Cancel RSVP for ${event.title}`
+                                                      : `RSVP to ${event.title}`
+                                              }
+                                          >
+                                              <Text
+                                                  style={[
+                                                      styles.rsvpText,
+                                                      going && styles.rsvpActiveText,
+                                                  ]}
+                                              >
+                                                  {going ? "✓ RSVP'd" : "RSVP"}
+                                              </Text>
+                                          </Pressable>
 
-                    {/* Stem Symposium card */}
-                    <View style={styles.eventCard}>
-                        <View style={styles.eventTop}>
-                            <View style={styles.eventInfo}>
-                                <Text style={styles.eventTitle}>STEM Symposium</Text>
-                                <Text style={styles.clubName}>Engineering Society</Text>
-                            </View>
-
-                            <View style={styles.dateBadge}>
-                                <Text style={styles.dateMonth}>Oct</Text>
-                                <Text style={styles.dateDay}>21</Text>
-                            </View>
-                        </View>
-
-                        <Text style={styles.detailText}>🕙 10:00 AM - 12:00 PM</Text>
-                        <Text style={styles.detailText}>📍 Anna Rubin, Rm 301</Text>
-
-                        <View style={styles.eventBottom}>
-                            <Pressable
-                                style={[
-                                    styles.rsvpButton,
-                                    stemRSVP && styles.rsvpActiveButton,
-                                ]}
-                                onPress={() => setStemRSVP(!stemRSVP)}
-                            >
-                                <Text style={styles.rsvpText}>{stemRSVP ? "RSVP'd" : "RSVP"}</Text>
-                            </Pressable>
-
-                            <View style={styles.eventCategory}>
-                                <Text style={styles.eventCategoryText}>Academic</Text>
-                            </View>
-                        </View>
-                    </View>
-
-                    {/* Open Mic Night card */}
-                    <View style={styles.eventCard}>
-                        <View style={styles.eventTop}>
-                            <View style={styles.eventInfo}>
-                                <Text style={styles.eventTitle}>Open Mic Night</Text>
-                                <Text style={styles.clubName}> Theatre Club</Text>
-                            </View>
-
-                            <View style={styles.dateBadge}>
-                                <Text style={styles.dateMonth}>Nov</Text>
-                                <Text style={styles.dateDay}>5</Text>
-                            </View>
-                        </View>
-
-                        <Text style={styles.detailText}>🕖 7:00 PM - 10:00</Text>
-                        <Text style={styles.detailText}>📍 Auditorium</Text>
-
-                        <View style={styles.eventBottom}>
-                            <Pressable
-                                style={[
-                                    styles.rsvpButton,
-                                    openMicRSVP && styles.rsvpActiveButton,
-                                ]}
-                                onPress={() => setOpenMicRSVP(!openMicRSVP)}
-                            >
-                                <Text style={styles.rsvpText}>{openMicRSVP ? "RSVP'd" : "RSVP"}</Text>
-                            </Pressable>
-
-                            <View style={styles.eventCategory}>
-                                <Text style={styles.eventCategoryText}>Arts</Text>
-                            </View>
-                        </View>
-                    </View>
-
+                                          <View style={styles.eventCategory}>
+                                              <Text style={styles.eventCategoryText}>
+                                                  {event.category}
+                                              </Text>
+                                          </View>
+                                      </View>
+                                  </View>
+                              );
+                          })}
                 </>
             ) : (
                 <>
@@ -241,87 +366,128 @@ export default function EventsScreen() {
 
                     <View style={styles.calendarCard}>
                         <View style={styles.calendarHeader}>
-                            <Pressable>
+                            <Pressable
+                                onPress={() => changeMonth(-1)}
+                                style={({ pressed }) => [
+                                    styles.iconButton,
+                                    pressed && styles.pressed,
+                                ]}
+                                accessibilityRole="button"
+                                accessibilityLabel="Previous month"
+                            >
                                 <Text style={styles.calendarArrow}>‹</Text>
                             </Pressable>
 
-                            <Text style={styles.calendarMonth}>October 2026</Text>
+                            <Text
+                                style={styles.calendarMonth}
+                                accessibilityRole="header"
+                                accessibilityLiveRegion="polite"
+                            >
+                                {monthName}
+                            </Text>
 
-                            <Pressable>
+                            <Pressable
+                                onPress={() => changeMonth(1)}
+                                style={({ pressed }) => [
+                                    styles.iconButton,
+                                    pressed && styles.pressed,
+                                ]}
+                                accessibilityRole="button"
+                                accessibilityLabel="Next month"
+                            >
                                 <Text style={styles.calendarArrow}>›</Text>
                             </Pressable>
                         </View>
 
                         <View style={styles.weekRow}>
-                            <Text style={styles.weekDay}>Sun</Text>
-                            <Text style={styles.weekDay}>Mon</Text>
-                            <Text style={styles.weekDay}>Tue</Text>
-                            <Text style={styles.weekDay}>Wed</Text>
-                            <Text style={styles.weekDay}>Thu</Text>
-                            <Text style={styles.weekDay}>Fri</Text>
-                            <Text style={styles.weekDay}>Sat</Text>
+                            {WEEK_DAYS.map((weekDay) => (
+                                <Text key={weekDay} style={styles.weekDay}>
+                                    {weekDay}
+                                </Text>
+                            ))}
                         </View>
 
-                        <View style={styles.weekRow}>
-                            <Text style={styles.emptyDay}></Text>
-                            <Text style={styles.emptyDay}></Text>
-                            <Text style={styles.emptyDay}></Text>
-                            <Text style={styles.calendarDay}>1</Text>
-                            <Text style={styles.calendarDay}>2</Text>
-                            <Text style={styles.calendarDay}>3</Text>
-                            <Text style={styles.calendarDay}>4</Text>
-                        </View>
+                        {monthWeeks(month).map((week, weekIndex) => (
+                            <View key={weekIndex} style={styles.weekRow}>
+                                {week.map((day, dayIndex) => {
+                                    if (day === null) {
+                                        return <View key={`empty-${dayIndex}`} style={styles.emptyDay} />;
+                                    }
 
-                        <View style={styles.weekRow}>
-                            <Text style={styles.calendarDay}>5</Text>
+                                    const key = dayKey(month.year, month.month, day);
+                                    const dayEvents = eventsByDay.get(key);
 
-                            <View style={styles.eventDay}>
-                                <Text style={styles.eventDayText}>6</Text>
+                                    if (!dayEvents) {
+                                        return (
+                                            <Text key={key} style={styles.calendarDay}>
+                                                {day}
+                                            </Text>
+                                        );
+                                    }
+
+                                    const selected = selectedDay === key;
+                                    return (
+                                        <Pressable
+                                            key={key}
+                                            onPress={() => setSelectedDay(selected ? null : key)}
+                                            style={({ pressed }) => [
+                                                styles.eventDay,
+                                                selected && styles.selectedEventDay,
+                                                pressed && styles.pressed,
+                                            ]}
+                                            hitSlop={3}
+                                            accessibilityRole="button"
+                                            accessibilityState={{ selected }}
+                                            accessibilityLabel={`${formatEventDateLong(dayEvents[0].event_date)}, ${dayEvents.length} ${dayEvents.length === 1 ? "event" : "events"}`}
+                                        >
+                                            <Text style={styles.eventDayText}>{day}</Text>
+                                        </Pressable>
+                                    );
+                                })}
                             </View>
-
-                            <Text style={styles.calendarDay}>7</Text>
-                            <Text style={styles.calendarDay}>8</Text>
-                            <Text style={styles.calendarDay}>9</Text>
-                            <Text style={styles.calendarDay}>10</Text>
-
-                            <View style={styles.eventDay}>
-                                <Text style={styles.eventDayText}>11</Text>
-                            </View>
-                        </View>
-
-                        <View style={styles.weekRow}>
-                            <Text style={styles.calendarDay}>12</Text>
-                            <Text style={styles.calendarDay}>13</Text>
-                            <Text style={styles.calendarDay}>14</Text>
-                            <Text style={styles.calendarDay}>15</Text>
-                            <Text style={styles.calendarDay}>16</Text>
-                            <Text style={styles.calendarDay}>17</Text>
-
-                            <View style={styles.eventDay}>
-                                <Text style={styles.eventDayText}>18</Text>
-                            </View>
-                        </View>
-
-                        <View style={styles.weekRow}>
-                            <Text style={styles.calendarDay}>19</Text>
-                            <Text style={styles.calendarDay}>20</Text>
-                            <Text style={styles.calendarDay}>21</Text>
-                            <Text style={styles.calendarDay}>22</Text>
-                            <Text style={styles.calendarDay}>23</Text>
-                            <Text style={styles.calendarDay}>24</Text>
-                            <Text style={styles.calendarDay}>25</Text>
-                        </View>
-
-                        <View style={styles.weekRow}>
-                            <Text style={styles.calendarDay}>26</Text>
-                            <Text style={styles.calendarDay}>27</Text>
-                            <Text style={styles.calendarDay}>28</Text>
-                            <Text style={styles.calendarDay}>29</Text>
-                            <Text style={styles.calendarDay}>30</Text>
-                            <Text style={styles.calendarDay}>31</Text>
-                            <Text style={styles.emptyDay}></Text>
-                        </View>
+                        ))}
                     </View>
+
+                    <Text style={styles.sectionTitle} accessibilityRole="header">
+                        {selectedDay
+                            ? `Events on ${new Date(month.year, month.month, Number(selectedDay.slice(-2))).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                            : `Events in ${monthName}`}
+                    </Text>
+
+                    {calendarEvents.length === 0
+                        ? emptyState
+                        : calendarEvents.map((event) => {
+                              const club = getClubById(event.club_id);
+                              const { month: badgeMonth, day: badgeDay } = formatEventMonthDay(
+                                  event.event_date,
+                              );
+                              const time = formatEventTimeRange(event);
+
+                              return (
+                                  <Pressable
+                                      key={event.event_id}
+                                      onPress={() => openEvent(event.event_id)}
+                                      style={({ pressed }) => [
+                                          styles.calendarEventCard,
+                                          pressed && styles.pressed,
+                                      ]}
+                                      accessibilityRole="button"
+                                      accessibilityLabel={`${event.title}, ${badgeMonth} ${badgeDay}, ${time}, ${event.location}`}
+                                      accessibilityHint="Opens the event details"
+                                  >
+                                      <View style={styles.calendarDot} />
+                                      <View style={styles.eventInfo}>
+                                          <Text style={styles.calendarEventTitle}>{event.title}</Text>
+                                          <Text style={styles.calendarEventInfo}>
+                                              {badgeMonth} {badgeDay} · {time} · {event.location}
+                                          </Text>
+                                          {club ? (
+                                              <Text style={styles.calendarEventInfo}>{club.name}</Text>
+                                          ) : null}
+                                      </View>
+                                  </Pressable>
+                              );
+                          })}
                 </>
             )}
         </ScrollView>
@@ -337,6 +503,17 @@ const styles = StyleSheet.create({
 
     content: {
         paddingBottom: 40,
+    },
+
+    pressed: {
+        opacity: 0.7,
+    },
+
+    iconButton: {
+        minWidth: 44,
+        minHeight: 44,
+        justifyContent: "center",
+        alignItems: "center",
     },
 
     header: {
@@ -425,6 +602,7 @@ const styles = StyleSheet.create({
 
     searchInput: {
         flex: 1,
+        minHeight: 44,
         fontSize: 16,
         color: "#171717",
         letterSpacing: 0,
@@ -432,7 +610,13 @@ const styles = StyleSheet.create({
 
     filterIcon: {
         fontSize: 20,
-        color: "#777B8A",
+        color: "#696C7A",
+    },
+
+    filterRow: {
+        flexDirection: "row",
+        gap: 8,
+        marginTop: 12,
     },
 
     categoryRow: {
@@ -498,7 +682,7 @@ const styles = StyleSheet.create({
 
     clubName: {
         fontSize: 14,
-        color: "#777B8A",
+        color: "#696C7A",
         marginTop: 4,
         marginBottom: 14,
     },
@@ -525,7 +709,7 @@ const styles = StyleSheet.create({
 
     detailText: {
         fontSize: 14,
-        color: "#777B8A",
+        color: "#696C7A",
         marginTop: 5,
     },
 
@@ -539,19 +723,27 @@ const styles = StyleSheet.create({
     rsvpButton: {
         flex: 1,
         backgroundColor: "#0B55B7",
-        paddingVertical: 11,
+        minHeight: 44,
+        justifyContent: "center",
         borderRadius: 9,
         alignItems: "center",
+        borderWidth: 2,
+        borderColor: "#0B55B7",
     },
 
+    // Outlined once RSVP'd: keeps text contrast above 4.5:1 (WCAG AA).
     rsvpActiveButton: {
-        backgroundColor: "#6C8FC4",
+        backgroundColor: "#FFFFFF",
     },
 
     rsvpText: {
         color: "#FFFFFF",
         fontSize: 15,
         fontWeight: "600",
+    },
+
+    rsvpActiveText: {
+        color: "#0B55B7",
     },
 
     eventCategory: {
@@ -563,7 +755,7 @@ const styles = StyleSheet.create({
     },
 
     eventCategoryText: {
-        color: "#777B8A",
+        color: "#696C7A",
         fontSize: 13,
     },
 
@@ -606,7 +798,7 @@ const styles = StyleSheet.create({
         textAlign: "center",
         fontSize: 12,
         fontWeight: "600",
-        color: "#777B8A",
+        color: "#696C7A",
     },
 
     calendarDay: {
@@ -630,6 +822,11 @@ const styles = StyleSheet.create({
         backgroundColor: "#0B55B7",
         alignItems: "center",
         justifyContent: "center",
+    },
+
+    selectedEventDay: {
+        borderWidth: 3,
+        borderColor: "#8DB4EA",
     },
 
     eventDayText: {
@@ -665,7 +862,7 @@ const styles = StyleSheet.create({
 
     calendarEventInfo: {
         fontSize: 13,
-        color: "#777B8A",
+        color: "#696C7A",
         marginTop: 3,
     },
 });
