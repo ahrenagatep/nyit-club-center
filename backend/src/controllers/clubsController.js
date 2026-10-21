@@ -330,7 +330,7 @@ async function leaveClub(req, res) {
     }
 
     if (membership.rows[0].role === 'president') {
-      return res.status(403).json({ error: 'The president cannot leave their club' }); // !! should add president transfership so prezzies can leave when they graduate...
+      return res.status(403).json({ error: 'The president cannot leave their club' }); // the president must transfer ownership first (POST /clubs/:id/transfer), then they can leave
     }
 
     await pool.query(
