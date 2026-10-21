@@ -214,6 +214,71 @@ async function deleteClub(req, res) {
   }
 }
 
+// TRANSFER OWNERSHIP OF CLUB
+
+// POST /clubs/:id/transfer
+// requires requireAuth + requireRole('president', 'admin') in the route.
+// req.body: { new_president_id } -> 200 { message }, 400 bad id / not an active member, 404 club not found
+async function transferOwnership(req, res) {
+  const { id: club_id } = req.params;
+  const clubResult = await pool.query('SELECT president_id FROM clubs WHERE club_id = $1', [club_id]);
+  const club = clubResult.rows[0]; // undefined if no such club
+
+  // check if the club exists
+  if (!club) {
+    return res.status(404).json({ error: 'Club not found' });
+  }
+
+  // check if the new president ID is provided in req.body
+  const { new_president_id } = req.body || {};
+  if (!new_president_id) {
+    return res.status(400).json({ error: 'New president ID is required' });
+  }
+
+  // check if the new president ID is a valid integer, rejects non-integer values like strings, floats, etc.
+  const new_id = Number(new_president_id);
+  if (Number.isInteger(new_id) === false) {
+    return res.status(400).json({ error: 'Invalid president ID' });
+  }
+
+  // check if the new president is the same as the current president , transferring would do nothing
+  if (new_id === club.president_id) {
+    return res.status(400).json({ error: 'User is already the president' });
+  }
+
+  // check if the new president is an active member of the club
+  const membershipResult = await pool.query("SELECT status FROM memberships WHERE user_id = $1 AND club_id = $2 AND status = 'active'", [new_id, club_id]);
+  const membership = membershipResult.rows[0];
+  if (!membership) {
+    return res.status(400).json({ error: 'The new president must be an active member of the club' });
+  }
+
+  const client = await pool.connect();
+
+  try {
+    // transaction: the three updates succeed together or not at all, so the club never ends up with two presidents or none
+    await client.query('BEGIN');
+
+    // update the club's president_id
+    await client.query('UPDATE clubs SET president_id = $1 WHERE club_id = $2', [new_id, club_id]);
+
+    // update the old president's role to officer (could be anything, but it's set to officer for now)
+    await client.query('UPDATE memberships SET role = $1 WHERE user_id = $2 AND club_id = $3', ['officer', club.president_id, club_id]);
+
+    // update the new president's role to president
+    await client.query('UPDATE memberships SET role = $1 WHERE user_id = $2 AND club_id = $3', ['president', new_id, club_id]);
+
+    await client.query('COMMIT');
+    res.status(200).json({ message: 'Ownership transferred successfully' });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error(err);
+    res.status(500).json({ error: 'Failed to transfer ownership' });
+  } finally {
+    client.release();
+  }
+}
+
 // ENDPOINTS FOR JOINING / LEAVING CLUBS
 
 // POST /clubs/:id/join
@@ -281,4 +346,4 @@ async function leaveClub(req, res) {
 }
 
 
-module.exports = { listClubs, getClub, createClub, updateClub, deleteClub, joinClub, leaveClub };
+module.exports = { listClubs, getClub, createClub, updateClub, deleteClub, joinClub, leaveClub, transferOwnership };

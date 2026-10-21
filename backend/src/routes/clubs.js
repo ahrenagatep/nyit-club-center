@@ -1,7 +1,7 @@
 // /clubs browsing is public, managing clubs requires auth + role
 
 const express = require('express');
-const { listClubs, getClub, createClub, updateClub, deleteClub, joinClub, leaveClub } = require('../controllers/clubsController');
+const { listClubs, getClub, createClub, updateClub, deleteClub, joinClub, leaveClub, transferOwnership } = require('../controllers/clubsController');
 const { requireAuth } = require('../middleware/auth');
 const { requireRole } = require('../middleware/requireRole');
 
@@ -21,5 +21,6 @@ router.put('/:id', requireAuth, requireRole('officer', 'president', 'admin'), up
 
 // admin / club president only
 router.delete('/:id', requireAuth, requireRole('president', 'admin'), deleteClub);   // returns { message: 'Club deleted', club_id: <id> } or 404 (not found)
+router.post('/:id/transfer', requireAuth, requireRole('president', 'admin'), transferOwnership); // transfers club ownership to another active member
 
 module.exports = router;
