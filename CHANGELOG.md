@@ -1,4 +1,16 @@
 # Changelog
+## 2026-10-20
+### Backend
+#### Ahren Agatep
+- Added `GET /users/me/memberships` (login required): returns the clubs the logged-in user is in
+    - each club has the same fields as `GET /clubs` plus the user's `role` in that club
+    - the user comes from the token (`req.user.user_id`), so nobody can ask for another user's clubs
+- Added `POST /clubs/:id/transfer` (club president or admin): hands a club to another member, body `{ new_president_id }`
+    - the new president must be an active member of the club and not already the president
+    - a transaction makes three changes together: `clubs.president_id`, the new president's role becomes `president`, the old president's role becomes `officer`
+    - the old president can now leave the club (`leaveClub` blocks the president role)
+    - errors: 400 (missing or invalid id, not an active member, already the president), 403 (not president or admin), 404 (club not found)
+- Tested in Postman: memberships (with and without a token, with a user who has no clubs) and transfer (success, role changes, each error case, old president now gets 403)
 ## 2026-10-16
 ### Backend
 #### Anthony Dominguez
