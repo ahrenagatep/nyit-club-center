@@ -25,7 +25,7 @@ export default function TabLayout() {
           backgroundColor: "#FFFFFF",
         },
       }}
-    >
+    >  {/*This makes names for tabs appear on the bottom of the app*/}
       <Tabs.Screen
         name="home"
         options={{
@@ -33,7 +33,6 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => <TabIcon emoji="🏠" focused={focused} />,
         }}
       />
-
       <Tabs.Screen
         name="explore"
         options={{
@@ -41,7 +40,6 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => <TabIcon emoji="🧭" focused={focused} />,
         }}
       />
-
       <Tabs.Screen
         name="skill-exchange"
         options={{
@@ -49,7 +47,6 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => <TabIcon emoji="🧠" focused={focused} />,
         }}
       />
-
       <Tabs.Screen
         name="events"
         options={{
@@ -59,6 +56,14 @@ export default function TabLayout() {
       />
 
       {/* Account hub; opens Profile (the design's Profile tab) */}
+      <Tabs.Screen
+        name="chat"
+        options={{
+          title: "Chats"  //recent added tab
+        }}
+      />  
+
+
       <Tabs.Screen
         name="more"
         options={{
