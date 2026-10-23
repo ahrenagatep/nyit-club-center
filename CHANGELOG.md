@@ -1,4 +1,13 @@
 # Changelog
+## 2026-10-22
+### Backend
+#### Anson Chen
+- Added `PUT /users/me/avatar` (login required): uploads or replaces the logged-in user's profile picture body is the raw image file with Content-Type image/jpeg or image/png, 2MB max.
+  - The file is saved in the avatars bucket at auth_user_id/avatar and the picture is saved in users.profile_image
+  - Errors: 400 (not a JPEG/PNG, empty body, fake image), 401 (no token), 413 (over 2MB), 502 (Storage upload failed)
+- Added `DELETE /users/me/avatar`(login also required): removes the picture from the bucket and sets profile_image to null. profile_image is now in USER_COLUMNS, so login, register, verify, and `GET/PATCH /users/me` return correct info
+- Tested in Postman: upload JPEG and PNG, delete, and error cases like over 2MB, no token, wrong type, etc.
+ 
 ## 2026-10-20
 ### Backend
 #### Ahren Agatep
