@@ -13,6 +13,7 @@ import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import { NotificationBell } from "@/components/notification-bell";
 
 import { EmptyState, EventCard, openClub } from "@/components/club-cards";
+import type { ThemeColors } from "@/constants/theme";
 import {
   CATEGORIES,
   CLUBS,
@@ -27,6 +28,7 @@ import {
 
 import { useClubs } from "@/lib/clubs";
 import { useAppState } from "@/state/app-state";
+import { useTheme, useThemedStyles } from "@/state/theme";
 
 type SortOption = "name" | "members" | "rating";
 
@@ -46,6 +48,8 @@ const SORT_LABELS: Record<SortOption, string> = {
  * `q` and `filters` are one-shot and cleared after they're applied.
  */
 export default function ExploreScreen() {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const params = useLocalSearchParams<{
     category?: string;
     q?: string;
@@ -162,7 +166,7 @@ const { clubs, loading, error } = useClubs();
           <TextInput
             style={styles.searchInput}
             placeholder="Search clubs and events..."
-            placeholderTextColor="#696C7A"
+            placeholderTextColor={colors.placeholder}
             value={search}
             onChangeText={setSearch}
             returnKeyType="search"
@@ -475,10 +479,10 @@ const { clubs, loading, error } = useClubs();
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.background,
   },
 
   content: {
@@ -502,7 +506,7 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    backgroundColor: "#0B55B7",
+    backgroundColor: colors.header,
     paddingTop: 70,
     paddingBottom: 75,
     paddingHorizontal: 24,
@@ -512,7 +516,7 @@ const styles = StyleSheet.create({
   },
 
   headerTitle: {
-    color: "#FFFFFF",
+    color: colors.onHeader,
     fontSize: 30,
     fontWeight: "bold",
   },
@@ -527,13 +531,13 @@ const styles = StyleSheet.create({
   },
 
   searchCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     marginHorizontal: 20,
     marginTop: -35,
     borderRadius: 23,
     padding: 16,
 
-    shadowColor: "#000000",
+    shadowColor: colors.shadow,
     shadowOpacity: 0.08,
     shadowRadius: 10,
     shadowOffset: {
@@ -558,7 +562,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 44,
     fontSize: 17,
-    color: "#171717",
+    color: colors.text,
   },
 
   filterIcon: {
@@ -572,7 +576,7 @@ const styles = StyleSheet.create({
   sortLabel: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#171717",
+    color: colors.text,
     marginBottom: 10,
   },
 
@@ -591,24 +595,24 @@ const styles = StyleSheet.create({
   },
 
   categoryButton: {
-    backgroundColor: "#F1F1F3",
+    backgroundColor: colors.surfaceMuted,
     paddingVertical: 10,
     paddingHorizontal: 19,
     borderRadius: 15,
   },
 
   activeCategoryButton: {
-    backgroundColor: "#0B55B7",
+    backgroundColor: colors.primary,
   },
 
   categoryText: {
-    color: "#171717",
+    color: colors.text,
     fontWeight: "600",
     fontSize: 15,
   },
 
   activeCategoryText: {
-    color: "#FFFFFF",
+    color: colors.onPrimary,
     fontWeight: "600",
     fontSize: 15,
   },
@@ -625,24 +629,24 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 23,
     fontWeight: "bold",
-    color: "#171717",
+    color: colors.text,
   },
 
   sectionLink: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#0B55B7",
+    color: colors.textAccent,
   },
 
   resultCount: {
     fontSize: 15,
-    color: "#696C7A",
+    color: colors.textMuted,
   },
 
   emptyRowText: {
     marginHorizontal: 20,
     fontSize: 15,
-    color: "#696C7A",
+    color: colors.textMuted,
   },
 
   horizontalCards: {
@@ -654,9 +658,9 @@ const styles = StyleSheet.create({
     width: 180,
     minHeight: 205,
     padding: 18,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#E2E2E5",
+    borderColor: colors.border,
     borderRadius: 18,
   },
 
@@ -668,11 +672,11 @@ const styles = StyleSheet.create({
   smallClubName: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#171717",
+    color: colors.text,
   },
 
   clubMembers: {
-    color: "#696C7A",
+    color: colors.textMuted,
     fontSize: 14,
     marginTop: 8,
   },
@@ -683,11 +687,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 11,
     paddingVertical: 5,
     borderRadius: 13,
-    backgroundColor: "#DDEEFF",
+    backgroundColor: colors.tagBackground,
   },
 
   tagText: {
-    color: "#0B55B7",
+    color: colors.textAccent,
     fontSize: 13,
     fontWeight: "500",
   },
@@ -696,29 +700,29 @@ const styles = StyleSheet.create({
     width: 240,
     minHeight: 220,
     padding: 18,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#E2E2E5",
+    borderColor: colors.border,
     borderRadius: 18,
   },
 
   trendingName: {
     fontSize: 19,
     fontWeight: "600",
-    color: "#171717",
+    color: colors.text,
     marginBottom: 7,
   },
 
   clubDescription: {
     fontSize: 14,
     lineHeight: 20,
-    color: "#696C7A",
+    color: colors.textMuted,
   },
 
   trendingInfo: {
     marginTop: 15,
     fontSize: 14,
-    color: "#696C7A",
+    color: colors.textMuted,
   },
 
   largeClubCard: {
@@ -726,9 +730,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     padding: 18,
     borderWidth: 1,
-    borderColor: "#E2E2E5",
+    borderColor: colors.border,
     borderRadius: 18,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
   },
 
   clubTopRow: {
@@ -740,7 +744,7 @@ const styles = StyleSheet.create({
     width: 65,
     height: 65,
     borderRadius: 16,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surfaceMutedEmoji,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 14,
@@ -757,7 +761,7 @@ const styles = StyleSheet.create({
   largeClubName: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#171717",
+    color: colors.text,
     marginBottom: 5,
   },
 
@@ -769,7 +773,7 @@ const styles = StyleSheet.create({
 
   statText: {
     fontSize: 13,
-    color: "#696C7A",
+    color: colors.textMuted,
   },
 
   actionRow: {
@@ -780,7 +784,7 @@ const styles = StyleSheet.create({
 
   joinButton: {
     flex: 1,
-    backgroundColor: "#0B55B7",
+    backgroundColor: colors.primary,
     minHeight: 44,
     justifyContent: "center",
     borderRadius: 11,
@@ -788,34 +792,34 @@ const styles = StyleSheet.create({
   },
 
   joinButtonText: {
-    color: "#FFFFFF",
+    color: colors.onPrimary,
     fontWeight: "600",
     fontSize: 16,
   },
 
   leaveButton: {
-    backgroundColor: "#F1F1F3",
+    backgroundColor: colors.surfaceMuted,
     borderWidth: 1,
-    borderColor: "#D5D7DC",
+    borderColor: colors.borderStrongLeave,
   },
 
   leaveButtonText: {
-    color: "#171717",
+    color: colors.text,
   },
 
   viewButton: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     minHeight: 44,
     justifyContent: "center",
     borderRadius: 11,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#0B55B7",
+    borderColor: colors.primary,
   },
 
   viewButtonText: {
-    color: "#0B55B7",
+    color: colors.textAccent,
     fontWeight: "600",
     fontSize: 16,
   },

@@ -1,6 +1,8 @@
 import { Text } from "react-native";
 import { Tabs } from "expo-router";
 
+import { useTheme } from "@/state/theme";
+
 /** Emoji tab icon, matching the app's other icons. Dimmed when its tab isn't selected; the label names the tab. */
 function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
   return (
@@ -15,14 +17,15 @@ function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
 }
 
 export default function TabLayout() {
+  const { colors } = useTheme();
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: "#0B55B7",
-        tabBarInactiveTintColor: "#000000",
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textTabInactive,
         tabBarStyle: {
-          backgroundColor: "#FFFFFF",
+          backgroundColor: colors.surface,
         },
       }}
     >  {/*This makes names for tabs appear on the bottom of the app*/}

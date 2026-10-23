@@ -9,13 +9,16 @@ import {
 
 import { router, useLocalSearchParams } from "expo-router";
 
+import type { ThemeColors } from "@/constants/theme";
 import { ApiError, authApi } from "@/lib/api";
+import { useThemedStyles } from "@/state/theme";
 
 type ResendStatus = "idle" | "sending" | "sent";
 
 // Shown after Sign Up. Supabase emails a confirmation link; once the user taps
 // it they can log in. "Resend" asks the backend to send the email again.
 export default function VerificationScreen() {
+    const styles = useThemedStyles(createStyles);
     const { email } = useLocalSearchParams<{ email?: string }>();
     const address = typeof email === "string" ? email : "";
 
@@ -112,11 +115,11 @@ export default function VerificationScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
 
     container: {
         flex: 1,
-        backgroundColor: "#F5F7FA",
+        backgroundColor: colors.backgroundMuted,
         paddingHorizontal: 25,
         paddingTop: 70,
     },
@@ -131,16 +134,16 @@ const styles = StyleSheet.create({
 
     backArrow: {
         fontSize: 40,
-        color: "#171717",
+        color: colors.text,
     },
 
     popupCard: {
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
         borderRadius: 20,
         padding: 28,
         alignItems: "center",
 
-        shadowColor: "#000000",
+        shadowColor: colors.shadow,
         shadowOpacity: 0.08,
         shadowRadius: 10,
         shadowOffset: {
@@ -158,13 +161,13 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 28,
         fontWeight: "bold",
-        color: "#171717",
+        color: colors.text,
     },
 
     message: {
         marginTop: 15,
         fontSize: 16,
-        color: "#696C7A",
+        color: colors.textMuted,
         textAlign: "center",
     },
 
@@ -172,19 +175,19 @@ const styles = StyleSheet.create({
         marginTop: 8,
         fontSize: 16,
         fontWeight: "600",
-        color: "#0B55B7",
+        color: colors.textAccent,
     },
 
     instructions: {
         marginTop: 20,
         fontSize: 15,
-        color: "#696C7A",
+        color: colors.textMuted,
         textAlign: "center",
         lineHeight: 22,
     },
 
     loginButton: {
-        backgroundColor: "#0B55B7",
+        backgroundColor: colors.primary,
         width: "100%",
         paddingVertical: 15,
         borderRadius: 12,
@@ -193,7 +196,7 @@ const styles = StyleSheet.create({
     },
 
     loginButtonText: {
-        color: "#FFFFFF",
+        color: colors.onPrimary,
         fontSize: 17,
         fontWeight: "600",
     },
@@ -205,19 +208,19 @@ const styles = StyleSheet.create({
     },
 
     resendButton: {
-        color: "#0B55B7",
+        color: colors.textAccent,
         fontSize: 14,
         fontWeight: "600",
     },
 
     resendNote: {
-        color: "#171717",
+        color: colors.text,
         fontSize: 14,
         marginTop: 20,
     },
 
     resendError: {
-        color: "#C62828",
+        color: colors.error,
         fontSize: 14,
         marginTop: 8,
         textAlign: "center",

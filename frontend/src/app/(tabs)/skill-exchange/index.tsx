@@ -20,7 +20,7 @@ import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import { NotificationBell } from "@/components/notification-bell";
 import { SkillPostCard } from "@/components/skill-cards";
 import { TagPicker, useSkillTagGroups } from "@/components/tag-picker";
-import { Brand } from "@/constants/brand";
+import type { ThemeColors } from "@/constants/theme";
 import {
     ApiError,
     skillApi,
@@ -30,6 +30,7 @@ import {
     type SkillStatus,
 } from "@/lib/api";
 import { useAuth } from "@/state/auth";
+import { useTheme, useThemedStyles } from "@/state/theme";
 
 const PAGE_SIZE = 20;
 const SEARCH_DELAY_MS = 300;
@@ -63,6 +64,8 @@ function errorMessage(error: unknown): string {
 
 /** Skill Exchange tab: students request help or offer it (Requests | Offers). */
 export default function SkillExchangeScreen() {
+    const styles = useThemedStyles(createStyles);
+    const { colors } = useTheme();
     const { session } = useAuth();
     const tagGroups = useSkillTagGroups();
 
@@ -253,7 +256,7 @@ export default function SkillExchangeScreen() {
                         <TextInput
                             style={styles.searchInput}
                             placeholder={`Search ${noun} or students...`}
-                            placeholderTextColor={Brand.textMuted}
+                            placeholderTextColor={colors.placeholder}
                             value={search}
                             onChangeText={setSearch}
                             returnKeyType="search"
@@ -314,7 +317,7 @@ export default function SkillExchangeScreen() {
                 </View>
 
                 {loading ? (
-                    <ActivityIndicator style={styles.spinner} size="large" color={Brand.primary} accessibilityLabel={`Loading ${noun}`} />
+                    <ActivityIndicator style={styles.spinner} size="large" color={colors.primary} accessibilityLabel={`Loading ${noun}`} />
                 ) : error ? (
                     <View style={styles.errorBox}>
                         <Text style={styles.errorText} accessibilityRole="alert">{error}</Text>
@@ -458,8 +461,8 @@ export default function SkillExchangeScreen() {
                                 <Switch
                                     value={mine}
                                     onValueChange={setMine}
-                                    trackColor={{ true: Brand.primary, false: "#C9CBD1" }}
-                                    thumbColor={Brand.white}
+                                    trackColor={{ true: colors.primary, false: colors.switchTrackOff }}
+                                    thumbColor={colors.switchThumb}
                                     accessibilityLabel="Only my posts"
                                     accessibilityLabelledBy="mine-label"
                                 />
@@ -499,10 +502,10 @@ export default function SkillExchangeScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.background,
     },
 
     content: {
@@ -520,7 +523,7 @@ const styles = StyleSheet.create({
     /* Header */
 
     header: {
-        backgroundColor: Brand.primary,
+        backgroundColor: colors.header,
         paddingTop: 60,
         paddingHorizontal: 20,
         paddingBottom: 24,
@@ -538,13 +541,13 @@ const styles = StyleSheet.create({
     },
 
     headerTitle: {
-        color: "#FFFFFF",
+        color: colors.onHeader,
         fontSize: 27,
         fontWeight: "bold",
     },
 
     headerSubtitle: {
-        color: "#E6EEFB",
+        color: colors.onHeaderMuted,
         fontSize: 13,
         marginTop: 5,
         maxWidth: 250,
@@ -568,7 +571,7 @@ const styles = StyleSheet.create({
 
     postButton: {
         borderWidth: 1,
-        borderColor: "#FFFFFF",
+        borderColor: colors.onHeader,
         paddingHorizontal: 15,
         minHeight: 44,
         justifyContent: "center",
@@ -576,7 +579,7 @@ const styles = StyleSheet.create({
     },
 
     postButtonText: {
-        color: "#FFFFFF",
+        color: colors.onHeader,
         fontWeight: "600",
         fontSize: 15,
     },
@@ -584,7 +587,7 @@ const styles = StyleSheet.create({
     kindToggle: {
         marginTop: 20,
         flexDirection: "row",
-        backgroundColor: "#2467BD",
+        backgroundColor: colors.headerControl,
         borderRadius: 10,
         padding: 4,
     },
@@ -598,16 +601,16 @@ const styles = StyleSheet.create({
     },
 
     kindButtonActive: {
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
     },
 
     kindText: {
-        color: "#FFFFFF",
+        color: colors.onHeader,
         fontWeight: "600",
     },
 
     kindTextActive: {
-        color: Brand.primary,
+        color: colors.textAccent,
     },
 
     /* Search */
@@ -623,7 +626,7 @@ const styles = StyleSheet.create({
     searchBar: {
         flex: 1,
         height: 50,
-        backgroundColor: "#F4F4F6",
+        backgroundColor: colors.inputBackground,
         borderRadius: 14,
         paddingHorizontal: 14,
 
@@ -640,11 +643,11 @@ const styles = StyleSheet.create({
         flex: 1,
         minHeight: 44,
         fontSize: 15,
-        color: "#171717",
+        color: colors.text,
     },
 
     filterButton: {
-        backgroundColor: Brand.primary,
+        backgroundColor: colors.primary,
         paddingHorizontal: 15,
         height: 50,
         borderRadius: 14,
@@ -653,7 +656,7 @@ const styles = StyleSheet.create({
     },
 
     filterButtonText: {
-        color: "#FFFFFF",
+        color: colors.onPrimary,
         fontWeight: "600",
     },
 
@@ -670,7 +673,7 @@ const styles = StyleSheet.create({
     },
 
     activeFilterTag: {
-        backgroundColor: "#EAF3FF",
+        backgroundColor: colors.primaryTintProfile,
         paddingHorizontal: 12,
         minHeight: 36,
         justifyContent: "center",
@@ -678,7 +681,7 @@ const styles = StyleSheet.create({
     },
 
     activeFilterText: {
-        color: Brand.primary,
+        color: colors.textAccent,
         fontSize: 13,
         fontWeight: "600",
     },
@@ -690,7 +693,7 @@ const styles = StyleSheet.create({
     },
 
     clearAllText: {
-        color: Brand.textMuted,
+        color: colors.textMuted,
         fontSize: 13,
         textDecorationLine: "underline",
     },
@@ -709,12 +712,12 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 20,
         fontWeight: "bold",
-        color: "#171717",
+        color: colors.text,
     },
 
     sectionCount: {
         fontSize: 13,
-        color: Brand.textMuted,
+        color: colors.textMuted,
     },
 
     errorBox: {
@@ -724,7 +727,7 @@ const styles = StyleSheet.create({
     },
 
     errorText: {
-        color: "#C62828",
+        color: colors.error,
         fontSize: 15,
         textAlign: "center",
         marginBottom: 12,
@@ -735,12 +738,12 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         borderRadius: 12,
         borderWidth: 1.5,
-        borderColor: Brand.primary,
+        borderColor: colors.primary,
         justifyContent: "center",
     },
 
     retryText: {
-        color: Brand.primary,
+        color: colors.textAccent,
         fontWeight: "600",
     },
 
@@ -749,13 +752,13 @@ const styles = StyleSheet.create({
         minHeight: 48,
         borderRadius: 12,
         borderWidth: 1.5,
-        borderColor: Brand.primary,
+        borderColor: colors.primary,
         alignItems: "center",
         justifyContent: "center",
     },
 
     moreText: {
-        color: Brand.primary,
+        color: colors.textAccent,
         fontWeight: "600",
         fontSize: 15,
     },
@@ -764,7 +767,7 @@ const styles = StyleSheet.create({
 
     modalBackground: {
         flex: 1,
-        backgroundColor: "rgba(0,0,0,0.35)",
+        backgroundColor: colors.backdrop,
         justifyContent: "flex-end",
     },
 
@@ -779,7 +782,7 @@ const styles = StyleSheet.create({
     },
 
     filterModal: {
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
         borderTopLeftRadius: 25,
         borderTopRightRadius: 25,
         paddingHorizontal: 22,
@@ -799,7 +802,7 @@ const styles = StyleSheet.create({
     filterTitle: {
         fontSize: 23,
         fontWeight: "bold",
-        color: "#171717",
+        color: colors.text,
     },
 
     closeHit: {
@@ -811,13 +814,13 @@ const styles = StyleSheet.create({
 
     closeButton: {
         fontSize: 22,
-        color: Brand.textMuted,
+        color: colors.textMuted,
     },
 
     filterSectionTitle: {
         fontSize: 16,
         fontWeight: "600",
-        color: "#171717",
+        color: colors.text,
 
         marginTop: 16,
         marginBottom: 12,
@@ -826,7 +829,7 @@ const styles = StyleSheet.create({
     filterSectionTitleInline: {
         fontSize: 16,
         fontWeight: "600",
-        color: "#171717",
+        color: colors.text,
     },
 
     switchRow: {
@@ -845,7 +848,7 @@ const styles = StyleSheet.create({
     },
 
     optionButton: {
-        backgroundColor: "#F1F1F3",
+        backgroundColor: colors.surfaceMuted,
 
         paddingHorizontal: 14,
         minHeight: 40,
@@ -855,16 +858,16 @@ const styles = StyleSheet.create({
     },
 
     selectedOption: {
-        backgroundColor: Brand.primary,
+        backgroundColor: colors.primary,
     },
 
     optionText: {
-        color: "#171717",
+        color: colors.text,
         fontSize: 13,
     },
 
     selectedOptionText: {
-        color: "#FFFFFF",
+        color: colors.onPrimary,
         fontWeight: "600",
     },
 
@@ -881,7 +884,7 @@ const styles = StyleSheet.create({
         flex: 1,
 
         borderWidth: 1,
-        borderColor: Brand.primary,
+        borderColor: colors.primary,
 
         minHeight: 48,
         justifyContent: "center",
@@ -892,7 +895,7 @@ const styles = StyleSheet.create({
     },
 
     clearButtonText: {
-        color: Brand.primary,
+        color: colors.textAccent,
         fontSize: 15,
         fontWeight: "600",
     },
@@ -900,7 +903,7 @@ const styles = StyleSheet.create({
     showButton: {
         flex: 2,
 
-        backgroundColor: Brand.primary,
+        backgroundColor: colors.primary,
 
         minHeight: 48,
         justifyContent: "center",
@@ -911,7 +914,7 @@ const styles = StyleSheet.create({
     },
 
     showButtonText: {
-        color: "#FFFFFF",
+        color: colors.onPrimary,
         fontSize: 15,
         fontWeight: "600",
     },

@@ -17,7 +17,6 @@ import { router, type Href, useFocusEffect } from "expo-router";
 import { openClub, openEvent } from "@/components/club-cards";
 import { DarkModeOverlay } from "@/components/dark-mode-overlay";
 import { DarkModeToggle } from "@/components/dark-mode-toggle";
-import { Brand } from "@/constants/brand";
 import {
     formatEventDate,
     getClubById,
@@ -27,8 +26,10 @@ import {
 } from "@/data/mock-data";
 import { ApiError, PROFILE_LIMITS, SCHOOL_YEARS, skillApi, usersApi, type SchoolYear, type SkillSummary } from "@/lib/api";
 import { KIND_LABEL, STATUS_LABEL, openSkillPost } from "@/components/skill-cards";
+import type { ThemeColors } from "@/constants/theme";
 import { useAppState } from "@/state/app-state";
 import { useAuth } from "@/state/auth";
+import { useTheme, useThemedStyles } from "@/state/theme";
 
 /** How many clubs/events each section shows before "View All". */
 const PREVIEW_COUNT = 2;
@@ -48,6 +49,8 @@ function goBack() {
  * pop-up and saved to the account (PATCH /users/me).
  */
 export default function ProfileScreen() {
+    const styles = useThemedStyles(createStyles);
+    const { colors } = useTheme();
     const { user, session, signOut, updateUser } = useAuth();
     const { joinedClubIds, rsvpEventIds } = useAppState();
 
@@ -432,7 +435,7 @@ export default function ProfileScreen() {
                             <TextInput
                                 style={styles.majorInput}
                                 placeholder="Enter your major"
-                                placeholderTextColor={Brand.textMuted}
+                                placeholderTextColor={colors.placeholder}
                                 value={editMajor}
                                 onChangeText={setEditMajor}
                                 accessibilityLabel="Major"
@@ -490,7 +493,7 @@ export default function ProfileScreen() {
                                 // Allows multiple lines of text
                                 multiline={true}
                                 placeholder="Tell us about yourself..."
-                                placeholderTextColor={Brand.textMuted}
+                                placeholderTextColor={colors.placeholder}
                                 value={editBio}
                                 onChangeText={setEditBio}
                                 maxLength={PROFILE_LIMITS.bio}
@@ -603,6 +606,7 @@ function SectionHeader({
     viewAllLabel: string;
     onViewAll: () => void;
 }) {
+    const styles = useThemedStyles(createStyles);
     return (
         <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitleNoMargin} accessibilityRole="header">{title}</Text>
@@ -634,6 +638,7 @@ function ActivityRow({
     hint?: string;
     onPress: () => void;
 }) {
+    const styles = useThemedStyles(createStyles);
     return (
         <Pressable
             onPress={onPress}
@@ -656,10 +661,10 @@ function ActivityRow({
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.background,
     },
 
     content: {
@@ -673,7 +678,7 @@ const styles = StyleSheet.create({
     // Dark background behind the popup
     modalBackground: {
         flex: 1,
-        backgroundColor: "rgba(0,0,0,0.35)",
+        backgroundColor: colors.backdrop,
         justifyContent: "flex-end",
     },
     // Dark mode for the popups; a Modal draws above the root layout's overlay
@@ -683,7 +688,7 @@ const styles = StyleSheet.create({
     },
     // White popup that slides up from the bottom
     editModal: {
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
 
         borderTopLeftRadius: 25,
         borderTopRightRadius: 25,
@@ -706,7 +711,7 @@ const styles = StyleSheet.create({
     editTitle: {
         fontSize: 23,
         fontWeight: "bold",
-        color: "#171717",
+        color: colors.text,
     },
     // 44x44 touch target around the ✕
     closeButtonArea: {
@@ -717,25 +722,25 @@ const styles = StyleSheet.create({
     },
     closeButton: {
         fontSize: 22,
-        color: Brand.textMuted,
+        color: colors.textMuted,
     },
     // Label for Major, School Year, and Bio
     formLabel: {
         fontSize: 16,
         fontWeight: "600",
-        color: "#171717",
+        color: colors.text,
         marginTop: 22,
         marginBottom: 10,
     },
     // Textbox where the user types their major
     majorInput: {
         borderWidth: 1,
-        borderColor: "#D9DBE1",
+        borderColor: colors.borderStrongProfile,
         borderRadius: 14,
         paddingHorizontal: 14,
         paddingVertical: 12,
         fontSize: 14,
-        color: "#171717",
+        color: colors.text,
     },
     // Holds the school year selection buttons
     optionRow: {
@@ -745,7 +750,7 @@ const styles = StyleSheet.create({
     },
     // Default school year button
     optionButton: {
-        backgroundColor: "#F1F1F3",
+        backgroundColor: colors.surfaceMuted,
         paddingHorizontal: 14,
         paddingVertical: 9,
         minHeight: 44,
@@ -754,32 +759,32 @@ const styles = StyleSheet.create({
     },
     // Blue style for the selected school year
     selectedOption: {
-        backgroundColor: "#0B55B7",
+        backgroundColor: colors.primary,
     },
 
     optionText: {
-        color: "#171717",
+        color: colors.text,
         fontSize: 13,
     },
     // Makes the selected school year text white
     selectedOptionText: {
-        color: "#FFFFFF",
+        color: colors.onPrimary,
         fontWeight: "600",
     },
     // Multiline textbox for the user's bio
     bioInput: {
         minHeight: 110,
         borderWidth: 1,
-        borderColor: "#D9DBE1",
+        borderColor: colors.borderStrongProfile,
         borderRadius: 14,
         padding: 14,
         fontSize: 14,
-        color: "#171717",
+        color: colors.text,
         textAlignVertical: "top",
     },
     // Button that saves the edited profile information
     saveButton: {
-        backgroundColor: "#0B55B7",
+        backgroundColor: colors.primary,
         marginTop: 28,
         paddingVertical: 14,
         borderRadius: 12,
@@ -787,13 +792,13 @@ const styles = StyleSheet.create({
     },
 
     saveButtonText: {
-        color: "#FFFFFF",
+        color: colors.onPrimary,
         fontSize: 15,
         fontWeight: "600",
     },
 
     saveError: {
-        color: Brand.danger,
+        color: colors.errorProfile,
         fontSize: 14,
         marginTop: 16,
     },
@@ -805,15 +810,15 @@ const styles = StyleSheet.create({
         marginTop: 10,
         paddingHorizontal: 15,
         borderWidth: 1,
-        borderColor: "#E0E2E6",
+        borderColor: colors.borderProfile,
         borderRadius: 15,
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
     },
 
     settingsRowDisabled: {
-        backgroundColor: "#F1F1F3",
+        backgroundColor: colors.surfaceMuted,
     },
 
     settingsRowIcon: {
@@ -825,19 +830,19 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 15,
         fontWeight: "600",
-        color: "#171717",
+        color: colors.text,
     },
 
     comingSoon: {
         fontSize: 13,
-        color: Brand.textMuted,
+        color: colors.textMuted,
     },
 
 
     /* HEADER */
 
     header: {
-        backgroundColor: "#0B55B7",
+        backgroundColor: colors.header,
         paddingTop: 60,
         paddingHorizontal: 20,
         paddingBottom: 75,
@@ -846,13 +851,14 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
     },
 
-    // 44x44 touch target for the back and settings buttons
+    // Dark mode button and settings button, side by side
     headerRight: {
         flexDirection: "row",
         alignItems: "center",
         gap: 8,
     },
 
+    // 44x44 touch target for the back and settings buttons
     headerButton: {
         minWidth: 44,
         minHeight: 44,
@@ -861,12 +867,12 @@ const styles = StyleSheet.create({
     },
 
     backArrow: {
-        color: "#FFFFFF",
+        color: colors.onHeader,
         fontSize: 38,
     },
 
     headerTitle: {
-        color: "#FFFFFF",
+        color: colors.onHeader,
         fontSize: 27,
         fontWeight: "bold",
     },
@@ -878,12 +884,12 @@ const styles = StyleSheet.create({
     /*Profile */
 
     profileCard: {
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
         marginHorizontal: 18,
         marginTop: -55,
         borderRadius: 18,
         padding: 18,
-        shadowColor: "#000000",
+        shadowColor: colors.shadow,
         shadowOpacity: 0.09,
         shadowRadius: 8,
         shadowOffset: {
@@ -903,7 +909,7 @@ const styles = StyleSheet.create({
         width: 88,
         height: 88,
         borderRadius: 44,
-        backgroundColor: "#EAF3FF",
+        backgroundColor: colors.primaryTintProfile,
         alignItems: "center",
         justifyContent: "center",
         marginRight: 15,
@@ -920,32 +926,32 @@ const styles = StyleSheet.create({
     name: {
         fontSize: 22,
         fontWeight: "bold",
-        color: "#171717",
+        color: colors.text,
     },
 
     major: {
         fontSize: 15,
-        color: "#666A78",
+        color: colors.textMutedProfile,
         marginTop: 4,
     },
 
     year: {
         fontSize: 14,
-        color: Brand.textMuted,
+        color: colors.textMuted,
         marginTop: 3,
     },
 
     roleTag: {
         alignSelf: "flex-start",
         marginTop: 8,
-        backgroundColor: Brand.tagBackground,
+        backgroundColor: colors.tagBackground,
         borderRadius: 12,
         paddingHorizontal: 10,
         paddingVertical: 4,
     },
 
     roleText: {
-        color: Brand.primary,
+        color: colors.textAccent,
         fontSize: 13,
         fontWeight: "600",
     },
@@ -958,13 +964,13 @@ const styles = StyleSheet.create({
     },
 
     editIcon: {
-        color: "#0B55B7",
+        color: colors.textAccent,
         fontSize: 27,
     },
 
     bio: {
         fontSize: 14,
-        color: "#666A78",
+        color: colors.textMutedProfile,
         lineHeight: 20,
         marginTop: 20,
         marginBottom: 12,
@@ -988,7 +994,7 @@ const styles = StyleSheet.create({
     infoText: {
         flexShrink: 1,
         fontSize: 13,
-        color: "#666A78",
+        color: colors.textMutedProfile,
     },
 
     /* Section */
@@ -999,13 +1005,13 @@ const styles = StyleSheet.create({
         marginBottom: 12,
         fontSize: 21,
         fontWeight: "bold",
-        color: "#171717",
+        color: colors.text,
     },
 
     sectionTitleNoMargin: {
         fontSize: 21,
         fontWeight: "bold",
-        color: "#171717",
+        color: colors.text,
     },
 
     /* Stats */
@@ -1019,12 +1025,12 @@ const styles = StyleSheet.create({
     statCard: {
         flex: 1,
         borderWidth: 1,
-        borderColor: "#E0E2E6",
+        borderColor: colors.borderProfile,
         borderRadius: 16,
         paddingVertical: 17,
         paddingHorizontal: 5,
         alignItems: "center",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
     },
 
     statIcon: {
@@ -1034,13 +1040,13 @@ const styles = StyleSheet.create({
     statNumber: {
         fontSize: 21,
         fontWeight: "bold",
-        color: "#171717",
+        color: colors.text,
         marginTop: 6,
     },
 
     statLabel: {
         fontSize: 11,
-        color: Brand.textMuted,
+        color: colors.textMuted,
         textAlign: "center",
         marginTop: 4,
     },
@@ -1062,7 +1068,7 @@ const styles = StyleSheet.create({
     },
 
     viewAll: {
-        color: "#0B55B7",
+        color: colors.textAccent,
         fontSize: 14,
         fontWeight: "600",
     },
@@ -1072,18 +1078,18 @@ const styles = StyleSheet.create({
         marginBottom: 11,
         padding: 15,
         borderWidth: 1,
-        borderColor: "#E0E2E6",
+        borderColor: colors.borderProfile,
         borderRadius: 15,
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
     },
 
     activityIconBox: {
         width: 52,
         height: 52,
         borderRadius: 14,
-        backgroundColor: "#EAF3FF",
+        backgroundColor: colors.primaryTintProfile,
         alignItems: "center",
         justifyContent: "center",
         marginRight: 13,
@@ -1100,18 +1106,18 @@ const styles = StyleSheet.create({
     activityTitle: {
         fontSize: 15,
         fontWeight: "600",
-        color: "#171717",
+        color: colors.text,
     },
 
     activitySubtitle: {
         fontSize: 12,
-        color: Brand.textMuted,
+        color: colors.textMuted,
         marginTop: 4,
     },
 
     arrow: {
         fontSize: 27,
-        color: Brand.textMuted,
+        color: colors.textMuted,
     },
 
     /* Sign out */
@@ -1122,13 +1128,13 @@ const styles = StyleSheet.create({
         minHeight: 52,
         borderRadius: 15,
         borderWidth: 2,
-        borderColor: Brand.danger,
+        borderColor: colors.danger,
         justifyContent: "center",
         alignItems: "center",
     },
 
     signOutText: {
-        color: Brand.danger,
+        color: colors.danger,
         fontSize: 16,
         fontWeight: "bold",
     },

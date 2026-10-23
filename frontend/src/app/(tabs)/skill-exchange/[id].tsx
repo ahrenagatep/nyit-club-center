@@ -23,10 +23,11 @@ import {
   backToOrigin,
 } from '@/components/skill-cards';
 import { SkillComments } from '@/components/skill-comments';
-import { Brand } from '@/constants/brand';
+import type { ThemeColors } from '@/constants/theme';
 import { ApiError, engagementsApi, skillApi, type SkillEngagement, type SkillPost } from '@/lib/api';
 import { formatPostDate, formatSlot, upcomingSlots } from '@/lib/skill-dates';
 import { useAuth } from '@/state/auth';
+import { useTheme, useThemedStyles } from '@/state/theme';
 
 function errorMessage(error: unknown): string {
   if (error instanceof ApiError) {
@@ -46,6 +47,8 @@ function leave() {
 }
 
 export default function SkillPostScreen() {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const { id, focus, from } = useLocalSearchParams<{ id: string; focus?: string; from?: string }>();
   const postId = /^\d+$/.test(id ?? '') ? Number(id) : null;
   const { session, user } = useAuth();
@@ -143,7 +146,7 @@ export default function SkillPostScreen() {
       <View style={styles.container}>
         <ScreenHeader title="Skill Exchange" onBack={backToOrigin(from)} />
         {loading ? (
-          <ActivityIndicator style={styles.spinner} size="large" color={Brand.primary} accessibilityLabel="Loading post" />
+          <ActivityIndicator style={styles.spinner} size="large" color={colors.primary} accessibilityLabel="Loading post" />
         ) : notFound ? (
           <EmptyState emoji="🗑️" title="Post not found" message="It may have been deleted by the poster." />
         ) : (
@@ -273,8 +276,8 @@ export default function SkillPostScreen() {
               value={post.status === 'available'}
               onValueChange={setAvailability}
               disabled={busy !== null}
-              trackColor={{ true: Brand.primary, false: '#C9CBD1' }}
-              thumbColor={Brand.white}
+              trackColor={{ true: colors.primary, false: colors.switchTrackOff }}
+              thumbColor={colors.switchThumb}
               accessibilityLabel="Available"
               accessibilityLabelledBy="available-label"
             />
@@ -403,7 +406,7 @@ export default function SkillPostScreen() {
               Responses{responses ? ` (${activeResponses.length})` : ''}
             </Text>
             {responses === null ? (
-              <ActivityIndicator color={Brand.primary} accessibilityLabel="Loading responses" />
+              <ActivityIndicator color={colors.primary} accessibilityLabel="Loading responses" />
             ) : activeResponses.length === 0 ? (
               <Text style={styles.meta}>No one has responded yet. You'll get a notification when someone does.</Text>
             ) : (
@@ -421,8 +424,8 @@ export default function SkillPostScreen() {
                     <View style={styles.responseTop}>
                       <Text style={styles.responseName}>{name}</Text>
                       <KudosBadge count={r.user.kudos} />
-                      <View style={[styles.responseStatus, { backgroundColor: status.bg }]}>
-                        <Text style={[styles.responseStatusText, { color: status.fg }]}>{status.label}</Text>
+                      <View style={[styles.responseStatus, { backgroundColor: colors[status.bg] }]}>
+                        <Text style={[styles.responseStatusText, { color: colors[status.fg] }]}>{status.label}</Text>
                       </View>
                     </View>
                     <Text style={styles.slot}>🗓 {formatSlot(r)}</Text>
@@ -460,10 +463,10 @@ export default function SkillPostScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Brand.white,
+    backgroundColor: colors.background,
   },
   content: {
     paddingBottom: 40,
@@ -516,22 +519,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   toolText: {
     fontSize: 14,
     fontWeight: '600',
-    color: Brand.primary,
+    color: colors.textAccent,
   },
   toolDanger: {
-    color: Brand.danger,
+    color: colors.danger,
   },
   title: {
     fontSize: 22,
     fontWeight: '700',
-    color: Brand.text,
+    color: colors.text,
     marginTop: 12,
   },
   section: {
@@ -541,66 +544,66 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: Brand.text,
+    color: colors.text,
     marginTop: 22,
     marginBottom: 6,
   },
   text: {
     fontSize: 15,
     lineHeight: 22,
-    color: '#3F4350',
+    color: colors.textSecondary,
   },
   meta: {
     fontSize: 13,
-    color: Brand.textMuted,
+    color: colors.textMuted,
     marginTop: 6,
   },
   slot: {
     fontSize: 15,
-    color: Brand.text,
+    color: colors.text,
     marginTop: 4,
   },
   busyTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: Brand.text,
+    color: colors.text,
     marginTop: 10,
   },
   busy: {
     fontSize: 14,
-    color: Brand.textMuted,
+    color: colors.textMuted,
     marginTop: 3,
   },
   actionBox: {
     marginTop: 24,
     padding: 16,
     borderRadius: 16,
-    backgroundColor: '#F3F7FD',
+    backgroundColor: colors.primarySurface,
     borderWidth: 1,
-    borderColor: '#C9DAF3',
+    borderColor: colors.primaryBorder,
     gap: 8,
   },
   actionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: Brand.text,
+    color: colors.text,
   },
   actionButton: {
     marginTop: 4,
   },
   contact: {
     fontSize: 15,
-    color: Brand.primary,
+    color: colors.textAccent,
   },
   primaryButton: {
-    backgroundColor: Brand.primary,
+    backgroundColor: colors.primary,
     minHeight: 50,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   primaryButtonText: {
-    color: Brand.white,
+    color: colors.onPrimary,
     fontSize: 16,
     fontWeight: '700',
   },
@@ -609,7 +612,7 @@ const styles = StyleSheet.create({
   },
   responseCard: {
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: colors.border,
     borderRadius: 14,
     padding: 12,
     marginBottom: 10,
@@ -625,7 +628,7 @@ const styles = StyleSheet.create({
   responseName: {
     fontSize: 15,
     fontWeight: '600',
-    color: Brand.text,
+    color: colors.text,
   },
   responseStatus: {
     borderRadius: 10,
@@ -638,14 +641,14 @@ const styles = StyleSheet.create({
   },
   responseMessage: {
     fontSize: 14,
-    color: '#3F4350',
+    color: colors.textSecondary,
     fontStyle: 'italic',
     marginTop: 4,
   },
   responseLink: {
     fontSize: 14,
     fontWeight: '600',
-    color: Brand.primary,
+    color: colors.textAccent,
     marginTop: 6,
   },
   switchRow: {
@@ -655,7 +658,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     padding: 12,
     borderRadius: 12,
-    backgroundColor: Brand.chip,
+    backgroundColor: colors.surfaceMuted,
   },
   switchText: {
     flex: 1,
@@ -664,31 +667,31 @@ const styles = StyleSheet.create({
   switchLabel: {
     fontSize: 15,
     fontWeight: '600',
-    color: Brand.text,
+    color: colors.text,
   },
   secondaryButton: {
     minHeight: 46,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: Brand.primary,
+    borderColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,
   },
   secondaryButtonText: {
-    color: Brand.primary,
+    color: colors.textAccent,
     fontSize: 15,
     fontWeight: '600',
   },
   confirm: {
-    backgroundColor: '#FDECEA',
+    backgroundColor: colors.dangerBackground,
     borderRadius: 12,
     padding: 14,
     marginTop: 12,
   },
   confirmText: {
     fontSize: 15,
-    color: Brand.text,
+    color: colors.text,
     marginBottom: 12,
   },
   confirmButtons: {
@@ -701,17 +704,17 @@ const styles = StyleSheet.create({
   dangerButton: {
     minHeight: 46,
     borderRadius: 12,
-    backgroundColor: Brand.danger,
+    backgroundColor: colors.danger,
     alignItems: 'center',
     justifyContent: 'center',
   },
   dangerButtonText: {
-    color: Brand.white,
+    color: colors.onDanger,
     fontSize: 15,
     fontWeight: '700',
   },
   errorText: {
-    color: '#C62828',
+    color: colors.error,
     fontSize: 14,
     textAlign: 'center',
     marginTop: 8,

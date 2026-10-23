@@ -7,10 +7,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { KudosBadge, authorName, initials } from '@/components/skill-cards';
-import { Brand } from '@/constants/brand';
+import type { ThemeColors } from '@/constants/theme';
 import { ApiError, COMMENT_MAX_LENGTH, skillCommentsApi, type SkillComment, type SkillPost } from '@/lib/api';
 import { formatPostDate, timeAgo } from '@/lib/skill-dates';
 import { useAuth } from '@/state/auth';
+import { useTheme, useThemedStyles } from '@/state/theme';
 
 function errorMessage(error: unknown): string {
   if (error instanceof ApiError) {
@@ -35,6 +36,7 @@ function CommentItem({
   onReply?: () => void;
   onDelete: () => Promise<void>;
 }) {
+  const styles = useThemedStyles(createStyles);
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const byPoster = comment.author.user_id === post.author.user_id;
@@ -136,6 +138,8 @@ export function SkillComments({
   /** Called once the comments have rendered (the post screen scrolls to them). */
   onLoaded?: () => void;
 }) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const { session, user } = useAuth();
   const [comments, setComments] = useState<SkillComment[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -222,7 +226,7 @@ export function SkillComments({
       </Text>
 
       {comments === null && !loadError ? (
-        <ActivityIndicator color={Brand.primary} style={styles.spinner} accessibilityLabel="Loading comments" />
+        <ActivityIndicator color={colors.primary} style={styles.spinner} accessibilityLabel="Loading comments" />
       ) : loadError ? (
         <View style={styles.loadError}>
           <Text style={styles.errorText} accessibilityRole="alert">
@@ -287,7 +291,7 @@ export function SkillComments({
             setSendError(null);
           }}
           placeholder={replyTo ? `Reply to ${authorName(replyTo.author)}…` : 'Write a comment…'}
-          placeholderTextColor={Brand.textMuted}
+          placeholderTextColor={colors.placeholder}
           multiline
           textAlignVertical="top"
           maxLength={COMMENT_MAX_LENGTH}
@@ -316,14 +320,14 @@ export function SkillComments({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   pressed: {
     opacity: 0.7,
   },
   heading: {
     fontSize: 18,
     fontWeight: '700',
-    color: Brand.text,
+    color: colors.text,
     marginTop: 28,
     marginBottom: 10,
   },
@@ -332,7 +336,7 @@ const styles = StyleSheet.create({
   },
   empty: {
     fontSize: 14,
-    color: Brand.textMuted,
+    color: colors.textMuted,
     marginBottom: 8,
   },
   loadError: {
@@ -341,15 +345,15 @@ const styles = StyleSheet.create({
   },
   comment: {
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: colors.border,
     borderRadius: 14,
     padding: 12,
     marginBottom: 10,
   },
   reply: {
     marginLeft: 24,
-    backgroundColor: '#F7F9FC',
-    borderColor: '#DCE5F2',
+    backgroundColor: colors.primarySurfaceReply,
+    borderColor: colors.primaryBorderReply,
   },
   commentHeader: {
     flexDirection: 'row',
@@ -359,21 +363,21 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: Brand.chip,
+    backgroundColor: colors.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
   },
   avatarPoster: {
-    backgroundColor: Brand.primaryTint,
+    backgroundColor: colors.primaryTint,
   },
   avatarText: {
     fontSize: 13,
     fontWeight: '700',
-    color: Brand.text,
+    color: colors.text,
   },
   avatarTextPoster: {
-    color: Brand.primary,
+    color: colors.textAccent,
   },
   commentWho: {
     flex: 1,
@@ -387,11 +391,11 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 15,
     fontWeight: '600',
-    color: Brand.text,
+    color: colors.text,
     flexShrink: 1,
   },
   posterBadge: {
-    backgroundColor: Brand.primaryTint,
+    backgroundColor: colors.primaryTint,
     borderRadius: 8,
     paddingHorizontal: 6,
     paddingVertical: 1,
@@ -399,22 +403,22 @@ const styles = StyleSheet.create({
   posterBadgeText: {
     fontSize: 11,
     fontWeight: '700',
-    color: Brand.primary,
+    color: colors.textAccent,
   },
   email: {
     fontSize: 12,
-    color: Brand.textMuted,
+    color: colors.textMuted,
     marginTop: 1,
   },
   time: {
     fontSize: 12,
-    color: Brand.textMuted,
+    color: colors.textMuted,
     marginLeft: 6,
   },
   body: {
     fontSize: 15,
     lineHeight: 21,
-    color: '#3F4350',
+    color: colors.textSecondary,
     marginTop: 8,
   },
   actions: {
@@ -430,22 +434,22 @@ const styles = StyleSheet.create({
   actionText: {
     fontSize: 14,
     fontWeight: '600',
-    color: Brand.primary,
+    color: colors.textAccent,
   },
   deleteText: {
     fontSize: 14,
     fontWeight: '600',
-    color: Brand.danger,
+    color: colors.danger,
   },
   confirm: {
-    backgroundColor: '#FDECEA',
+    backgroundColor: colors.dangerBackground,
     borderRadius: 10,
     padding: 10,
     marginTop: 8,
   },
   confirmText: {
     fontSize: 14,
-    color: Brand.text,
+    color: colors.text,
     marginBottom: 8,
   },
   confirmButtons: {
@@ -458,21 +462,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: Brand.primary,
+    borderColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Brand.white,
+    backgroundColor: colors.surface,
   },
   smallButtonText: {
-    color: Brand.primary,
+    color: colors.textAccent,
     fontWeight: '600',
   },
   smallDanger: {
-    backgroundColor: Brand.danger,
-    borderColor: Brand.danger,
+    backgroundColor: colors.danger,
+    borderColor: colors.danger,
   },
   smallDangerText: {
-    color: Brand.white,
+    color: colors.onDanger,
     fontWeight: '700',
   },
   composer: {
@@ -482,7 +486,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Brand.primaryTint,
+    backgroundColor: colors.primaryTint,
     borderRadius: 10,
     paddingLeft: 12,
     marginBottom: 8,
@@ -491,17 +495,17 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: '600',
-    color: Brand.primary,
+    color: colors.textAccent,
   },
   input: {
     minHeight: 80,
     borderWidth: 1,
-    borderColor: '#D6D8DD',
+    borderColor: colors.borderStrong,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,
-    color: Brand.text,
+    color: colors.text,
   },
   composerFooter: {
     flexDirection: 'row',
@@ -512,14 +516,14 @@ const styles = StyleSheet.create({
   hint: {
     flex: 1,
     fontSize: 12,
-    color: Brand.textMuted,
+    color: colors.textMuted,
   },
   counter: {
     fontSize: 12,
-    color: Brand.textMuted,
+    color: colors.textMuted,
   },
   errorText: {
-    color: '#C62828',
+    color: colors.error,
     fontSize: 14,
     minHeight: 18,
     marginTop: 4,
@@ -527,7 +531,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   send: {
-    backgroundColor: Brand.primary,
+    backgroundColor: colors.primary,
     minHeight: 48,
     borderRadius: 12,
     alignItems: 'center',
@@ -537,7 +541,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   sendText: {
-    color: Brand.white,
+    color: colors.onPrimary,
     fontSize: 15,
     fontWeight: '700',
   },

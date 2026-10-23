@@ -11,6 +11,7 @@ import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import { NotificationBell } from "@/components/notification-bell";
 
 import { EmptyState, openEvent } from "@/components/club-cards";
+import type { ThemeColors } from "@/constants/theme";
 import {
     EVENT_CATEGORIES,
     campusDateKey,
@@ -31,6 +32,7 @@ import {
     type CalendarMonth,
 } from "@/lib/calendar";
 import { useAppState } from "@/state/app-state";
+import { useTheme, useThemedStyles } from "@/state/theme";
 
 type ViewMode = "list" | "calendar";
 
@@ -42,6 +44,8 @@ function currentMonth(): CalendarMonth {
 
 /** Events tab: upcoming events as a list or a month calendar (FR-9). */
 export default function EventsScreen() {
+    const styles = useThemedStyles(createStyles);
+    const { colors } = useTheme();
     const [viewMode, setViewMode] = useState<ViewMode>("list");
     const [search, setSearch] = useState("");
     const [selectedCategory, setSelectedCategory] = useState<EventCategory | "All">("All");
@@ -162,7 +166,7 @@ export default function EventsScreen() {
                     <TextInput
                         style={styles.searchInput}
                         placeholder="search events..."
-                        placeholderTextColor="#696C7A"
+                        placeholderTextColor={colors.placeholder}
                         value={search}
                         onChangeText={setSearch}
                         returnKeyType="search"
@@ -464,10 +468,10 @@ export default function EventsScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.background,
     },
 
     content: {
@@ -486,7 +490,7 @@ const styles = StyleSheet.create({
     },
 
     header: {
-        backgroundColor: "#0B55B7",
+        backgroundColor: colors.header,
         paddingTop: 65,
         paddingHorizontal: 20,
         paddingBottom: 35,
@@ -499,7 +503,7 @@ const styles = StyleSheet.create({
     },
 
     headerTitle: {
-        color: "#FFFFFF",
+        color: colors.onHeader,
         fontSize: 26,
         fontWeight: "bold",
     },
@@ -510,21 +514,21 @@ const styles = StyleSheet.create({
     },
 
     bellIcon: {
-        color: "#FFFFFF",
+        color: colors.onHeader,
         fontSize: 24,
     },
 
     viewToggle: {
         marginTop: 25,
         flexDirection: "row",
-        backgroundColor: "#2467BD",
+        backgroundColor: colors.headerControl,
         borderRadius: 10,
         padding: 4,
     },
 
     activeToggle: {
         flex: 1,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
         paddingVertical: 10,
         borderRadius: 8,
         alignItems: "center",
@@ -537,23 +541,23 @@ const styles = StyleSheet.create({
     },
 
     activeToggleText: {
-        color: "#0B55B7",
+        color: colors.textAccent,
         fontWeight: "600",
     },
 
     inactiveToggleText: {
-        color: "#FFFFFF",
+        color: colors.onHeader,
         fontWeight: "600",
     },
 
     searchCard: {
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
         marginHorizontal: 20,
         marginTop: -10,
         padding: 14,
         borderRadius: 15,
 
-        shadowColor: "#000000",
+        shadowColor: colors.shadow,
         shadowOpacity: 0.08,
         shadowRadius: 8,
         shadowOffset: {
@@ -578,13 +582,13 @@ const styles = StyleSheet.create({
         flex: 1,
         minHeight: 44,
         fontSize: 16,
-        color: "#171717",
+        color: colors.text,
         letterSpacing: 0,
     },
 
     filterIcon: {
         fontSize: 20,
-        color: "#696C7A",
+        color: colors.textMuted,
     },
 
     filterRow: {
@@ -602,24 +606,24 @@ const styles = StyleSheet.create({
     },
 
     categoryButton: {
-        backgroundColor: "#F1F1F3",
+        backgroundColor: colors.surfaceMuted,
         paddingHorizontal: 14,
         paddingVertical: 8,
         borderRadius: 15,
     },
 
     activeCategoryButton: {
-        backgroundColor: "#0B55B7",
+        backgroundColor: colors.primary,
     },
 
     categoryText: {
-        color: "#171717",
+        color: colors.text,
         fontSize: 13,
         fontWeight: "500",
     },
 
     activeCategoryText: {
-        color: "#FFFFFF",
+        color: colors.onPrimary,
     },
 
     sectionTitle: {
@@ -628,7 +632,7 @@ const styles = StyleSheet.create({
         marginBottom: 12,
         fontSize: 20,
         fontWeight: "bold",
-        color: "#171717",
+        color: colors.text,
     },
 
     eventCard: {
@@ -637,8 +641,8 @@ const styles = StyleSheet.create({
         padding: 16,
         borderRadius: 15,
         borderWidth: 1,
-        borderColor: "#E2E2E5",
-        backgroundColor: "#FFFFFF",
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
     },
 
     eventTop: {
@@ -654,18 +658,18 @@ const styles = StyleSheet.create({
     eventTitle: {
         fontSize: 18,
         fontWeight: "600",
-        color: "#171717",
+        color: colors.text,
     },
 
     clubName: {
         fontSize: 14,
-        color: "#696C7A",
+        color: colors.textMuted,
         marginTop: 4,
         marginBottom: 14,
     },
 
     dateBadge: {
-        backgroundColor: "#E9EEF9",
+        backgroundColor: colors.primaryTintDate,
         width: 48,
         height: 55,
         borderRadius: 10,
@@ -674,19 +678,19 @@ const styles = StyleSheet.create({
     },
 
     dateMonth: {
-        color: "#0B55B7",
+        color: colors.textAccent,
         fontSize: 12,
     },
 
     dateDay: {
-        color: "#0B55B7",
+        color: colors.textAccent,
         fontSize: 16,
         fontWeight: "600",
     },
 
     detailText: {
         fontSize: 14,
-        color: "#696C7A",
+        color: colors.textMuted,
         marginTop: 5,
     },
 
@@ -699,40 +703,40 @@ const styles = StyleSheet.create({
 
     rsvpButton: {
         flex: 1,
-        backgroundColor: "#0B55B7",
+        backgroundColor: colors.primary,
         minHeight: 44,
         justifyContent: "center",
         borderRadius: 9,
         alignItems: "center",
         borderWidth: 2,
-        borderColor: "#0B55B7",
+        borderColor: colors.primary,
     },
 
     // Outlined once RSVP'd: keeps text contrast above 4.5:1 (WCAG AA).
     rsvpActiveButton: {
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
     },
 
     rsvpText: {
-        color: "#FFFFFF",
+        color: colors.onPrimary,
         fontSize: 15,
         fontWeight: "600",
     },
 
     rsvpActiveText: {
-        color: "#0B55B7",
+        color: colors.textAccent,
     },
 
     eventCategory: {
         borderWidth: 1,
-        borderColor: "#E2E2E5",
+        borderColor: colors.border,
         borderRadius: 9,
         paddingHorizontal: 12,
         paddingVertical: 10,
     },
 
     eventCategoryText: {
-        color: "#696C7A",
+        color: colors.textMuted,
         fontSize: 13,
     },
 
@@ -740,9 +744,9 @@ const styles = StyleSheet.create({
         marginHorizontal: 20,
         marginTop: 25,
         padding: 18,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
         borderWidth: 1,
-        borderColor: "#E2E2E5",
+        borderColor: colors.border,
         borderRadius: 16,
     },
 
@@ -756,12 +760,12 @@ const styles = StyleSheet.create({
     calendarMonth: {
         fontSize: 20,
         fontWeight: "bold",
-        color: "#171717",
+        color: colors.text,
     },
 
     calendarArrow: {
         fontSize: 30,
-        color: "#0B55B7",
+        color: colors.textAccent,
     },
 
     weekRow: {
@@ -775,7 +779,7 @@ const styles = StyleSheet.create({
         textAlign: "center",
         fontSize: 12,
         fontWeight: "600",
-        color: "#696C7A",
+        color: colors.textMuted,
     },
 
     calendarDay: {
@@ -783,7 +787,7 @@ const styles = StyleSheet.create({
         height: 38,
         textAlign: "center",
         lineHeight: 38,
-        color: "#171717",
+        color: colors.text,
         fontSize: 14,
     },
 
@@ -796,18 +800,18 @@ const styles = StyleSheet.create({
         width: 38,
         height: 38,
         borderRadius: 19,
-        backgroundColor: "#0B55B7",
+        backgroundColor: colors.primary,
         alignItems: "center",
         justifyContent: "center",
     },
 
     selectedEventDay: {
         borderWidth: 3,
-        borderColor: "#8DB4EA",
+        borderColor: colors.primaryBorderStrong,
     },
 
     eventDayText: {
-        color: "#FFFFFF",
+        color: colors.onPrimary,
         fontSize: 14,
         fontWeight: "600",
     },
@@ -817,7 +821,7 @@ const styles = StyleSheet.create({
         marginBottom: 12,
         padding: 15,
         borderWidth: 1,
-        borderColor: "#E2E2E5",
+        borderColor: colors.border,
         borderRadius: 12,
         flexDirection: "row",
         alignItems: "center",
@@ -827,19 +831,19 @@ const styles = StyleSheet.create({
         width: 10,
         height: 10,
         borderRadius: 5,
-        backgroundColor: "#0B55B7",
+        backgroundColor: colors.primary,
         marginRight: 12,
     },
 
     calendarEventTitle: {
         fontSize: 16,
         fontWeight: "600",
-        color: "#171717",
+        color: colors.text,
     },
 
     calendarEventInfo: {
         fontSize: 13,
-        color: "#696C7A",
+        color: colors.textMuted,
         marginTop: 3,
     },
 });

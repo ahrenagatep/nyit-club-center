@@ -1,14 +1,17 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 
-import { EmptyState, cardStyles } from '@/components/club-cards';
+import { EmptyState, createCardStyles } from '@/components/club-cards';
 import { ScreenHeader } from '@/components/screen-header';
-import { Brand } from '@/constants/brand';
+import type { ThemeColors } from '@/constants/theme';
 import { useAppState } from '@/state/app-state';
 import { useClub } from '@/lib/clubs';
+import { useThemedStyles } from '@/state/theme';
 
 /** Club detail: about, join/leave, and the club's upcoming events. */
 export default function ClubScreen() {
+  const styles = useThemedStyles(createStyles);
+  const cardStyles = useThemedStyles(createCardStyles);
   const { id } = useLocalSearchParams<{ id: string }>();
   const { club, loading, error } = useClub(Number(id));
   const { isJoined, toggleJoin } = useAppState();
@@ -88,10 +91,10 @@ export default function ClubScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Brand.white,
+    backgroundColor: colors.background,
   },
   content: {
     paddingBottom: 35,
@@ -105,13 +108,13 @@ const styles = StyleSheet.create({
   },
   tag: {
     marginTop: 12,
-    backgroundColor: Brand.tagBackground,
+    backgroundColor: colors.tagBackground,
     borderRadius: 14,
     paddingHorizontal: 11,
     paddingVertical: 5,
   },
   tagText: {
-    color: Brand.primary,
+    color: colors.textAccent,
     fontSize: 14,
   },
   joinButton: {
@@ -121,20 +124,20 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Brand.primary,
+    backgroundColor: colors.primary,
     borderWidth: 2,
-    borderColor: Brand.primary,
+    borderColor: colors.primary,
   },
   joinButtonJoined: {
-    backgroundColor: Brand.white,
+    backgroundColor: colors.surface,
   },
   joinText: {
-    color: Brand.white,
+    color: colors.onPrimary,
     fontSize: 17,
     fontWeight: 'bold',
   },
   joinTextJoined: {
-    color: Brand.primary,
+    color: colors.textAccent,
   },
   pressed: {
     opacity: 0.7,
@@ -143,6 +146,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     fontSize: 16,
     lineHeight: 24,
-    color: Brand.text,
+    color: colors.text,
   },
 });

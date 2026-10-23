@@ -5,9 +5,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { Brand } from '@/constants/brand';
+import type { ThemeColors } from '@/constants/theme';
 import { SKILL_LIMITS, skillApi, type SkillTagGroup } from '@/lib/api';
 import { useAuth } from '@/state/auth';
+import { useTheme, useThemedStyles } from '@/state/theme';
 
 // the premade list rarely changes, so load it once per app session
 let cachedGroups: SkillTagGroup[] | null = null;
@@ -63,6 +64,8 @@ export function TagPicker({
   label?: string;
   allowCustom?: boolean;
 }) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const [query, setQuery] = useState('');
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -143,7 +146,7 @@ export function TagPicker({
           }}
           onSubmitEditing={addTyped}
           placeholder={allowCustom ? 'Search or type a new tag' : 'Search tags'}
-          placeholderTextColor={Brand.textMuted}
+          placeholderTextColor={colors.placeholder}
           autoCorrect={false}
           autoCapitalize="none"
           returnKeyType="done"
@@ -224,19 +227,19 @@ export function TagPicker({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   pressed: {
     opacity: 0.7,
   },
   label: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#222222',
+    color: colors.textLabel,
     marginBottom: 8,
   },
   count: {
     fontWeight: '400',
-    color: Brand.textMuted,
+    color: colors.textMuted,
   },
   chipRow: {
     flexDirection: 'row',
@@ -246,21 +249,21 @@ const styles = StyleSheet.create({
   },
   chip: {
     maxWidth: '100%',
-    backgroundColor: Brand.chip,
+    backgroundColor: colors.surfaceMuted,
     borderRadius: 16,
     paddingHorizontal: 12,
     minHeight: 36,
     justifyContent: 'center',
   },
   chipText: {
-    color: Brand.chipText,
+    color: colors.textChip,
     fontSize: 13,
   },
   selectedChip: {
-    backgroundColor: Brand.primary,
+    backgroundColor: colors.primary,
   },
   selectedChipText: {
-    color: Brand.white,
+    color: colors.onPrimary,
     fontSize: 13,
     fontWeight: '600',
   },
@@ -268,7 +271,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#D6D8DD',
+    borderColor: colors.borderStrong,
     borderRadius: 12,
     paddingLeft: 15,
   },
@@ -276,7 +279,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 48,
     fontSize: 16,
-    color: Brand.text,
+    color: colors.text,
   },
   addButton: {
     minHeight: 44,
@@ -286,12 +289,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   addButtonText: {
-    color: Brand.primary,
+    color: colors.textAccent,
     fontWeight: '700',
     fontSize: 15,
   },
   error: {
-    color: '#C62828',
+    color: colors.error,
     fontSize: 13,
     minHeight: 18,
     marginTop: 4,
@@ -299,7 +302,7 @@ const styles = StyleSheet.create({
   },
   browseLabel: {
     fontSize: 13,
-    color: Brand.textMuted,
+    color: colors.textMuted,
     marginBottom: 6,
   },
   // wraps instead of scrolling sideways: a hidden horizontal scroller can't be scrolled with a mouse on web
@@ -312,22 +315,22 @@ const styles = StyleSheet.create({
   groupChip: {
     maxWidth: '100%',
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: colors.border,
     borderRadius: 16,
     paddingHorizontal: 12,
     minHeight: 36,
     justifyContent: 'center',
   },
   groupChipOpen: {
-    borderColor: Brand.primary,
-    backgroundColor: Brand.primaryTint,
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryTint,
   },
   groupChipText: {
     fontSize: 13,
-    color: Brand.text,
+    color: colors.text,
   },
   groupChipTextOpen: {
-    color: Brand.primary,
+    color: colors.textAccent,
     fontWeight: '600',
   },
 });

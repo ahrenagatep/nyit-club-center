@@ -14,12 +14,14 @@ import { router, useLocalSearchParams } from "expo-router";
 
 import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import { FormField } from "@/components/form-field";
+import type { ThemeColors } from "@/constants/theme";
 import { ApiError, authApi } from "@/lib/api";
 import {
   validateEmail,
   validatePassword,
   validateResetCode,
 } from "@/lib/validation";
+import { useTheme, useThemedStyles } from "@/state/theme";
 
 type Step = "request" | "reset";
 type FieldErrors = Partial<
@@ -36,6 +38,8 @@ function errorMessage(err: unknown): string {
 // Step 1 emails a reset code; step 2 takes the code and a new password.
 // On success the user goes back to Login with their email filled in.
 export default function ForgotPasswordScreen() {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const params = useLocalSearchParams<{ email?: string }>();
 
   const [step, setStep] = useState<Step>("request");
@@ -263,7 +267,7 @@ export default function ForgotPasswordScreen() {
             accessibilityState={{ disabled: loading, busy: loading }}
           >
             {loading ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color={colors.onPrimary} />
             ) : (
               <Text style={styles.primaryButtonText}>
                 {step === "request" ? "SEND CODE" : "RESET PASSWORD"}
@@ -310,10 +314,10 @@ export default function ForgotPasswordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.background,
   },
 
   scrollView: {
@@ -332,7 +336,7 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    backgroundColor: "#0B55B7",
+    backgroundColor: colors.header,
     paddingTop: 80,
     paddingBottom: 45,
     alignItems: "center",
@@ -341,7 +345,7 @@ const styles = StyleSheet.create({
   logoBox: {
     width: 65,
     height: 65,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.onHeader,
     borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
@@ -353,13 +357,13 @@ const styles = StyleSheet.create({
   },
 
   appTitle: {
-    color: "#FFFFFF",
+    color: colors.onHeader,
     fontSize: 28,
     fontWeight: "bold",
   },
 
   appSubtitle: {
-    color: "#DCE8FF",
+    color: colors.onHeaderMutedLogo,
     fontSize: 15,
     marginTop: 4,
   },
@@ -373,12 +377,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 30,
     fontWeight: "bold",
-    color: "#171717",
+    color: colors.text,
   },
 
   subtitle: {
     fontSize: 16,
-    color: "#696C7A",
+    color: colors.textMuted,
     marginTop: 7,
     marginBottom: 24,
     lineHeight: 22,
@@ -387,24 +391,24 @@ const styles = StyleSheet.create({
   noticeBox: {
     padding: 14,
     borderRadius: 14,
-    backgroundColor: "#E7EFFB",
+    backgroundColor: colors.primaryTint,
     marginBottom: 20,
   },
 
   noticeText: {
     fontSize: 14,
-    color: "#171717",
+    color: colors.text,
     lineHeight: 20,
   },
 
   errorText: {
-    color: "#C62828",
+    color: colors.error,
     fontSize: 14,
     marginBottom: 15,
   },
 
   primaryButton: {
-    backgroundColor: "#0B55B7",
+    backgroundColor: colors.primary,
     minHeight: 52,
     justifyContent: "center",
     borderRadius: 12,
@@ -417,7 +421,7 @@ const styles = StyleSheet.create({
   },
 
   primaryButtonText: {
-    color: "#FFFFFF",
+    color: colors.onPrimary,
     fontSize: 17,
     fontWeight: "600",
   },
@@ -442,7 +446,7 @@ const styles = StyleSheet.create({
   },
 
   linkText: {
-    color: "#0B55B7",
+    color: colors.textAccent,
     fontSize: 15,
     fontWeight: "600",
   },

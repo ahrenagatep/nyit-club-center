@@ -2,7 +2,9 @@ import { useCallback } from 'react';
 import { Pressable, StyleSheet, Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 
+import type { ThemeColors } from '@/constants/theme';
 import { useNotifications } from '@/state/notifications';
+import { useThemedStyles } from '@/state/theme';
 
 /**
  * 🔔 button for the blue headers: opens Notifications and shows the unread count.
@@ -17,6 +19,7 @@ export function NotificationBell({
   iconStyle?: StyleProp<TextStyle>;
   pressedStyle?: StyleProp<ViewStyle>;
 }) {
+  const styles = useThemedStyles(createStyles);
   const { unreadCount, refreshUnread } = useNotifications();
 
   useFocusEffect(
@@ -46,7 +49,7 @@ export function NotificationBell({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   badge: {
     position: 'absolute',
     top: -4,
@@ -55,14 +58,14 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 10,
     paddingHorizontal: 5,
-    backgroundColor: '#C62828',
+    backgroundColor: colors.error,
     borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderColor: colors.onHeader,
     alignItems: 'center',
     justifyContent: 'center',
   },
   badgeText: {
-    color: '#FFFFFF',
+    color: colors.onDanger,
     fontSize: 11,
     fontWeight: '700',
     lineHeight: 13,

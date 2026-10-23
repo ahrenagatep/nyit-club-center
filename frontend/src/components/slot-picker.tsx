@@ -8,7 +8,7 @@ import { useMemo } from 'react';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { MonthCalendar } from '@/components/month-calendar';
-import { Brand } from '@/constants/brand';
+import type { ThemeColors } from '@/constants/theme';
 import type { SkillKind } from '@/lib/api';
 import {
   addDays,
@@ -21,6 +21,7 @@ import {
   type SlotSelection,
   type TimeWindow,
 } from '@/lib/skill-dates';
+import { useTheme, useThemedStyles } from '@/state/theme';
 
 const STEP = 30; // minutes
 const MAX_REPEAT_WEEKS = 15;
@@ -42,6 +43,8 @@ function TimeEditor({
   onChange: (next: TimeWindow | null) => void;
   forDay?: string;
 }) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const suffix = forDay ? ` for ${forDay}` : '';
   const labelId = `all-day-label${forDay ? `-${forDay.replace(/\W+/g, '-')}` : ''}`;
   return (
@@ -53,8 +56,8 @@ function TimeEditor({
         <Switch
           value={!value}
           onValueChange={(allDay) => onChange(allDay ? null : DEFAULT_WINDOW)}
-          trackColor={{ true: Brand.primary, false: '#C9CBD1' }}
-          thumbColor={Brand.white}
+          trackColor={{ true: colors.primary, false: colors.switchTrackOff }}
+          thumbColor={colors.switchThumb}
           accessibilityLabel={`All day${suffix}`}
           accessibilityLabelledBy={labelId}
         />
@@ -108,6 +111,7 @@ export function Stepper({
   canDecrease: boolean;
   canIncrease: boolean;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.stepper}>
       <Text style={styles.stepperLabel}>{label}</Text>
@@ -149,6 +153,8 @@ export function SlotPicker({
   onChange: (next: SlotSelection) => void;
   error?: string | null;
 }) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const today = todayKey();
   const last = lastSelectableKey();
 
@@ -252,8 +258,8 @@ export function SlotPicker({
                     windows: same ? dates.windows : Object.fromEntries(dates.dates.map((d) => [d, windowForDate(dates, d)])),
                   })
                 }
-                trackColor={{ true: Brand.primary, false: '#C9CBD1' }}
-                thumbColor={Brand.white}
+                trackColor={{ true: colors.primary, false: colors.switchTrackOff }}
+                thumbColor={colors.switchThumb}
                 accessibilityLabel="Same time on every date"
                 accessibilityLabelledBy="same-time-label"
               />
@@ -305,7 +311,7 @@ export function SlotPicker({
 }
 
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   pressed: {
     opacity: 0.7,
   },
@@ -315,12 +321,12 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#222222',
+    color: colors.textLabel,
     marginBottom: 8,
   },
   modeToggle: {
     flexDirection: 'row',
-    backgroundColor: Brand.chip,
+    backgroundColor: colors.surfaceMuted,
     borderRadius: 10,
     padding: 4,
     marginBottom: 10,
@@ -333,15 +339,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   modeButtonActive: {
-    backgroundColor: Brand.white,
+    backgroundColor: colors.surface,
   },
   modeText: {
     fontSize: 14,
-    color: Brand.textMuted,
+    color: colors.textMuted,
     fontWeight: '500',
   },
   modeTextActive: {
-    color: Brand.primary,
+    color: colors.textAccent,
     fontWeight: '700',
   },
   switchRow: {
@@ -353,14 +359,14 @@ const styles = StyleSheet.create({
   },
   switchLabel: {
     fontSize: 15,
-    color: Brand.text,
+    color: colors.text,
   },
   timeRow: {
     gap: 4,
   },
   dayCard: {
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: colors.border,
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingTop: 8,
@@ -369,7 +375,7 @@ const styles = StyleSheet.create({
   dayCardTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: Brand.text,
+    color: colors.text,
   },
   stepper: {
     flexDirection: 'row',
@@ -379,7 +385,7 @@ const styles = StyleSheet.create({
   },
   stepperLabel: {
     fontSize: 15,
-    color: Brand.text,
+    color: colors.text,
   },
   stepperControls: {
     flexDirection: 'row',
@@ -390,13 +396,13 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: Brand.chip,
+    backgroundColor: colors.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
   stepButtonText: {
     fontSize: 24,
-    color: Brand.primary,
+    color: colors.textAccent,
     marginTop: -2,
   },
   stepValue: {
@@ -404,17 +410,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 15,
     fontWeight: '600',
-    color: Brand.text,
+    color: colors.text,
     paddingHorizontal: 6,
     flexShrink: 1,
   },
   summary: {
     fontSize: 14,
-    color: Brand.textMuted,
+    color: colors.textMuted,
     marginTop: 8,
   },
   error: {
-    color: '#C62828',
+    color: colors.error,
     fontSize: 13,
     minHeight: 18,
     marginTop: 4,

@@ -6,9 +6,10 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Brand } from '@/constants/brand';
+import type { ThemeColors } from '@/constants/theme';
 import { WEEK_DAYS, dayKey, monthWeeks, shiftMonth, type CalendarMonth } from '@/lib/calendar';
 import { formatDayKey, todayKey } from '@/lib/skill-dates';
+import { useThemedStyles } from '@/state/theme';
 
 function monthOf(key: string): CalendarMonth {
   const [y, m] = key.split('-').map(Number);
@@ -40,6 +41,7 @@ export function MonthCalendar({
   onPress: (key: string) => void;
   invalid?: boolean;
 }) {
+  const styles = useThemedStyles(createStyles);
   const today = todayKey();
   const [month, setMonth] = useState<CalendarMonth>(() => monthOf(initialKey));
   const atFirst = monthIndex(month) <= monthIndex(monthOf(firstKey));
@@ -122,7 +124,7 @@ export function MonthCalendar({
 
 const DAY_SIZE = 38;
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   pressed: {
     opacity: 0.7,
   },
@@ -131,12 +133,12 @@ const styles = StyleSheet.create({
   },
   calendar: {
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: colors.border,
     borderRadius: 16,
     padding: 12,
   },
   calendarInvalid: {
-    borderColor: '#C62828',
+    borderColor: colors.error,
   },
   calendarHeader: {
     flexDirection: 'row',
@@ -152,12 +154,12 @@ const styles = StyleSheet.create({
   },
   arrow: {
     fontSize: 28,
-    color: Brand.primary,
+    color: colors.textAccent,
   },
   monthName: {
     fontSize: 17,
     fontWeight: '700',
-    color: Brand.text,
+    color: colors.text,
   },
   weekRow: {
     flexDirection: 'row',
@@ -169,7 +171,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 12,
     fontWeight: '600',
-    color: Brand.textMuted,
+    color: colors.textMuted,
   },
   day: {
     width: DAY_SIZE,
@@ -184,27 +186,27 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: DAY_SIZE,
     fontSize: 14,
-    color: Brand.text,
+    color: colors.text,
   },
   dayDisabled: {
-    color: '#B5B7BF',
+    color: colors.textDisabled,
   },
   dayToday: {
     borderWidth: 2,
-    borderColor: Brand.primary,
+    borderColor: colors.primary,
   },
   daySelected: {
-    backgroundColor: Brand.primary,
+    backgroundColor: colors.primary,
   },
   daySelectedText: {
-    color: Brand.white,
+    color: colors.onPrimary,
     fontWeight: '700',
   },
   dayMarked: {
-    backgroundColor: Brand.primaryTint,
+    backgroundColor: colors.primaryTint,
   },
   dayMarkedText: {
-    color: Brand.primary,
+    color: colors.textAccent,
     fontWeight: '600',
   },
 });

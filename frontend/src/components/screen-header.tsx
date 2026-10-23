@@ -3,7 +3,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 
 import { DarkModeToggle } from '@/components/dark-mode-toggle';
-import { Brand } from '@/constants/brand';
+import type { ThemeColors } from '@/constants/theme';
+import { useThemedStyles } from '@/state/theme';
 
 type ScreenHeaderProps = {
   title: string;
@@ -24,6 +25,7 @@ type ScreenHeaderProps = {
  * is no screen to go back to (e.g. after a deep link or web refresh).
  */
 export function ScreenHeader({ title, subtitle, showBack = true, children, right, onBack }: ScreenHeaderProps) {
+  const styles = useThemedStyles(createStyles);
   const goBack = () => {
     if (onBack) return onBack();
     if (router.canGoBack()) {
@@ -64,9 +66,9 @@ export function ScreenHeader({ title, subtitle, showBack = true, children, right
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   header: {
-    backgroundColor: Brand.primary,
+    backgroundColor: colors.header,
     paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 24,
@@ -81,13 +83,13 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.20)',
+    backgroundColor: colors.headerButton,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
   },
   backIcon: {
-    color: Brand.white,
+    color: colors.onHeader,
     fontSize: 32,
     lineHeight: 34,
     fontWeight: '600',
@@ -97,12 +99,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    color: Brand.white,
+    color: colors.onHeader,
     fontSize: 26,
     fontWeight: 'bold',
   },
   subtitle: {
-    color: '#E6EEFB',
+    color: colors.onHeaderMuted,
     fontSize: 15,
     marginTop: 4,
   },

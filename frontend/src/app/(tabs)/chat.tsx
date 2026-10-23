@@ -8,7 +8,11 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 
+import type { ThemeColors } from "@/constants/theme";
+import { useThemedStyles } from "@/state/theme";
+
 export default function ChatScreen() {
+    const styles = useThemedStyles(createStyles);
     const [chatType, setChatType] = useState< "group" | "DM">("group");
     const [groupChats, setGroupChats] = useState<any[]>([]);
     const [directMessages, setDirectMessages] = useState<any[]>([]);
@@ -163,27 +167,27 @@ export default function ChatScreen() {
 
 
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.background,
     },
 
     header: {
-        backgroundColor: "#0B55B7",
+        backgroundColor: colors.header,
         paddingTop: 60,
         paddingHorizontal: 20,
         paddingBottom: 25,
     },
 
     headerTitle: {
-        color: "#FFFFFF",
+        color: colors.onHeader,
         fontSize: 34,
         fontWeight: "bold",
     },
 
     headerSubtitle: {
-        color: "#D9E6FF",
+        color: colors.onHeaderMutedChat,
         fontSize: 16,
         marginTop: 5,
         marginBottom: 22,
@@ -191,7 +195,7 @@ const styles = StyleSheet.create({
 
     toggleContainer: {
         flexDirection: "row",
-        backgroundColor: "#2C6DC5",
+        backgroundColor: colors.headerControlChat,
         borderRadius: 14,
         padding: 5,
     },
@@ -204,17 +208,17 @@ const styles = StyleSheet.create({
     },
 
     activeToggleButton: {
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
     },
 
     toggleText: {
-        color: "#FFFFFF",
+        color: colors.onHeader,
         fontSize: 16,
         fontWeight: "bold",
     },
 
     activeToggleText: {
-        color: "#0B55B7",
+        color: colors.textAccent,
     },
 
     chatList: {
@@ -226,6 +230,7 @@ const styles = StyleSheet.create({
     },
 
     sectionTitle: {
+        color: colors.text,
         fontSize: 24,
         fontWeight: "bold",
         marginBottom: 18,
@@ -244,6 +249,7 @@ const styles = StyleSheet.create({
     },
 
     emptyTitle: {
+        color: colors.text,
         fontSize: 20,
         fontWeight: "bold",
         marginBottom: 8,
@@ -251,7 +257,7 @@ const styles = StyleSheet.create({
 
     emptyText: {
         fontSize: 15,
-        color: "#6B7280",
+        color: colors.textMutedChat,
         textAlign: "center",
         lineHeight: 22,
     },
@@ -261,21 +267,21 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingVertical: 16,
         borderBottomWidth: 1,
-        borderBottomColor: "#E5E7EB",
+        borderBottomColor: colors.borderChat,
     },
 
     avatar: {
         width: 52,
         height: 52,
         borderRadius: 26,
-        backgroundColor: "#E6EEF9",
+        backgroundColor: colors.primaryTintChat,
         alignItems: "center",
         justifyContent: "center",
         marginRight: 14,
     },
 
     avatarText: {
-        color: "#0B55B7",
+        color: colors.textAccent,
         fontSize: 20,
         fontWeight: "bold",
     },
@@ -291,6 +297,7 @@ const styles = StyleSheet.create({
     },
 
     chatName: {
+        color: colors.text,
         fontSize: 17,
         fontWeight: "bold",
         flex: 1,
@@ -298,13 +305,13 @@ const styles = StyleSheet.create({
 
     timeText: {
         fontSize: 13,
-        color: "#8A8A8A",
+        color: colors.textMutedChatTime,
         marginLeft: 10,
     },
 
     lastMessage: {
         fontSize: 14,
-        color: "#6B7280",
+        color: colors.textMutedChat,
         marginTop: 5,
     },
 });

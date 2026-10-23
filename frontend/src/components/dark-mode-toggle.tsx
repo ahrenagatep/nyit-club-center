@@ -1,7 +1,8 @@
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { Brand } from '@/constants/brand';
+import type { ThemeColors } from '@/constants/theme';
 import { useDarkMode } from '@/state/dark-mode';
+import { useThemedStyles } from '@/state/theme';
 
 type DarkModeToggleProps = {
   /** Extra spacing/positioning for the header it sits in. */
@@ -13,6 +14,7 @@ type DarkModeToggleProps = {
  * and off. The inner square is filled while dark mode is on.
  */
 export function DarkModeToggle({ style }: DarkModeToggleProps) {
+  const styles = useThemedStyles(createStyles);
   const { isDarkMode, toggleDarkMode } = useDarkMode();
 
   return (
@@ -28,14 +30,14 @@ export function DarkModeToggle({ style }: DarkModeToggleProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   button: {
     width: 36,
     height: 36,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: Brand.white,
-    backgroundColor: 'rgba(255,255,255,0.20)',
+    borderColor: colors.onHeader,
+    backgroundColor: colors.headerButton,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -44,10 +46,10 @@ const styles = StyleSheet.create({
     height: 14,
     borderRadius: 3,
     borderWidth: 2,
-    borderColor: Brand.white,
+    borderColor: colors.onHeader,
   },
   innerOn: {
-    backgroundColor: Brand.white,
+    backgroundColor: colors.onHeader,
   },
   pressed: {
     opacity: 0.7,

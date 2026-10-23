@@ -1,9 +1,9 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 
-import { ClubRow, EmptyState, RsvpButton, cardStyles } from '@/components/club-cards';
+import { ClubRow, EmptyState, RsvpButton, createCardStyles } from '@/components/club-cards';
 import { ScreenHeader } from '@/components/screen-header';
-import { Brand } from '@/constants/brand';
+import type { ThemeColors } from '@/constants/theme';
 import {
   formatEventDateLong,
   formatEventTimeRange,
@@ -11,9 +11,12 @@ import {
   getEventById,
 } from '@/data/mock-data';
 import { useAppState } from '@/state/app-state';
+import { useThemedStyles } from '@/state/theme';
 
 /** Event detail: when/where, RSVP, and a link to the host club. */
 export default function EventScreen() {
+  const styles = useThemedStyles(createStyles);
+  const cardStyles = useThemedStyles(createCardStyles);
   const { id } = useLocalSearchParams<{ id: string }>();
   const event = getEventById(Number(id));
   const { hasRsvp, toggleRsvp } = useAppState();
@@ -87,10 +90,10 @@ export default function EventScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Brand.white,
+    backgroundColor: colors.background,
   },
   content: {
     paddingBottom: 35,
@@ -99,7 +102,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginTop: 22,
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: colors.border,
     borderRadius: 18,
     paddingHorizontal: 18,
     paddingVertical: 8,
@@ -115,11 +118,11 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 13,
-    color: Brand.textMuted,
+    color: colors.textMuted,
   },
   detailValue: {
     fontSize: 16,
-    color: Brand.text,
+    color: colors.text,
     fontWeight: '500',
     marginTop: 2,
   },
@@ -130,6 +133,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     fontSize: 16,
     lineHeight: 24,
-    color: Brand.text,
+    color: colors.text,
   },
 });

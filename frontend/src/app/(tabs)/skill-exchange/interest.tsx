@@ -13,10 +13,11 @@ import { MonthCalendar } from '@/components/month-calendar';
 import { ScreenHeader } from '@/components/screen-header';
 import { authorName } from '@/components/skill-cards';
 import { Stepper } from '@/components/slot-picker';
-import { Brand } from '@/constants/brand';
+import type { ThemeColors } from '@/constants/theme';
 import { ApiError, ENGAGEMENT_MESSAGE_MAX, SKILL_LIMITS, engagementsApi, skillApi, type SkillPost } from '@/lib/api';
 import { campusTimeToIso, formatDayKey, formatMinutes, freeWindows, lastSelectableKey, slotDays, todayKey, type DayWindow } from '@/lib/skill-dates';
 import { useAuth } from '@/state/auth';
+import { useTheme, useThemedStyles } from '@/state/theme';
 
 const STEP = 30;
 const DEFAULT_LENGTH = 60;
@@ -34,6 +35,8 @@ function openPost(postId: number) {
 }
 
 export default function InterestScreen() {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const postId = /^\d+$/.test(id ?? '') ? Number(id) : null;
   const { session } = useAuth();
@@ -103,7 +106,7 @@ export default function InterestScreen() {
               {loadError}
             </Text>
           ) : (
-            <ActivityIndicator size="large" color={Brand.primary} accessibilityLabel="Loading post" />
+            <ActivityIndicator size="large" color={colors.primary} accessibilityLabel="Loading post" />
           )}
         </View>
       </View>
@@ -328,10 +331,10 @@ export default function InterestScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Brand.white,
+    backgroundColor: colors.background,
   },
   content: {
     paddingBottom: 40,
@@ -351,7 +354,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   summary: {
-    backgroundColor: Brand.chip,
+    backgroundColor: colors.surfaceMuted,
     borderRadius: 14,
     padding: 14,
     marginBottom: 18,
@@ -359,22 +362,22 @@ const styles = StyleSheet.create({
   },
   summaryText: {
     fontSize: 14,
-    color: Brand.textMuted,
+    color: colors.textMuted,
   },
   summaryTitle: {
     fontSize: 17,
     fontWeight: '700',
-    color: Brand.text,
+    color: colors.text,
   },
   label: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#222222',
+    color: colors.textLabel,
     marginBottom: 4,
   },
   hint: {
     fontSize: 13,
-    color: Brand.textMuted,
+    color: colors.textMuted,
     marginBottom: 8,
   },
   times: {
@@ -384,7 +387,7 @@ const styles = StyleSheet.create({
   dayTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: Brand.text,
+    color: colors.text,
     marginBottom: 6,
   },
   chipRow: {
@@ -394,26 +397,26 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   chip: {
-    backgroundColor: Brand.chip,
+    backgroundColor: colors.surfaceMuted,
     borderRadius: 16,
     paddingHorizontal: 12,
     minHeight: 40,
     justifyContent: 'center',
   },
   chipActive: {
-    backgroundColor: Brand.primary,
+    backgroundColor: colors.primary,
   },
   chipText: {
     fontSize: 13,
-    color: Brand.chipText,
+    color: colors.textChip,
   },
   chipTextActive: {
-    color: Brand.white,
+    color: colors.onPrimary,
     fontWeight: '600',
   },
   fixedPlace: {
     fontSize: 15,
-    color: Brand.text,
+    color: colors.text,
     marginVertical: 14,
   },
   multiline: {
@@ -421,36 +424,36 @@ const styles = StyleSheet.create({
     minHeight: 80,
     paddingVertical: 14,
     fontSize: 16,
-    color: Brand.text,
+    color: colors.text,
   },
   counter: {
     alignSelf: 'flex-end',
     fontSize: 12,
-    color: Brand.textMuted,
+    color: colors.textMuted,
     marginTop: -22,
     marginBottom: 6,
   },
   notice: {
     fontSize: 15,
-    color: Brand.text,
+    color: colors.text,
     marginBottom: 14,
   },
   errorText: {
-    color: '#C62828',
+    color: colors.error,
     fontSize: 14,
     minHeight: 18,
     marginBottom: 8,
     textAlign: 'center',
   },
   confirm: {
-    backgroundColor: Brand.primaryTint,
+    backgroundColor: colors.primaryTint,
     borderRadius: 14,
     padding: 14,
   },
   confirmText: {
     fontSize: 15,
     lineHeight: 21,
-    color: Brand.text,
+    color: colors.text,
     marginBottom: 12,
   },
   confirmButtons: {
@@ -458,7 +461,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   primary: {
-    backgroundColor: Brand.primary,
+    backgroundColor: colors.primary,
     minHeight: 50,
     borderRadius: 12,
     alignItems: 'center',
@@ -466,7 +469,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   primaryText: {
-    color: Brand.white,
+    color: colors.onPrimary,
     fontSize: 16,
     fontWeight: '700',
   },
@@ -474,14 +477,14 @@ const styles = StyleSheet.create({
     minHeight: 50,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: Brand.primary,
+    borderColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,
-    backgroundColor: Brand.white,
+    backgroundColor: colors.surface,
   },
   secondaryText: {
-    color: Brand.primary,
+    color: colors.textAccent,
     fontSize: 15,
     fontWeight: '600',
   },

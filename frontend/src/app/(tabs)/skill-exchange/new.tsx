@@ -12,10 +12,11 @@ import { ScreenHeader } from '@/components/screen-header';
 import { KIND_LABEL } from '@/components/skill-cards';
 import { SlotPicker, emptySelection } from '@/components/slot-picker';
 import { TagPicker, useSkillTagGroups } from '@/components/tag-picker';
-import { Brand } from '@/constants/brand';
+import type { ThemeColors } from '@/constants/theme';
 import { ApiError, SKILL_LIMITS, skillApi, type SkillKind, type SkillPost } from '@/lib/api';
 import { buildSlots, formatSlot, slotSelectionError, type SlotSelection } from '@/lib/skill-dates';
 import { useAuth } from '@/state/auth';
+import { useTheme, useThemedStyles } from '@/state/theme';
 
 type FieldErrors = Partial<Record<'title' | 'description' | 'extras' | 'location' | 'tags' | 'slots', string>>;
 
@@ -34,6 +35,7 @@ function goBackOr(postId?: number) {
 }
 
 function CharCount({ value, max }: { value: string; max: number }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <Text style={[styles.counter, value.length > max && styles.counterOver]} importantForAccessibility="no">
       {value.length}/{max}
@@ -42,6 +44,8 @@ function CharCount({ value, max }: { value: string; max: number }) {
 }
 
 export default function SkillPostFormScreen() {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const params = useLocalSearchParams<{ kind?: string; id?: string }>();
   const editId = params.id && /^\d+$/.test(params.id) ? Number(params.id) : null;
   const { session } = useAuth();
@@ -158,7 +162,7 @@ export default function SkillPostFormScreen() {
               {loadError}
             </Text>
           ) : (
-            <ActivityIndicator size="large" color={Brand.primary} accessibilityLabel="Loading post" />
+            <ActivityIndicator size="large" color={colors.primary} accessibilityLabel="Loading post" />
           )}
         </View>
       </View>
@@ -285,8 +289,8 @@ export default function SkillPostFormScreen() {
                 <Switch
                   value={flexible}
                   onValueChange={setFlexible}
-                  trackColor={{ true: Brand.primary, false: '#C9CBD1' }}
-                  thumbColor={Brand.white}
+                  trackColor={{ true: colors.primary, false: colors.switchTrackOff }}
+                  thumbColor={colors.switchThumb}
                   accessibilityLabel="Flexible location"
                   accessibilityLabelledBy="flexible-label"
                 />
@@ -339,10 +343,10 @@ export default function SkillPostFormScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Brand.white,
+    backgroundColor: colors.background,
   },
   content: {
     paddingBottom: 40,
@@ -362,7 +366,7 @@ const styles = StyleSheet.create({
   },
   kindToggle: {
     flexDirection: 'row',
-    backgroundColor: Brand.chip,
+    backgroundColor: colors.surfaceMuted,
     borderRadius: 12,
     padding: 4,
     marginBottom: 18,
@@ -375,42 +379,42 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   kindButtonActive: {
-    backgroundColor: Brand.primary,
+    backgroundColor: colors.primary,
   },
   kindText: {
     fontSize: 15,
     fontWeight: '600',
-    color: Brand.textMuted,
+    color: colors.textMuted,
   },
   kindTextActive: {
-    color: Brand.white,
+    color: colors.onPrimary,
   },
   locked: {
-    backgroundColor: Brand.chip,
+    backgroundColor: colors.surfaceMuted,
     borderRadius: 14,
     padding: 14,
     marginBottom: 18,
   },
   lockedLabel: {
     fontSize: 13,
-    color: Brand.textMuted,
+    color: colors.textMuted,
     fontWeight: '600',
   },
   lockedTitle: {
     fontSize: 17,
     fontWeight: '700',
-    color: Brand.text,
+    color: colors.text,
     marginTop: 4,
     marginBottom: 6,
   },
   lockedMeta: {
     fontSize: 14,
-    color: Brand.textMuted,
+    color: colors.textMuted,
     marginTop: 3,
   },
   note: {
     fontSize: 13,
-    color: Brand.textMuted,
+    color: colors.textMuted,
     marginTop: -2,
     marginBottom: 12,
   },
@@ -419,27 +423,27 @@ const styles = StyleSheet.create({
     minHeight: 110,
     paddingVertical: 14,
     fontSize: 16,
-    color: Brand.text,
+    color: colors.text,
   },
   multilineSmall: {
     flex: 1,
     minHeight: 70,
     paddingVertical: 14,
     fontSize: 16,
-    color: Brand.text,
+    color: colors.text,
   },
   counter: {
     alignSelf: 'flex-end',
     fontSize: 12,
-    color: Brand.textMuted,
+    color: colors.textMuted,
     marginTop: -22,
     marginBottom: 10,
   },
   counterOver: {
-    color: '#C62828',
+    color: colors.error,
   },
   fieldError: {
-    color: '#C62828',
+    color: colors.error,
     fontSize: 13,
     marginTop: -4,
     marginBottom: 8,
@@ -457,11 +461,11 @@ const styles = StyleSheet.create({
   switchLabel: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#222222',
+    color: colors.textLabel,
     marginBottom: 4,
   },
   formError: {
-    color: '#C62828',
+    color: colors.error,
     fontSize: 14,
     minHeight: 20,
     marginTop: 6,
@@ -469,7 +473,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   submit: {
-    backgroundColor: Brand.primary,
+    backgroundColor: colors.primary,
     minHeight: 50,
     borderRadius: 12,
     alignItems: 'center',
@@ -479,7 +483,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   submitText: {
-    color: Brand.white,
+    color: colors.onPrimary,
     fontSize: 16,
     fontWeight: '700',
   },
@@ -490,7 +494,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   cancelText: {
-    color: Brand.primary,
+    color: colors.textAccent,
     fontSize: 15,
     fontWeight: '600',
   },
