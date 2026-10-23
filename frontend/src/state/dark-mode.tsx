@@ -6,8 +6,8 @@
  * resets to light mode when the app reloads.
  *
  * For now "dark mode" is the light screens with every color inverted (see
- * DarkModeOverlay). The screens still use hardcoded colors, so a real dark
- * palette would mean moving them to theme colors first.
+ * DarkModeOverlay). The screens now read their colors from the theme
+ * (state/theme.tsx), so a real dark palette can replace the inversion.
  */
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 

@@ -14,6 +14,7 @@ import { router } from "expo-router";
 
 import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import { FormField } from "@/components/form-field";
+import type { ThemeColors } from "@/constants/theme";
 import { ApiError, authApi } from "@/lib/api";
 import {
   validateEmail,
@@ -22,6 +23,7 @@ import {
   validateUsername,
 } from "@/lib/validation";
 import { useAuth } from "@/state/auth";
+import { useTheme, useThemedStyles } from "@/state/theme";
 
 type FieldName =
   | "firstName"
@@ -34,6 +36,8 @@ type FieldName =
 type FieldErrors = Partial<Record<FieldName, string>>;
 
 export default function SignUpScreen() {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const { signIn } = useAuth();
 
   const [firstName, setFirstName] = useState("");
@@ -262,7 +266,7 @@ export default function SignUpScreen() {
           accessibilityState={{ disabled: loading, busy: loading }}
         >
           {loading ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <ActivityIndicator color={colors.onPrimary} />
           ) : (
             <Text style={styles.signUpButtonText}>CREATE</Text>
           )}
@@ -284,10 +288,10 @@ export default function SignUpScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.background,
   },
 
   scrollView: {
@@ -306,7 +310,7 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    backgroundColor: "#0B55B7",
+    backgroundColor: colors.header,
     paddingTop: 80,
     paddingBottom: 45,
     alignItems: "center",
@@ -315,7 +319,7 @@ const styles = StyleSheet.create({
   logoBox: {
     width: 65,
     height: 65,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.onHeader,
     borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
@@ -327,13 +331,13 @@ const styles = StyleSheet.create({
   },
 
   appTitle: {
-    color: "#FFFFFF",
+    color: colors.onHeader,
     fontSize: 28,
     fontWeight: "bold",
   },
 
   appSubtitle: {
-    color: "#DCE8FF",
+    color: colors.onHeaderMutedLogo,
     fontSize: 15,
     marginTop: 4,
   },
@@ -347,24 +351,24 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 30,
     fontWeight: "bold",
-    color: "#171717",
+    color: colors.text,
   },
 
   subtitle: {
     fontSize: 16,
-    color: "#696C7A",
+    color: colors.textMuted,
     marginTop: 7,
     marginBottom: 30,
   },
 
   errorText: {
-    color: "#C62828",
+    color: colors.error,
     fontSize: 14,
     marginBottom: 15,
   },
 
   signUpButton: {
-    backgroundColor: "#0B55B7",
+    backgroundColor: colors.primary,
     minHeight: 52,
     justifyContent: "center",
     borderRadius: 12,
@@ -377,7 +381,7 @@ const styles = StyleSheet.create({
   },
 
   signUpButtonText: {
-    color: "#FFFFFF",
+    color: colors.onPrimary,
     fontSize: 17,
     fontWeight: "600",
   },
@@ -390,7 +394,7 @@ const styles = StyleSheet.create({
   },
 
   backButtonText: {
-    color: "#0B55B7",
+    color: colors.textAccent,
     fontSize: 15,
     fontWeight: "600",
   },

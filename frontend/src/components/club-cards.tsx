@@ -6,7 +6,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 
-import { Brand } from '@/constants/brand';
+import type { ThemeColors } from '@/constants/theme';
 import {
   formatEventDate,
   formatEventTimeRange,
@@ -16,6 +16,7 @@ import {
   type ClubEvent,
 } from '@/data/mock-data';
 import { useAppState } from '@/state/app-state';
+import { useThemedStyles } from '@/state/theme';
 
 export function openClub(clubId: number) {
   router.push({ pathname: '/club/[id]', params: { id: String(clubId) } });
@@ -27,6 +28,7 @@ export function openEvent(eventId: number) {
 
 /** Full-width club row: emoji, name, subtitle, chevron. */
 export function ClubRow({ club, subtitle }: { club: Club; subtitle?: string }) {
+  const styles = useThemedStyles(createStyles);
   const { isJoined } = useAppState();
   const line =
     subtitle ?? `${getMemberCount(club, isJoined(club.club_id))} members · ${club.category}`;
@@ -54,6 +56,7 @@ export function ClubRow({ club, subtitle }: { club: Club; subtitle?: string }) {
 
 /** Event card with date badge, details, and an RSVP toggle. */
 export function EventCard({ event, showClub = true }: { event: ClubEvent; showClub?: boolean }) {
+  const styles = useThemedStyles(createStyles);
   const { hasRsvp, toggleRsvp } = useAppState();
   const club = getClubById(event.club_id);
   const going = hasRsvp(event.event_id);
@@ -102,6 +105,7 @@ export function RsvpButton({
   onPress: () => void;
   title: string;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <Pressable
       onPress={onPress}
@@ -133,6 +137,7 @@ export function CategoryChip({
   /** Screen-reader label; defaults to the visible label. */
   accessibilityLabel?: string;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <Pressable
       onPress={onPress}
@@ -154,6 +159,7 @@ export function EmptyState({
   title: string;
   message: string;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.empty}>
       <Text style={styles.emptyEmoji} importantForAccessibility="no">
@@ -165,18 +171,19 @@ export function EmptyState({
   );
 }
 
-export const cardStyles = StyleSheet.create({
+/** Shared with the Club and Event screens: `const cardStyles = useThemedStyles(createCardStyles);` */
+export const createCardStyles = (colors: ThemeColors) => StyleSheet.create({
   sectionTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: Brand.text,
+    color: colors.text,
     marginHorizontal: 20,
     marginTop: 26,
     marginBottom: 14,
   },
 });
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   pressed: {
     opacity: 0.7,
   },
@@ -184,12 +191,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: colors.border,
     borderRadius: 18,
     padding: 18,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Brand.white,
+    backgroundColor: colors.surface,
   },
   rowEmoji: {
     fontSize: 34,
@@ -201,26 +208,26 @@ const styles = StyleSheet.create({
   clubName: {
     fontSize: 18,
     fontWeight: '600',
-    color: Brand.text,
+    color: colors.text,
   },
   muted: {
     fontSize: 15,
-    color: Brand.textMuted,
+    color: colors.textMuted,
     marginTop: 6,
   },
   chevron: {
     fontSize: 28,
-    color: Brand.textMuted,
+    color: colors.textMuted,
     marginLeft: 8,
   },
   eventCard: {
     marginHorizontal: 20,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: colors.border,
     borderRadius: 18,
     padding: 20,
-    backgroundColor: Brand.white,
+    backgroundColor: colors.surface,
   },
   eventTopRow: {
     flexDirection: 'row',
@@ -232,23 +239,23 @@ const styles = StyleSheet.create({
     paddingRight: 12,
   },
   eventTitle: {
-    color: Brand.text,
+    color: colors.text,
     fontSize: 19,
     fontWeight: '600',
   },
   eventClub: {
-    color: Brand.textMuted,
+    color: colors.textMuted,
     fontSize: 15,
     marginTop: 6,
   },
   dateBadge: {
-    backgroundColor: Brand.primaryTint,
+    backgroundColor: colors.primaryTint,
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 18,
   },
   dateText: {
-    color: Brand.primary,
+    color: colors.textAccent,
     fontSize: 15,
     fontWeight: '500',
   },
@@ -259,47 +266,47 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   detailText: {
-    color: Brand.textMuted,
+    color: colors.textMuted,
     fontSize: 14,
   },
   rsvpButton: {
-    backgroundColor: Brand.primary,
+    backgroundColor: colors.primary,
     minHeight: 48,
     justifyContent: 'center',
     borderRadius: 13,
     alignItems: 'center',
     marginTop: 20,
     borderWidth: 2,
-    borderColor: Brand.primary,
+    borderColor: colors.primary,
   },
   rsvpButtonGoing: {
-    backgroundColor: Brand.white,
+    backgroundColor: colors.surface,
   },
   rsvpText: {
-    color: Brand.white,
+    color: colors.onPrimary,
     fontSize: 17,
     fontWeight: 'bold',
   },
   rsvpTextGoing: {
-    color: Brand.primary,
+    color: colors.textAccent,
   },
   chip: {
-    backgroundColor: Brand.chip,
+    backgroundColor: colors.surfaceMuted,
     paddingHorizontal: 20,
     minHeight: 44,
     justifyContent: 'center',
     borderRadius: 16,
   },
   chipActive: {
-    backgroundColor: Brand.primary,
+    backgroundColor: colors.primary,
   },
   chipText: {
-    color: Brand.chipText,
+    color: colors.textChip,
     fontSize: 16,
     fontWeight: '600',
   },
   chipTextActive: {
-    color: Brand.white,
+    color: colors.onPrimary,
   },
   empty: {
     alignItems: 'center',
@@ -313,12 +320,12 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: Brand.text,
+    color: colors.text,
     textAlign: 'center',
   },
   emptyMessage: {
     fontSize: 15,
-    color: Brand.textMuted,
+    color: colors.textMuted,
     textAlign: 'center',
     marginTop: 6,
   },

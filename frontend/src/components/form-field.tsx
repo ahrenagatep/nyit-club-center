@@ -12,12 +12,17 @@ import {
   type TextInputProps,
 } from "react-native";
 
+import type { ThemeColors } from "@/constants/theme";
+import { useTheme, useThemedStyles } from "@/state/theme";
+
 export function FormField({
   label,
   error,
   secure,
   ...inputProps
 }: TextInputProps & { label: string; error?: string; secure?: boolean }) {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const [visible, setVisible] = useState(false);
 
   return (
@@ -27,7 +32,7 @@ export function FormField({
       <View style={[styles.inputRow, error && styles.inputInvalid]}>
         <TextInput
           style={styles.inputText}
-          placeholderTextColor="#6B6E7A"
+          placeholderTextColor={colors.placeholderForm}
           secureTextEntry={secure && !visible}
           accessibilityLabel={label}
           {...inputProps}
@@ -55,11 +60,11 @@ export function FormField({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   label: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#222222",
+    color: colors.textLabel,
     marginBottom: 8,
   },
 
@@ -67,7 +72,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#D6D8DD",
+    borderColor: colors.borderStrong,
     borderRadius: 12,
     paddingHorizontal: 15,
   },
@@ -76,12 +81,12 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 14,
     fontSize: 16,
-    color: "#171717",
+    color: colors.text,
     letterSpacing: 0,
   },
 
   inputInvalid: {
-    borderColor: "#C62828",
+    borderColor: colors.error,
   },
 
   eyeButton: {
@@ -97,7 +102,7 @@ const styles = StyleSheet.create({
 
   // reserves space under each field so errors don't shift the layout
   fieldError: {
-    color: "#C62828",
+    color: colors.error,
     fontSize: 13,
     minHeight: 20,
     marginTop: 4,

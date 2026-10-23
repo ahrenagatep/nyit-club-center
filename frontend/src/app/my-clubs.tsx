@@ -3,12 +3,14 @@ import { router } from 'expo-router';
 
 import { ClubRow, EmptyState } from '@/components/club-cards';
 import { ScreenHeader } from '@/components/screen-header';
-import { Brand } from '@/constants/brand';
+import type { ThemeColors } from '@/constants/theme';
 import { CLUBS, getMembershipRoleLabel } from '@/data/mock-data';
 import { useAppState } from '@/state/app-state';
+import { useThemedStyles } from '@/state/theme';
 
 /** Clubs the user has joined (Home → "View all" under Your Clubs, and Profile). */
 export default function MyClubsScreen() {
+  const styles = useThemedStyles(createStyles);
   const { joinedClubIds } = useAppState();
   const clubs = CLUBS.filter((club) => joinedClubIds.includes(club.club_id));
 
@@ -51,10 +53,10 @@ export default function MyClubsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Brand.white,
+    backgroundColor: colors.background,
   },
   content: {
     paddingBottom: 35,
@@ -68,12 +70,12 @@ const styles = StyleSheet.create({
     minHeight: 52,
     borderRadius: 14,
     borderWidth: 2,
-    borderColor: Brand.primary,
+    borderColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   browseText: {
-    color: Brand.primary,
+    color: colors.textAccent,
     fontSize: 17,
     fontWeight: 'bold',
   },

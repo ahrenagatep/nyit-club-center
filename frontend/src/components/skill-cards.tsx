@@ -6,9 +6,10 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 
-import { Brand } from '@/constants/brand';
+import type { ThemeColorName, ThemeColors } from '@/constants/theme';
 import type { EngagementStatus, SkillAuthor, SkillKind, SkillPost, SkillStatus } from '@/lib/api';
 import { formatPostDate, formatSlot, timeAgo } from '@/lib/skill-dates';
+import { useTheme, useThemedStyles } from '@/state/theme';
 
 /** Screens outside the Skill Exchange tab that open its screens; Back returns to them. */
 export type SkillOrigin = 'notifications' | 'profile';
@@ -41,25 +42,29 @@ export const STATUS_LABEL: Record<SkillStatus, string> = {
   unavailable: 'Unavailable',
 };
 
+/** A badge's background and text, as theme color names. */
+type BadgeColors = { bg: ThemeColorName; fg: ThemeColorName };
+
 // text/background pairs all pass WCAG AA (4.5:1) at 12px
-const STATUS_COLORS: Record<SkillStatus, { bg: string; fg: string }> = {
-  open: { bg: '#DDF8E8', fg: '#11633A' },
-  available: { bg: '#DDF8E8', fg: '#11633A' },
-  closed: { bg: '#FFF1D6', fg: '#7A4A00' },
-  complete: { bg: '#F1F1F3', fg: '#4A4D57' },
-  unavailable: { bg: '#F1F1F3', fg: '#4A4D57' },
+const STATUS_COLORS: Record<SkillStatus, BadgeColors> = {
+  open: { bg: 'successBackground', fg: 'success' },
+  available: { bg: 'successBackground', fg: 'success' },
+  closed: { bg: 'warningBackground', fg: 'warning' },
+  complete: { bg: 'surfaceMuted', fg: 'neutral' },
+  unavailable: { bg: 'surfaceMuted', fg: 'neutral' },
 };
 
 // a response's state; same AA-checked colour pairs as the post badges
-export const ENGAGEMENT_STATUS: Record<EngagementStatus, { label: string; bg: string; fg: string }> = {
-  pending: { label: 'WAITING FOR A REPLY', bg: '#FFF1D6', fg: '#7A4A00' },
-  accepted: { label: 'AGREED', bg: '#DDF8E8', fg: '#11633A' },
-  declined: { label: 'DECLINED', bg: '#F1F1F3', fg: '#4A4D57' },
-  cancelled: { label: 'CANCELLED', bg: '#F1F1F3', fg: '#4A4D57' },
-  completed: { label: 'COMPLETED', bg: '#E5EFFF', fg: '#0B55B7' },
+export const ENGAGEMENT_STATUS: Record<EngagementStatus, { label: string } & BadgeColors> = {
+  pending: { label: 'WAITING FOR A REPLY', bg: 'warningBackground', fg: 'warning' },
+  accepted: { label: 'AGREED', bg: 'successBackground', fg: 'success' },
+  declined: { label: 'DECLINED', bg: 'surfaceMuted', fg: 'neutral' },
+  cancelled: { label: 'CANCELLED', bg: 'surfaceMuted', fg: 'neutral' },
+  completed: { label: 'COMPLETED', bg: 'primaryTintBadge', fg: 'textAccent' },
 };
 
 export function KindBadge({ kind }: { kind: SkillKind }) {
+  const styles = useThemedStyles(createStyles);
   const offer = kind === 'offer';
   return (
     <View style={[styles.badge, offer ? styles.offerBadge : styles.requestBadge]}>
@@ -69,15 +74,18 @@ export function KindBadge({ kind }: { kind: SkillKind }) {
 }
 
 export function StatusBadge({ status }: { status: SkillStatus }) {
-  const colors = STATUS_COLORS[status];
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
+  const badge = STATUS_COLORS[status];
   return (
-    <View style={[styles.badge, { backgroundColor: colors.bg }]}>
-      <Text style={[styles.badgeText, { color: colors.fg }]}>{STATUS_LABEL[status].toUpperCase()}</Text>
+    <View style={[styles.badge, { backgroundColor: colors[badge.bg] }]}>
+      <Text style={[styles.badgeText, { color: colors[badge.fg] }]}>{STATUS_LABEL[status].toUpperCase()}</Text>
     </View>
   );
 }
 
 export function TagChips({ tags }: { tags: string[] }) {
+  const styles = useThemedStyles(createStyles);
   if (!tags.length) return null;
   return (
     <View style={styles.tagRow}>
@@ -95,6 +103,7 @@ export function kudosLabel(count: number): string {
 }
 
 export function KudosBadge({ count }: { count: number }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.kudos} accessibilityLabel={`${kudosLabel(count)}: requests and offers fulfilled`}>
       <Text style={styles.kudosText}>⭐ {count}</Text>
@@ -112,6 +121,7 @@ export function initials(author: SkillAuthor): string {
 
 /** Avatar, name + Kudos, NYIT email, and when it was posted. */
 export function AuthorRow({ author, postedAt }: { author: SkillAuthor; postedAt: string }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.authorRow}>
       <View style={styles.avatar} importantForAccessibility="no-hide-descendants">
@@ -150,6 +160,7 @@ export function SkillPostCard({
   expanded: boolean;
   onToggle: () => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   // the description is drawn in full and clipped; its real height says whether it was cut off
   const [descriptionHeight, setDescriptionHeight] = useState(0);
   const clipped = descriptionHeight > PREVIEW_HEIGHT + 1;
@@ -254,7 +265,7 @@ const PREVIEW_HEIGHT = 60;
 const CARD_DATES = 2;
 const FADE_STEPS = [0.2, 0.45, 0.7, 0.92];
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   pressed: {
     opacity: 0.7,
   },
@@ -263,9 +274,9 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     padding: 16,
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: colors.border,
     borderRadius: 16,
-    backgroundColor: Brand.white,
+    backgroundColor: colors.surface,
   },
   authorRow: {
     flexDirection: 'row',
@@ -275,13 +286,13 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: Brand.primaryTint,
+    backgroundColor: colors.primaryTint,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
   avatarText: {
-    color: Brand.primary,
+    color: colors.textAccent,
     fontSize: 16,
     fontWeight: '700',
   },
@@ -296,21 +307,21 @@ const styles = StyleSheet.create({
   authorName: {
     fontSize: 16,
     fontWeight: '600',
-    color: Brand.text,
+    color: colors.text,
     flexShrink: 1,
   },
   authorEmail: {
     fontSize: 13,
-    color: Brand.textMuted,
+    color: colors.textMuted,
     marginTop: 2,
   },
   timeText: {
     fontSize: 12,
-    color: Brand.textMuted,
+    color: colors.textMuted,
     marginLeft: 8,
   },
   kudos: {
-    backgroundColor: '#FFF6D9',
+    backgroundColor: colors.kudosBackground,
     borderRadius: 10,
     paddingHorizontal: 7,
     paddingVertical: 2,
@@ -318,7 +329,7 @@ const styles = StyleSheet.create({
   kudosText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#6B4E00',
+    color: colors.kudos,
   },
   badgeRow: {
     flexDirection: 'row',
@@ -337,26 +348,26 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   offerBadge: {
-    backgroundColor: '#DDF8E8',
+    backgroundColor: colors.successBackground,
   },
   offerText: {
-    color: '#11633A',
+    color: colors.success,
   },
   requestBadge: {
-    backgroundColor: '#E5EFFF',
+    backgroundColor: colors.primaryTintBadge,
   },
   requestText: {
-    color: Brand.primary,
+    color: colors.textAccent,
   },
   yours: {
     fontSize: 12,
-    color: Brand.textMuted,
+    color: colors.textMuted,
     fontStyle: 'italic',
   },
   title: {
     fontSize: 17,
     fontWeight: '700',
-    color: Brand.text,
+    color: colors.text,
     marginTop: 10,
   },
   tagRow: {
@@ -366,31 +377,31 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   tag: {
-    backgroundColor: Brand.chip,
+    backgroundColor: colors.surfaceMuted,
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
   tagText: {
     fontSize: 12,
-    color: Brand.chipText,
+    color: colors.textChip,
   },
   details: {
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: Brand.border,
+    borderTopColor: colors.border,
   },
   detailLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: Brand.text,
+    color: colors.text,
     marginTop: 10,
   },
   description: {
     fontSize: 14,
     lineHeight: 20,
-    color: '#3F4350',
+    color: colors.textSecondary,
   },
   facts: {
     marginTop: 10,
@@ -398,11 +409,11 @@ const styles = StyleSheet.create({
   },
   fact: {
     fontSize: 13,
-    color: Brand.text,
+    color: colors.text,
   },
   factMore: {
     fontSize: 13,
-    color: Brand.textMuted,
+    color: colors.textMuted,
   },
   preview: {
     marginTop: 10,
@@ -419,11 +430,11 @@ const styles = StyleSheet.create({
   },
   fadeStep: {
     height: 6,
-    backgroundColor: Brand.white,
+    backgroundColor: colors.surface,
   },
   meta: {
     fontSize: 13,
-    color: Brand.textMuted,
+    color: colors.textMuted,
     marginTop: 8,
   },
   cardBottom: {
@@ -438,12 +449,12 @@ const styles = StyleSheet.create({
     paddingRight: 8,
   },
   textButtonText: {
-    color: Brand.primary,
+    color: colors.textAccent,
     fontSize: 14,
     fontWeight: '600',
   },
   openButton: {
-    backgroundColor: Brand.primary,
+    backgroundColor: colors.primary,
     minHeight: 44,
     minWidth: 80,
     paddingHorizontal: 18,
@@ -452,7 +463,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   openButtonText: {
-    color: Brand.white,
+    color: colors.onPrimary,
     fontSize: 14,
     fontWeight: '600',
   },

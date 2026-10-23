@@ -11,10 +11,12 @@ import {
 import { router } from "expo-router";
 
 import { DarkModeToggle } from "@/components/dark-mode-toggle";
-import { Brand } from "@/constants/brand";
+import type { ThemeColors } from "@/constants/theme";
 import { useAuth } from "@/state/auth";
+import { useThemedStyles } from "@/state/theme";
 
 export default function MoreScreen() {
+    const styles = useThemedStyles(createStyles);
     const { user, signOut } = useAuth();
     // user is briefly null while signing out, before the redirect to Login.
     const fullName =
@@ -79,11 +81,11 @@ export default function MoreScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
 
     container: {
         flex: 1,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.background,
     },
 
     content: {
@@ -91,7 +93,7 @@ const styles = StyleSheet.create({
     },
 
     header: {
-        backgroundColor: "#0B55B7",
+        backgroundColor: colors.header,
         paddingTop: 65,
         paddingHorizontal: 22,
         paddingBottom: 40,
@@ -101,19 +103,19 @@ const styles = StyleSheet.create({
     },
 
     headerSubtitle: {
-        color: "#E6EEFB",
+        color: colors.onHeaderMuted,
         fontSize: 14,
         marginTop: 6,
     },
 
     profileCard: {
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
         marginHorizontal: 18,
         marginTop: -20,
         borderRadius: 18,
         padding: 18,
 
-        shadowColor: "#000000",
+        shadowColor: colors.shadow,
         shadowOpacity: 0.08,
         shadowRadius: 8,
         shadowOffset: {
@@ -133,7 +135,7 @@ const styles = StyleSheet.create({
         width: 72,
         height: 72,
         borderRadius: 36,
-        backgroundColor: "#F1F1F3",
+        backgroundColor: colors.surfaceMuted,
         alignItems: "center",
         justifyContent: "center",
         marginRight: 15,
@@ -150,12 +152,12 @@ const styles = StyleSheet.create({
     name: {
         fontSize: 21,
         fontWeight: "bold",
-        color: "#171717",
+        color: colors.text,
     },
 
     major: {
         fontSize: 14,
-        color: Brand.textMuted,
+        color: colors.textMuted,
         marginTop: 4,
     },
 
@@ -163,7 +165,7 @@ const styles = StyleSheet.create({
         marginTop: 20,
         paddingTop: 17,
         borderTopWidth: 1,
-        borderTopColor: "#E4E5E8",
+        borderTopColor: colors.borderMore,
 
         flexDirection: "row",
         justifyContent: "space-between",
@@ -173,37 +175,37 @@ const styles = StyleSheet.create({
     viewProfileTitle: {
         fontSize: 16,
         fontWeight: "600",
-        color: "#171717",
+        color: colors.text,
     },
 
     viewProfileSubtitle: {
         fontSize: 12,
-        color: Brand.textMuted,
+        color: colors.textMuted,
         marginTop: 4,
     },
 
     arrow: {
         fontSize: 30,
-        color: Brand.textMuted,
+        color: colors.textMuted,
     },
 
     futureCard: {
         marginHorizontal: 18,
         marginTop: 20,
         padding: 18,
-        backgroundColor: "#F7F8FA",
+        backgroundColor: colors.surfaceMutedMore,
         borderRadius: 16,
     },
 
     futureTitle: {
         fontSize: 15,
         fontWeight: "600",
-        color: "#171717",
+        color: colors.text,
     },
 
     futureText: {
         fontSize: 13,
-        color: Brand.textMuted,
+        color: colors.textMuted,
         marginTop: 5,
         lineHeight: 18,
     },
@@ -218,13 +220,13 @@ const styles = StyleSheet.create({
         minHeight: 52,
         borderRadius: 16,
         borderWidth: 2,
-        borderColor: Brand.danger,
+        borderColor: colors.danger,
         justifyContent: "center",
         alignItems: "center",
     },
 
     signOutText: {
-        color: Brand.danger,
+        color: colors.danger,
         fontSize: 16,
         fontWeight: "bold",
     },

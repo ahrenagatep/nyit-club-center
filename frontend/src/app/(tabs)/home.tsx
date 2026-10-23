@@ -19,6 +19,7 @@ import {
   EventCard,
   openClub,
 } from "@/components/club-cards";
+import type { ThemeColors } from "@/constants/theme";
 import {
   CATEGORIES,
   CLUBS,
@@ -33,6 +34,7 @@ import { useClubs } from "@/lib/clubs";
 
 import { useAppState } from "@/state/app-state";
 import { useAuth } from "@/state/auth";
+import { useTheme, useThemedStyles } from "@/state/theme";
 
 // How many upcoming events to preview on Home; "View all" opens the Events tab.
 const HOME_EVENT_LIMIT = 2;
@@ -45,6 +47,8 @@ function openExplore(
 }
 
 export default function HomeScreen() {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const [search, setSearch] = useState("");
   const { joinedClubIds } = useAppState();
   const { user } = useAuth();
@@ -125,7 +129,7 @@ export default function HomeScreen() {
           <TextInput
             style={styles.searchText}
             placeholder="Search clubs, events, people..."
-            placeholderTextColor="#696C7A"
+            placeholderTextColor={colors.placeholder}
             value={search}
             onChangeText={setSearch}
             onSubmitEditing={submitSearch}
@@ -282,11 +286,11 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
 
   recommendedMessage: {
     fontSize: 17,
-    color: "#696C7A",
+    color: colors.textMuted,
     marginLeft: 20,
   },
 
@@ -313,7 +317,7 @@ const styles = StyleSheet.create({
 
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.background,
   },
 
   content: {
@@ -321,7 +325,7 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    backgroundColor: "#0B55B7",
+    backgroundColor: colors.header,
     paddingTop: 70,
     paddingHorizontal: 26,
     paddingBottom: 88,
@@ -331,12 +335,12 @@ const styles = StyleSheet.create({
   },
 
   welcomeText: {
-    color: "#FFFFFF",
+    color: colors.onHeader,
     fontSize: 19,
   },
 
   name: {
-    color: "#FFFFFF",
+    color: colors.onHeader,
     fontSize: 30,
     fontWeight: "bold",
     marginTop: 4,
@@ -356,7 +360,7 @@ const styles = StyleSheet.create({
     width: 54,
     height: 54,
     borderRadius: 27,
-    backgroundColor: "rgba(255,255,255,0.20)",
+    backgroundColor: colors.headerButton,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -366,13 +370,13 @@ const styles = StyleSheet.create({
   },
 
   searchCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     marginHorizontal: 20,
     marginTop: -38,
     borderRadius: 24,
     padding: 16,
 
-    shadowColor: "#000000",
+    shadowColor: colors.shadow,
     shadowOpacity: 0.08,
     shadowRadius: 10,
     shadowOffset: {
@@ -396,7 +400,7 @@ const styles = StyleSheet.create({
   searchText: {
     flex: 1,
     minHeight: 44,
-    color: "#171717",
+    color: colors.text,
     fontSize: 17,
     letterSpacing: 0,
   },
@@ -425,11 +429,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#171717",
+    color: colors.text,
   },
 
   sectionLink: {
-    color: "#0B55B7",
+    color: colors.textAccent,
     fontSize: 17,
     fontWeight: "600",
   },
@@ -443,10 +447,10 @@ const styles = StyleSheet.create({
     width: 190,
     minHeight: 230,
     borderWidth: 1,
-    borderColor: "#E2E2E5",
+    borderColor: colors.border,
     borderRadius: 18,
     padding: 18,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
   },
 
   clubEmoji: {
@@ -457,26 +461,26 @@ const styles = StyleSheet.create({
   clubName: {
     fontSize: 19,
     fontWeight: "600",
-    color: "#171717",
+    color: colors.text,
   },
 
   clubMembers: {
     fontSize: 15,
-    color: "#696C7A",
+    color: colors.textMuted,
     marginTop: 8,
   },
 
   tag: {
     marginTop: 12,
     alignSelf: "flex-start",
-    backgroundColor: "#DDEEFF",
+    backgroundColor: colors.tagBackground,
     borderRadius: 14,
     paddingHorizontal: 11,
     paddingVertical: 5,
   },
 
   tagText: {
-    color: "#0B55B7",
+    color: colors.textAccent,
     fontSize: 14,
   },
 });

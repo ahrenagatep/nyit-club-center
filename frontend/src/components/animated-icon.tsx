@@ -5,10 +5,14 @@ import { Dimensions, StyleSheet, View } from 'react-native';
 import Animated, { Easing, Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
+import type { ThemeColors } from '@/constants/theme';
+import { useThemedStyles } from '@/state/theme';
+
 const INITIAL_SCALE_FACTOR = Dimensions.get('screen').height / 90;
 const DURATION = 600;
 
 export function AnimatedSplashOverlay() {
+  const styles = useThemedStyles(createStyles);
   const [animate, setAnimate] = useState(false);
   const [visible, setVisible] = useState(true);
 
@@ -96,6 +100,7 @@ const glowKeyframe = new Keyframe({
 });
 
 export function AnimatedIcon() {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.iconContainer}>
       <Animated.View entering={glowKeyframe.duration(60 * 1000 * 4)} style={styles.glow}>
@@ -110,7 +115,7 @@ export function AnimatedIcon() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   imageContainer: {
     justifyContent: 'center',
     alignItems: 'center',
@@ -133,14 +138,14 @@ const styles = StyleSheet.create({
   },
   background: {
     borderRadius: 40,
-    experimental_backgroundImage: `linear-gradient(180deg, #3C9FFE, #0274DF)`,
+    experimental_backgroundImage: `linear-gradient(180deg, ${colors.splashIconTop}, ${colors.splashIconBottom})`,
     width: 128,
     height: 128,
     position: 'absolute',
   },
   splashOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: '#208AEF',
+    backgroundColor: colors.splashBackground,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,

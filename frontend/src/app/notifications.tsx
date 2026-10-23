@@ -5,11 +5,12 @@ import { router, useFocusEffect } from 'expo-router';
 import { EmptyState } from '@/components/club-cards';
 import { openSkillEngagement } from '@/components/skill-cards';
 import { ScreenHeader } from '@/components/screen-header';
-import { Brand } from '@/constants/brand';
+import type { ThemeColors } from '@/constants/theme';
 import { ApiError, notificationsApi, type AppNotification, type NotificationType } from '@/lib/api';
 import { formatPostDate, timeAgo } from '@/lib/skill-dates';
 import { useAuth } from '@/state/auth';
 import { useNotifications } from '@/state/notifications';
+import { useTheme, useThemedStyles } from '@/state/theme';
 
 const PAGE_SIZE = 30;
 
@@ -40,6 +41,8 @@ function errorMessage(error: unknown): string {
 
 /** Notification inbox (🔔 on Home, Explore, Events; Profile → Settings). */
 export default function NotificationsScreen() {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const { session } = useAuth();
   const { unreadCount, setUnreadCount } = useNotifications();
 
@@ -165,7 +168,7 @@ export default function NotificationsScreen() {
 
       <View style={styles.list}>
         {loading ? (
-          <ActivityIndicator style={styles.spinner} size="large" color={Brand.primary} accessibilityLabel="Loading notifications" />
+          <ActivityIndicator style={styles.spinner} size="large" color={colors.primary} accessibilityLabel="Loading notifications" />
         ) : error ? (
           <View style={styles.errorBox}>
             <Text style={styles.errorText} accessibilityRole="alert">
@@ -236,10 +239,10 @@ export default function NotificationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Brand.white,
+    backgroundColor: colors.background,
   },
   content: {
     paddingBottom: 35,
@@ -262,7 +265,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   markAllText: {
-    color: Brand.primary,
+    color: colors.textAccent,
     fontSize: 15,
     fontWeight: '600',
   },
@@ -273,16 +276,16 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: colors.border,
     borderRadius: 18,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Brand.white,
+    backgroundColor: colors.surface,
   },
   cardUnread: {
-    backgroundColor: '#F3F7FD',
-    borderColor: '#C9DAF3',
+    backgroundColor: colors.primarySurface,
+    borderColor: colors.primaryBorder,
   },
   icon: {
     fontSize: 26,
@@ -299,7 +302,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: '500',
-    color: Brand.text,
+    color: colors.text,
     flexShrink: 1,
   },
   titleUnread: {
@@ -307,18 +310,18 @@ const styles = StyleSheet.create({
   },
   date: {
     fontSize: 13,
-    color: Brand.textMuted,
+    color: colors.textMuted,
     marginLeft: 8,
   },
   message: {
     fontSize: 15,
-    color: Brand.textMuted,
+    color: colors.textMuted,
     marginTop: 4,
     lineHeight: 21,
   },
   gone: {
     fontSize: 13,
-    color: Brand.textMuted,
+    color: colors.textMuted,
     fontStyle: 'italic',
     marginTop: 4,
   },
@@ -326,12 +329,12 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: Brand.primary,
+    backgroundColor: colors.primary,
     marginLeft: 10,
   },
   chevron: {
     fontSize: 28,
-    color: Brand.textMuted,
+    color: colors.textMuted,
     marginLeft: 8,
   },
   errorBox: {
@@ -339,7 +342,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   errorText: {
-    color: '#C62828',
+    color: colors.error,
     fontSize: 15,
     textAlign: 'center',
     marginHorizontal: 20,
@@ -350,7 +353,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: Brand.primary,
+    borderColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -358,7 +361,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
   },
   retryText: {
-    color: Brand.primary,
+    color: colors.textAccent,
     fontWeight: '600',
     fontSize: 15,
   },

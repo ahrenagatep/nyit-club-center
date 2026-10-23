@@ -13,10 +13,11 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { FormField } from '@/components/form-field';
 import { ScreenHeader } from '@/components/screen-header';
 import { ENGAGEMENT_STATUS, KudosBadge, authorName, backToOrigin, initials } from '@/components/skill-cards';
-import { Brand } from '@/constants/brand';
+import type { ThemeColors } from '@/constants/theme';
 import { ApiError, ENGAGEMENT_MESSAGE_MAX, engagementsApi, type SkillAuthor, type SkillEngagement } from '@/lib/api';
 import { formatPostDate, formatSlot, timeAgo } from '@/lib/skill-dates';
 import { useAuth } from '@/state/auth';
+import { useTheme, useThemedStyles } from '@/state/theme';
 
 type Action = 'accept' | 'decline' | 'cancel' | 'complete' | 'kudos';
 
@@ -30,6 +31,7 @@ function errorMessage(error: unknown): string {
 }
 
 function PersonCard({ person, role, showContact }: { person: SkillAuthor; role: string; showContact: boolean }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.person}>
       <View style={styles.avatar} importantForAccessibility="no-hide-descendants">
@@ -52,6 +54,8 @@ function PersonCard({ person, role, showContact }: { person: SkillAuthor; role: 
 }
 
 export default function EngagementScreen() {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
   const engagementId = /^\d+$/.test(id ?? '') ? Number(id) : null;
   const { session } = useAuth();
@@ -122,7 +126,7 @@ export default function EngagementScreen() {
               {loadError}
             </Text>
           ) : (
-            <ActivityIndicator size="large" color={Brand.primary} accessibilityLabel="Loading" />
+            <ActivityIndicator size="large" color={colors.primary} accessibilityLabel="Loading" />
           )}
         </View>
       </View>
@@ -210,8 +214,8 @@ export default function EngagementScreen() {
       <ScreenHeader title={heading} subtitle={isRequest ? 'Request' : 'Offer'} onBack={backToOrigin(from)} />
 
       <View style={styles.body}>
-        <View style={[styles.status, { backgroundColor: status.bg }]}>
-          <Text style={[styles.statusText, { color: status.fg }]}>{status.label}</Text>
+        <View style={[styles.status, { backgroundColor: colors[status.bg] }]}>
+          <Text style={[styles.statusText, { color: colors[status.fg] }]}>{status.label}</Text>
         </View>
 
         <Pressable
@@ -324,8 +328,8 @@ export default function EngagementScreen() {
                 <Switch
                   value={awardKudos}
                   onValueChange={setAwardKudos}
-                  trackColor={{ true: Brand.primary, false: '#C9CBD1' }}
-                  thumbColor={Brand.white}
+                  trackColor={{ true: colors.primary, false: colors.switchTrackOff }}
+                  thumbColor={colors.switchThumb}
                   accessibilityLabel={`Give ${authorName(responder)} Kudos`}
                   accessibilityLabelledBy="kudos-label"
                 />
@@ -423,10 +427,10 @@ export default function EngagementScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Brand.white,
+    backgroundColor: colors.background,
   },
   content: {
     paddingBottom: 40,
@@ -465,11 +469,11 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 20,
     fontWeight: '700',
-    color: Brand.text,
+    color: colors.text,
   },
   chevron: {
     fontSize: 28,
-    color: Brand.textMuted,
+    color: colors.textMuted,
     marginLeft: 8,
   },
   details: {
@@ -479,23 +483,23 @@ const styles = StyleSheet.create({
   },
   detail: {
     fontSize: 16,
-    color: Brand.text,
+    color: colors.text,
   },
   meta: {
     fontSize: 13,
-    color: Brand.textMuted,
+    color: colors.textMuted,
     marginTop: 4,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: Brand.text,
+    color: colors.text,
     marginBottom: 8,
   },
   contactBox: {
     borderWidth: 1,
-    borderColor: '#BFE6CF',
-    backgroundColor: '#F2FBF6',
+    borderColor: colors.successBorder,
+    backgroundColor: colors.successSurface,
     borderRadius: 16,
     padding: 14,
     marginBottom: 14,
@@ -509,13 +513,13 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: Brand.primaryTint,
+    backgroundColor: colors.primaryTint,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
   avatarText: {
-    color: Brand.primary,
+    color: colors.textAccent,
     fontWeight: '700',
     fontSize: 16,
   },
@@ -524,7 +528,7 @@ const styles = StyleSheet.create({
   },
   personRole: {
     fontSize: 12,
-    color: Brand.textMuted,
+    color: colors.textMuted,
   },
   nameRow: {
     flexDirection: 'row',
@@ -534,32 +538,32 @@ const styles = StyleSheet.create({
   personName: {
     fontSize: 16,
     fontWeight: '600',
-    color: Brand.text,
+    color: colors.text,
   },
   contact: {
     fontSize: 15,
-    color: Brand.primary,
+    color: colors.textAccent,
     marginTop: 4,
   },
   quote: {
     borderLeftWidth: 3,
-    borderLeftColor: Brand.primary,
+    borderLeftColor: colors.primary,
     paddingLeft: 12,
     marginBottom: 12,
   },
   quoteLabel: {
     fontSize: 12,
-    color: Brand.textMuted,
+    color: colors.textMuted,
     marginBottom: 2,
   },
   quoteText: {
     fontSize: 15,
     lineHeight: 21,
-    color: '#3F4350',
+    color: colors.textSecondary,
   },
   notice: {
     fontSize: 15,
-    color: Brand.text,
+    color: colors.text,
     marginBottom: 10,
   },
   actions: {
@@ -567,8 +571,8 @@ const styles = StyleSheet.create({
   },
   completeBox: {
     borderWidth: 1,
-    borderColor: '#C9DAF3',
-    backgroundColor: '#F3F7FD',
+    borderColor: colors.primaryBorder,
+    backgroundColor: colors.primarySurface,
     borderRadius: 16,
     padding: 14,
     marginTop: 4,
@@ -584,11 +588,11 @@ const styles = StyleSheet.create({
   switchLabel: {
     flex: 1,
     fontSize: 15,
-    color: Brand.text,
+    color: colors.text,
     paddingRight: 12,
   },
   kudosBox: {
-    backgroundColor: '#FFF8E1',
+    backgroundColor: colors.kudosSurface,
     borderRadius: 16,
     padding: 14,
     marginTop: 4,
@@ -597,19 +601,19 @@ const styles = StyleSheet.create({
   kudosText: {
     fontSize: 15,
     lineHeight: 21,
-    color: Brand.text,
+    color: colors.text,
   },
   multiline: {
     flex: 1,
     minHeight: 70,
     paddingVertical: 14,
     fontSize: 16,
-    color: Brand.text,
+    color: colors.text,
   },
   counter: {
     alignSelf: 'flex-end',
     fontSize: 12,
-    color: Brand.textMuted,
+    color: colors.textMuted,
     marginTop: -22,
     marginBottom: 6,
   },
@@ -618,7 +622,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   primary: {
-    backgroundColor: Brand.primary,
+    backgroundColor: colors.primary,
     minHeight: 50,
     borderRadius: 12,
     alignItems: 'center',
@@ -626,7 +630,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   primaryText: {
-    color: Brand.white,
+    color: colors.onPrimary,
     fontSize: 16,
     fontWeight: '700',
   },
@@ -634,19 +638,19 @@ const styles = StyleSheet.create({
     minHeight: 50,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: Brand.primary,
+    borderColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,
-    backgroundColor: Brand.white,
+    backgroundColor: colors.surface,
   },
   secondaryText: {
-    color: Brand.primary,
+    color: colors.textAccent,
     fontSize: 15,
     fontWeight: '600',
   },
   danger: {
-    backgroundColor: Brand.danger,
+    backgroundColor: colors.danger,
     minHeight: 50,
     borderRadius: 12,
     alignItems: 'center',
@@ -659,7 +663,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   dangerLinkText: {
-    color: Brand.danger,
+    color: colors.danger,
     fontSize: 15,
     fontWeight: '600',
   },
@@ -669,19 +673,19 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   confirmGood: {
-    backgroundColor: Brand.primaryTint,
+    backgroundColor: colors.primaryTint,
   },
   confirmBad: {
-    backgroundColor: '#FDECEA',
+    backgroundColor: colors.dangerBackground,
   },
   confirmText: {
     fontSize: 15,
     lineHeight: 21,
-    color: Brand.text,
+    color: colors.text,
     marginBottom: 12,
   },
   errorText: {
-    color: '#C62828',
+    color: colors.error,
     fontSize: 14,
     minHeight: 18,
     marginTop: 8,

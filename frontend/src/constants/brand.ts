@@ -1,17 +1,19 @@
+import { LightColors } from '@/constants/theme';
+
 /**
- * NYIT Club Center brand colors, pulled from the Login and Home screens so
- * new screens match them. (theme.ts still holds the Expo template's
- * light/dark palette used by the themed-* components.)
+ * @deprecated Use `useTheme()` / `useThemedStyles()` from `@/state/theme` instead.
+ * These are fixed light-mode colors and won't follow dark mode. Kept only so code
+ * written before the theme (e.g. on other branches) still works.
  */
 export const Brand = {
-  primary: '#0B55B7',
-  primaryTint: '#E7EFFB',
-  tagBackground: '#DDEEFF',
-  white: '#FFFFFF',
-  text: '#171717',
-  textMuted: '#696C7A',
-  border: '#E2E2E5',
-  chip: '#F1F1F3',
-  chipText: '#1C1C1E',
-  danger: '#B42318',
+  primary: LightColors.primary,
+  primaryTint: LightColors.primaryTint,
+  tagBackground: LightColors.tagBackground,
+  white: LightColors.surface,
+  text: LightColors.text,
+  textMuted: LightColors.textMuted,
+  border: LightColors.border,
+  chip: LightColors.surfaceMuted,
+  chipText: LightColors.textChip,
+  danger: LightColors.danger,
 } as const;

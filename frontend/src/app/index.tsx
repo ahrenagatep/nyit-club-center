@@ -14,9 +14,11 @@ import {
 import { router, useLocalSearchParams } from "expo-router";
 
 import { DarkModeToggle } from "@/components/dark-mode-toggle";
+import type { ThemeColors } from "@/constants/theme";
 import { ApiError, authApi } from "@/lib/api";
 import { validateEmail } from "@/lib/validation";
 import { useAuth } from "@/state/auth";
+import { useTheme, useThemedStyles } from "@/state/theme";
 
 type ResendStatus = "idle" | "sending" | "sent";
 
@@ -31,6 +33,8 @@ function loginErrorMessage(err: unknown): string {
 
 // tells react native what the page shows and does
 export default function LoginScreen() {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const { signIn } = useAuth();
   // set by Forgot Password after a successful reset
   const params = useLocalSearchParams<{ email?: string; reset?: string }>();
@@ -165,7 +169,7 @@ export default function LoginScreen() {
           <TextInput
             style={styles.input}
             placeholder="Enter your email"
-            placeholderTextColor="#6B6E7A"
+            placeholderTextColor={colors.placeholderForm}
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="email"
@@ -196,7 +200,7 @@ export default function LoginScreen() {
           <TextInput
             style={styles.input}
             placeholder="Enter password"
-            placeholderTextColor="#6B6E7A"
+            placeholderTextColor={colors.placeholderForm}
             secureTextEntry={!showPassword}
             autoCapitalize="none"
             autoComplete="current-password"
@@ -307,7 +311,7 @@ export default function LoginScreen() {
           accessibilityState={{ disabled: loading, busy: loading }}
         >
           {loading ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <ActivityIndicator color={colors.onPrimary} />
           ) : (
             <Text style={styles.signInButtonText}>Login</Text>
           )}
@@ -328,10 +332,10 @@ export default function LoginScreen() {
 }
 // below is the appearance of the components and styling of the app, controls the layout
 // while first section makes the compoents and controls it
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.background,
   },
 // remove if needed 
   scrollView: {
@@ -349,7 +353,7 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    backgroundColor: "#0B55B7",
+    backgroundColor: colors.header,
     height: 300,
     alignItems: "center",
     justifyContent: "center",
@@ -363,7 +367,7 @@ const styles = StyleSheet.create({
     width: 65,
     height: 64,
     borderRadius: 14,
-    backgroundColor:"rgba(255,255,255,0.22)",
+    backgroundColor:colors.headerButtonLogin,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 14,
@@ -374,13 +378,13 @@ const styles = StyleSheet.create({
   },
 
   appTitle: {
-    color: "#FFFFFF",
+    color: colors.onHeader,
     fontSize: 27,
     fontWeight: "bold",
   },
 
   appSubtitle: {
-    color: "#E6EEFB",
+    color: colors.onHeaderMuted,
     fontSize: 14,
     marginTop: 4,
   },
@@ -394,19 +398,19 @@ const styles = StyleSheet.create({
   signInTitle: {
     fontSize: 25,
     fontWeight: "bold",
-    color: "#171717",
+    color: colors.text,
   },
 
   signInSubtitle: {
     fontSize: 14,
-    color: "#696C7A",
+    color: colors.textMuted,
     marginTop: 6,
     marginBottom: 28,
   },
   
   label: {
     fontSize: 14,
-    color: "#222222",
+    color: colors.textLabel,
     fontWeight: "600",
     marginBottom: 8,
     marginTop: 10,
@@ -415,9 +419,9 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F5F5F6",
+    backgroundColor: colors.inputBackgroundLogin,
     borderWidth: 1,
-    borderColor: "#E0E1E5",
+    borderColor: colors.borderLogin,
     borderRadius: 14,
     paddingHorizontal: 14,
     height: 55,
@@ -426,13 +430,13 @@ const styles = StyleSheet.create({
   inputIcon: {
     fontSize: 17,
     marginRight: 10,
-    color: "#7A7E8C",
+    color: colors.textMutedIcon,
   },
 
   input: {
     flex: 1,
     fontSize: 15,
-    color: "#111111",
+    color: colors.textInput,
     letterSpacing: 0, //delete this if not needed
   },
 
@@ -448,17 +452,17 @@ const styles = StyleSheet.create({
   },
 
   inputInvalid: {
-    borderColor: "#C62828",
+    borderColor: colors.error,
   },
 
   fieldError: {
-    color: "#C62828",
+    color: colors.error,
     fontSize: 13,
     marginTop: 6,
   },
 
   formError: {
-    color: "#C62828",
+    color: colors.error,
     fontSize: 14,
     fontWeight: "600",
     marginTop: 16,
@@ -475,25 +479,25 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     padding: 14,
     borderRadius: 14,
-    backgroundColor: "#E6F4EA",
+    backgroundColor: colors.successBackgroundLogin,
   },
 
   noticeBox: {
     marginTop: 16,
     padding: 14,
     borderRadius: 14,
-    backgroundColor: "#E7EFFB",
+    backgroundColor: colors.primaryTint,
   },
 
   noticeTitle: {
     fontSize: 15,
     fontWeight: "bold",
-    color: "#171717",
+    color: colors.text,
   },
 
   noticeText: {
     fontSize: 14,
-    color: "#171717",
+    color: colors.text,
     marginTop: 6,
     lineHeight: 20,
   },
@@ -505,7 +509,7 @@ const styles = StyleSheet.create({
   },
 
   noticeButtonText: {
-    color: "#0B55B7",
+    color: colors.textAccent,
     fontSize: 14,
     fontWeight: "600",
   },
@@ -516,21 +520,21 @@ const styles = StyleSheet.create({
 
   forgotPassword: {
     textAlign: "right",
-    color: "#0B55B7",
+    color: colors.textAccent,
     fontSize: 14,
     fontWeight: "600",
     marginTop: 12,
   },
 
   signInButton: {
-    backgroundColor: "#0B55B7",
+    backgroundColor: colors.primary,
     height: 56,
     borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 26,
 
-    shadowColor: "#000",
+    shadowColor: colors.shadow,
     shadowOpacity: 0.12,
     shadowRadius: 5,
     shadowOffset: {
@@ -542,7 +546,7 @@ const styles = StyleSheet.create({
   },
 
   signInButtonText: {
-    color: "#FFFFFF",
+    color: colors.onPrimary,
     fontSize: 17,
     fontWeight: "bold",
   },
@@ -553,7 +557,7 @@ const styles = StyleSheet.create({
   },
   
   signUpButtonText: {
-    color: "#0B55B7",
+    color: colors.textAccent,
     fontSize: 15,
     fontWeight: "600",
   },

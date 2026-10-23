@@ -15,10 +15,12 @@ import {
 
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
 import { DarkModeOverlay } from "@/components/dark-mode-overlay";
+import type { ThemeColors } from "@/constants/theme";
 import { AppStateProvider } from "@/state/app-state";
 import { AuthProvider, useAuth } from "@/state/auth";
 import { DarkModeProvider } from "@/state/dark-mode";
 import { NotificationsProvider } from "@/state/notifications";
+import { AppThemeProvider, useTheme, useThemedStyles } from "@/state/theme";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -26,24 +28,34 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   return (
-    <AuthProvider>
-      <NotificationsProvider>
-        <AppStateProvider>
-          <DarkModeProvider>
-            <ThemeProvider
-              value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-            >
-              {/* Every screen draws inside this view, so dark mode covers them all */}
-              <View style={styles.app} collapsable={false}>
-                <AnimatedSplashOverlay />
-                <RootStack />
-                <DarkModeOverlay />
-              </View>
-            </ThemeProvider>
-          </DarkModeProvider>
-        </AppStateProvider>
-      </NotificationsProvider>
-    </AuthProvider>
+    <AppThemeProvider>
+      <AuthProvider>
+        <NotificationsProvider>
+          <AppStateProvider>
+            <DarkModeProvider>
+              <ThemeProvider
+                value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+              >
+                <AppFrame />
+              </ThemeProvider>
+            </DarkModeProvider>
+          </AppStateProvider>
+        </NotificationsProvider>
+      </AuthProvider>
+    </AppThemeProvider>
+  );
+}
+
+/** Every screen draws inside this view, so dark mode covers them all. */
+function AppFrame() {
+  const styles = useThemedStyles(createStyles);
+
+  return (
+    <View style={styles.app} collapsable={false}>
+      <AnimatedSplashOverlay />
+      <RootStack />
+      <DarkModeOverlay />
+    </View>
   );
 }
 
@@ -59,6 +71,8 @@ export default function RootLayout() {
  * through Login to Home.
  */
 function RootStack() {
+  const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
   const { status } = useAuth();
 
   return (
@@ -92,18 +106,18 @@ function RootStack() {
           accessibilityLabel="Loading"
           accessibilityLiveRegion="polite"
         >
-          <ActivityIndicator size="large" color="#0B55B7" />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       )}
     </>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   app: {
     flex: 1,
     // Opaque base and its own blending group, so DarkModeOverlay inverts the screens
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.background,
     isolation: "isolate",
   },
   loading: {
@@ -112,7 +126,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     left: 0,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.background,
     justifyContent: "center",
     alignItems: "center",
   },
