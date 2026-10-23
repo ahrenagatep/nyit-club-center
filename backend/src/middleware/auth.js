@@ -33,6 +33,7 @@ async function requireAuth(req, res, next) {
   }
 
   req.authUser = data.user;
+  req.accessToken = token; // lets a route call Supabase as this user (e.g. Storage uploads)
   req.user = profile || {
     auth_user_id: data.user.id,
     nyit_email: normalizeEmail(data.user.email || ''),
