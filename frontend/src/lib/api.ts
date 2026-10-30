@@ -305,9 +305,22 @@ export type ApiClub = {
   member_count: number;
 };
 
+export type ApiMembership = ApiClub & {
+  role: 'member' | 'officer' | 'president';
+};
+
 export const clubsApi = {
   list: () => apiRequest<ApiClub[]>('/clubs'),
-  get: (id: number) => apiRequest<ApiClub>(`/clubs/${id}`)
+  get: (id: number) => apiRequest<ApiClub>(`/clubs/${id}`),
+  join: (id: number, token: string) =>
+    apiRequest<unknown>(`/clubs/${id}/join`, { method: 'POST', token }),
+  leave: (id: number, token: string) =>
+    apiRequest<unknown>(`/clubs/${id}/join`, { method: 'DELETE', token }),
+};
+
+export const membershipsApi = {
+  // the logged in user's clubs, each w/ their role
+  mine: (token: string) => apiRequest<ApiMembership[]>('/users/me/memberships', { token })
 };
 
 // ---------- Skill Exchange (/skill-exchange) ----------

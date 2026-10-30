@@ -1,16 +1,14 @@
 /**
- * TEMPORARY in-memory app state for RSVPs and club memberships.
+ * App-wide state for club memberships and RSVPs.
  *
- * Lets Home, Explore, Club, and Event screens agree on "have I joined this
- * club / RSVP'd to this event" while the backend endpoints for memberships
- * and attendance don't exist yet. State resets when the app reloads.
- *
- * When the API is ready, keep this hook's shape and replace the setters with
- * calls to e.g. POST /clubs/:id/join and POST /events/:id/rsvp.
+ * Memberships come from the backend: joined clubs load from GET /users/me/memberships
+ * on login, and toggleJoin calls POST / DELETE /clubs/:id/join.
+ * RSVPs are still TEMPORARY in-memory state until the events endpoints exist. !!!
  */
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 
-import { MY_MEMBERSHIPS } from '@/data/mock-data';
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode, useEffect } from 'react';
+import { useAuth } from '@/state/auth';
+import { clubsApi, membershipsApi } from '@/lib/api';
 
 type AppState = {
   joinedClubIds: number[];
@@ -28,14 +26,54 @@ function toggleId(ids: number[], id: number): number[] {
 }
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
-  const [joinedClubIds, setJoinedClubIds] = useState<number[]>(() =>
-    MY_MEMBERSHIPS.map((membership) => membership.club_id),
-  );
+
+  const { session } = useAuth(); // the logged in user's session (token)
+
+  // starts empty, filled in from the backend below
+  const [joinedClubIds, setJoinedClubIds] = useState<number[]>([]);
+
+  // load user's clubs when they log in / out
+  useEffect(() => {
+    if (!session) {
+      setJoinedClubIds([]); // logged out , no clubs
+      return;
+    }
+
+    async function loadMemberships(token: string) {
+      try {
+        const rows = await membershipsApi.mine(token);
+        setJoinedClubIds(rows.map((row) => row.club_id));
+      } catch {
+        // offline / expired session, keep what we have
+      }
+    }
+
+    loadMemberships(session.access_token);
+  }, [session?.access_token]);
+
   const [rsvpEventIds, setRsvpEventIds] = useState<number[]>([]);
 
-  const toggleJoin = useCallback((clubId: number) => {
-    setJoinedClubIds((ids) => toggleId(ids, clubId));
-  }, []);
+  const toggleJoin = useCallback(async(clubId: number) => {
+    if (!session) {
+      return; // must be logged in to join / leave
+    }
+
+    const token = session.access_token;
+    const joined = joinedClubIds.includes(clubId);
+
+    try {
+      // if joined, call leave, otherwise call join
+      if (joined) {
+        await clubsApi.leave(clubId, token);
+      } else {
+        await clubsApi.join(clubId, token);
+      }
+
+      setJoinedClubIds((ids) => toggleId(ids, clubId)); // only reached if the request succeeded
+    } catch {
+      // request failed (like a president can't leave), keep the button as it was
+    }
+  }, [session, joinedClubIds]);
 
   const toggleRsvp = useCallback((eventId: number) => {
     setRsvpEventIds((ids) => toggleId(ids, eventId));
