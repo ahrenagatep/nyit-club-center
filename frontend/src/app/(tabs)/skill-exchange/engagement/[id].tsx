@@ -248,6 +248,20 @@ export default function EngagementScreen() {
                 Use email to sort out the details. When it's done, {e.is_poster ? 'mark it complete below' : `${authorName(poster)} marks it complete`}.
               </Text>
             )}
+            {/* jumps into a DM w/ them. dm-chat only needs their user id + a name for the header.
+                sits inside the green Contact box -> only shows once it's accepted/completed, same as the box.
+                `other` (set up near the top) = "whoever isn't me": the responder if I'm the poster, else the poster.
+                router.push opens dm-chat on top of this screen, so Back comes right back here.
+                params -> ?userId=7&name=Bob%20Lee in the URL. URL params are always strings, hence String(). */}
+            <Pressable
+              onPress={() =>
+                router.push({ pathname: '/dm-chat', params: { userId: String(other.user_id), name: authorName(other) } })
+              }
+              style={({ pressed }) => [styles.secondary, styles.messageButton, pressed && styles.pressed]}
+              accessibilityRole="button"
+              accessibilityLabel={`Message ${authorName(other)}`}>
+              <Text style={styles.secondaryText}>💬 Message {other.first_name || authorName(other)}</Text>
+            </Pressable>
           </View>
         ) : (
           <PersonCard person={e.is_poster ? responder : poster} role={e.is_poster ? 'From' : 'Poster'} showContact={false} />
@@ -648,6 +662,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.textAccent,
     fontSize: 15,
     fontWeight: '600',
+  },
+  messageButton: {
+    marginTop: 12,
   },
   danger: {
     backgroundColor: colors.danger,
