@@ -1,4 +1,19 @@
 # Changelog
+## 2026-10-29
+### Backend
+#### Anson Chen
+- Added `POST /direct-messages` (login required): sends a private message from the logged-in user to another user.
+  - Body (JSON): `{ "receiver_id": 2, "content": "Hi!" }`
+  - Returns `201 Created` with the saved message: `message_id`, `sender_id`, `receiver_id`, `content`, `sent_at`
+  - The sender always comes from the login token
+  - Errors: `400` (invalid `receiver_id`, messaging yourself, empty content, over 2000 characters, inappropriate language), `401` (no token or bad token), `404` (receiver doesn't exist or the caller has no profile)
+- Added `GET /direct-messages/:userId` (login required): returns the whole conversation between the logged-in user and `:userId`.
+  - Returns `{ "messages": [ ... ] }`, oldest message first, including messages sent in **both** directions
+  - You can only ever see conversations you are part of
+  - Errors: `400` (invalid user id), `401` (no token or bad token)
+  - If you've never messaged that user, you get an empty list: `{ "messages": [] }`
+- No database changes. 
+
 ## 2026-10-22
 ### Backend
 #### Anson Chen

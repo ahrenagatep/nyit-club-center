@@ -10,6 +10,7 @@ const usersRoutes = require('./routes/users');
 const skillExchangeRoutes = require('./routes/skillExchange');
 const notificationsRoutes = require('./routes/notifications');
 const membershipsRoutes = require('./routes/memberships');
+const directMessagesRoutes = require('./routes/directMessages');
 const path = require('path'); 
 
 const app = express();
@@ -23,6 +24,7 @@ app.use('/users/me/memberships', membershipsRoutes);
 app.use('/users', usersRoutes);
 app.use('/skill-exchange', skillExchangeRoutes);
 app.use('/notifications', notificationsRoutes);
+app.use('/direct-messages', directMessagesRoutes);
 
 app.get('/health', async (req, res) => {
   try {
