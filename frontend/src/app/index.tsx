@@ -13,7 +13,6 @@ import {
 
 import { router, useLocalSearchParams } from "expo-router";
 
-import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import type { ThemeColors } from "@/constants/theme";
 import { ApiError, authApi } from "@/lib/api";
 import { validateEmail } from "@/lib/validation";
@@ -124,8 +123,6 @@ export default function LoginScreen() {
 
       {/* BLUE HEADER */}
       <View style={styles.header}>
-        <DarkModeToggle style={styles.themeToggle} />
-
         <View style={styles.logoBox}>
           <Text style={styles.logoEmoji}>🎓</Text>
         </View>
@@ -344,12 +341,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   
   scrollContent: {
     flexGrow: 1,
-  },
-
-  themeToggle: {
-    position: "absolute",
-    top: 60,
-    right: 20,
   },
 
   header: {

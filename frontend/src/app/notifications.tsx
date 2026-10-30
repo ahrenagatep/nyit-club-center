@@ -78,13 +78,14 @@ export default function NotificationsScreen() {
     [session, items.length, setUnreadCount],
   );
 
-  // reload each time the screen opens (new notifications since last time)
+  // reload each time the screen opens (new notifications since last time), and once
+  // the saved login has been read if the screen opened first (e.g. a web page reload)
   const loadRef = useRef(load);
   loadRef.current = load;
   useFocusEffect(
     useCallback(() => {
-      loadRef.current();
-    }, []),
+      if (session) loadRef.current();
+    }, [session]),
   );
 
   const markRead = async (notification: AppNotification) => {

@@ -6,56 +6,70 @@ import {
 } from "expo-router";
 
 import * as SplashScreen from "expo-splash-screen";
-import {
-  ActivityIndicator,
-  StyleSheet,
-  View,
-  useColorScheme,
-} from "react-native";
+import { useMemo } from "react";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
-import { DarkModeOverlay } from "@/components/dark-mode-overlay";
 import type { ThemeColors } from "@/constants/theme";
 import { AppStateProvider } from "@/state/app-state";
 import { AuthProvider, useAuth } from "@/state/auth";
-import { DarkModeProvider } from "@/state/dark-mode";
+import { DarkModeProvider, useDarkMode } from "@/state/dark-mode";
 import { NotificationsProvider } from "@/state/notifications";
 import { AppThemeProvider, useTheme, useThemedStyles } from "@/state/theme";
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
   return (
-    <AppThemeProvider>
-      <AuthProvider>
-        <NotificationsProvider>
-          <AppStateProvider>
-            <DarkModeProvider>
-              <ThemeProvider
-                value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-              >
-                <AppFrame />
-              </ThemeProvider>
-            </DarkModeProvider>
-          </AppStateProvider>
-        </NotificationsProvider>
-      </AuthProvider>
-    </AppThemeProvider>
+    <DarkModeProvider>
+      <AppThemeProvider>
+        <AuthProvider>
+          <NotificationsProvider>
+            <AppStateProvider>
+              <AppFrame />
+            </AppStateProvider>
+          </NotificationsProvider>
+        </AuthProvider>
+      </AppThemeProvider>
+    </DarkModeProvider>
   );
 }
 
-/** Every screen draws inside this view, so dark mode covers them all. */
+/**
+ * Every screen draws inside this view. The navigation theme follows the app's
+ * dark mode button (not the phone's setting), so what shows between and behind
+ * screens matches the palette.
+ */
 function AppFrame() {
   const styles = useThemedStyles(createStyles);
+  const { colors } = useTheme();
+  const { isDarkMode } = useDarkMode();
+
+  const navigationTheme = useMemo(
+    () =>
+      isDarkMode
+        ? {
+            ...DarkTheme,
+            colors: {
+              ...DarkTheme.colors,
+              primary: colors.primary,
+              background: colors.background,
+              card: colors.surface,
+              text: colors.text,
+              border: colors.border,
+            },
+          }
+        : DefaultTheme,
+    [isDarkMode, colors],
+  );
 
   return (
-    <View style={styles.app} collapsable={false}>
-      <AnimatedSplashOverlay />
-      <RootStack />
-      <DarkModeOverlay />
-    </View>
+    <ThemeProvider value={navigationTheme}>
+      <View style={styles.app} collapsable={false}>
+        <AnimatedSplashOverlay />
+        <RootStack />
+      </View>
+    </ThemeProvider>
   );
 }
 
@@ -116,9 +130,7 @@ function RootStack() {
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
   app: {
     flex: 1,
-    // Opaque base and its own blending group, so DarkModeOverlay inverts the screens
     backgroundColor: colors.background,
-    isolation: "isolate",
   },
   loading: {
     position: "absolute",

@@ -7,7 +7,6 @@ import {
     ScrollView,
     StyleSheet,
 } from "react-native";
-import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import { NotificationBell } from "@/components/notification-bell";
 
 import { EmptyState, openEvent } from "@/components/club-cards";
@@ -121,7 +120,6 @@ export default function EventsScreen() {
                     <Text style={styles.headerTitle} accessibilityRole="header">
                         Events
                     </Text>
-                    <DarkModeToggle style={styles.themeToggle} />
                     <NotificationBell
                         style={styles.iconButton}
                         pressedStyle={styles.pressed}
@@ -506,11 +504,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         color: colors.onHeader,
         fontSize: 26,
         fontWeight: "bold",
-    },
-
-    themeToggle: {
-        marginLeft: "auto",
-        marginRight: 8,
     },
 
     bellIcon: {

@@ -1,6 +1,6 @@
 /**
  * The app's colors, named by the job they do on screen (not by what they look like),
- * so a dark palette can later reuse the same names. Screens read them through
+ * so the light and dark palettes share the same names. Screens read them through
  * useTheme() / useThemedStyles() in state/theme.tsx instead of typing hex codes.
  *
  * Every job is listed on the color-jobs page with screenshots of where it's used.
@@ -40,7 +40,7 @@ export const LightColors = {
   onHeaderMutedLogo: '#DCE8FF',
   /** Chats: the subtitle under the title. */
   onHeaderMutedChat: '#D9E6FF',
-  /** See-through circles and squares on the header (back button, profile circle). */
+  /** See-through circles on the header (back button, profile circle). */
   headerButton: 'rgba(255,255,255,0.20)',
   /** Login: the logo tile. */
   headerButtonLogin: 'rgba(255,255,255,0.22)',
@@ -187,3 +187,113 @@ export type ThemeColorName = keyof typeof LightColors;
 
 /** A full palette. A dark palette must give every job a color. */
 export type ThemeColors = Record<ThemeColorName, string>;
+
+/**
+ * Dark mode colors, placeholders until the group picks final ones. Each is the exact
+ * inverse of its light color (255 minus red, green and blue), except where noted:
+ * the NYIT blue and everything drawn on it stay the same, and colored jobs keep
+ * their color with the inverse's brightness. Review page with every swatch:
+ * https://claude.ai/artifact/BwUZpEzpBBp6kV1cn9Qbwe
+ */
+export const DarkColors: ThemeColors = {
+  // ---------- Page and card backgrounds ----------
+  background: '#000000',
+  backgroundMuted: '#0A0805',
+  surface: '#000000',
+  surfaceMuted: '#0E0E0C',
+  surfaceMutedEmoji: '#0C0B09',
+  surfaceMutedMore: '#080705',
+  inputBackground: '#0B0B09',
+  inputBackgroundLogin: '#0A0A09',
+
+  // ---------- The blue header ----------
+  header: '#0B55B7', // NYIT blue, kept
+  onHeader: '#FFFFFF', // on the blue header, kept
+  onHeaderMuted: '#E6EEFB', // on the blue header, kept
+  onHeaderMutedLogo: '#DCE8FF', // on the blue header, kept
+  onHeaderMutedChat: '#D9E6FF', // on the blue header, kept
+  headerButton: 'rgba(255,255,255,0.20)', // on the blue header, kept
+  headerButtonLogin: 'rgba(255,255,255,0.22)', // on the blue header, kept
+  headerControl: '#2467BD', // kept with the header blue
+  headerControlChat: '#2C6DC5', // kept with the header blue
+
+  // ---------- NYIT blue: actions and highlights ----------
+  // Pale blues: brightness flipped, blue kept (the plain inverse is orange).
+  primary: '#0B55B7', // NYIT blue, kept
+  onPrimary: '#FFFFFF', // on blue buttons, kept
+  textAccent: '#1D78F1', // NYIT blue made lighter so it reads on black
+  primaryTint: '#040C18',
+  primaryTintProfile: '#000915',
+  primaryTintBadge: '#000A1A',
+  primaryTintDate: '#060B16',
+  primaryTintChat: '#060E19',
+  tagBackground: '#001122',
+  primarySurface: '#02060C',
+  primarySurfaceReply: '#030508',
+  primaryBorder: '#0C1D36',
+  primaryBorderReply: '#0D1623',
+  primaryBorderStrong: '#153C72',
+
+  // ---------- Text ----------
+  text: '#E8E8E8',
+  textLabel: '#DDDDDD',
+  textChip: '#E3E3E1',
+  textInput: '#EEEEEE',
+  textTabInactive: '#FFFFFF',
+  textSecondary: '#C0BCAF',
+  textMuted: '#969385',
+  textMutedProfile: '#999587',
+  textMutedChat: '#948D7F',
+  textMutedChatTime: '#757575',
+  textMutedIcon: '#858173',
+  placeholder: '#969385',
+  placeholderForm: '#949185',
+  textDisabled: '#4A4840',
+
+  // ---------- Borders and lines ----------
+  border: '#1D1D1A',
+  borderProfile: '#1F1D19',
+  borderChat: '#1A1814',
+  borderMore: '#1B1A17',
+  borderLogin: '#1F1E1A',
+  borderStrong: '#292722',
+  borderStrongProfile: '#26241E',
+  borderStrongLeave: '#2A2823',
+
+  // ---------- Errors and destructive actions ----------
+  // Reds, greens, ambers and golds (here and below): brightness flipped, color kept
+  // (the plain inverse would make errors cyan and green badges pink).
+  error: '#D73939',
+  errorProfile: '#E7564B',
+  danger: '#E12C1E', // a red that reads as text on black and under white text
+  onDanger: '#FFFFFF', // on red buttons, kept
+  dangerBackground: '#150402',
+
+  // ---------- Status badges ----------
+  success: '#9CEEC5',
+  successBackground: '#072212',
+  successBackgroundLogin: '#0B190F',
+  successSurface: '#040D08',
+  successBorder: '#194029',
+  warning: '#FFCF85',
+  warningBackground: '#291B00',
+  neutral: '#B5B2A8',
+
+  // ---------- Kudos ----------
+  kudos: '#FFE294',
+  kudosBackground: '#261D00',
+  kudosSurface: '#1E1700',
+
+  // ---------- Switches ----------
+  switchTrackOff: '#36342E',
+  switchThumb: '#FFFFFF', // kept; a black knob would disappear
+
+  // ---------- Shadows and dimming ----------
+  shadow: '#000000', // kept; a white shadow would glow
+  backdrop: 'rgba(0,0,0,0.60)', // kept black (the inverse brightens the screen), a bit darker
+
+  // ---------- Startup splash (phones only) ----------
+  splashBackground: '#208AEF', // kept; phones show the splash before the setting is known
+  splashIconTop: '#3C9FFE', // kept with the splash
+  splashIconBottom: '#0274DF', // kept with the splash
+};

@@ -9,7 +9,6 @@ import {
   Platform,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import { NotificationBell } from "@/components/notification-bell";
 
 import { EmptyState, EventCard, openClub } from "@/components/club-cards";
@@ -146,8 +145,6 @@ const { clubs, loading, error } = useClubs();
         <Text style={styles.headerTitle} accessibilityRole="header">
           Explore Clubs
         </Text>
-
-        <DarkModeToggle style={styles.themeToggle} />
 
         <NotificationBell
           style={styles.iconButton}
@@ -523,11 +520,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
 
   notificationIcon: {
     fontSize: 27,
-  },
-
-  themeToggle: {
-    marginLeft: "auto",
-    marginRight: 8,
   },
 
   searchCard: {

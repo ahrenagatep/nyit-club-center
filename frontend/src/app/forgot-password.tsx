@@ -12,7 +12,6 @@ import {
 
 import { router, useLocalSearchParams } from "expo-router";
 
-import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import { FormField } from "@/components/form-field";
 import type { ThemeColors } from "@/constants/theme";
 import { ApiError, authApi } from "@/lib/api";
@@ -159,8 +158,6 @@ export default function ForgotPasswordScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <DarkModeToggle style={styles.themeToggle} />
-
           <View style={styles.logoBox}>
             <Text style={styles.logoEmoji}>🔑</Text>
           </View>
@@ -327,12 +324,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingBottom: 40,
-  },
-
-  themeToggle: {
-    position: "absolute",
-    top: 60,
-    right: 20,
   },
 
   header: {
