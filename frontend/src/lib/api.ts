@@ -651,3 +651,40 @@ export type SkillSummary = {
   /** Newest 3 of their posts. */
   recent: Pick<SkillPost, 'post_id' | 'kind' | 'title' | 'status' | 'created_at'>[];
 };
+
+// ---------- Direct messages (/direct-messages) ----------
+
+// thin wrappers: screen calls directMessagesApi.send(...) -> apiRequest(...) does the real fetch
+// (adds the token header + 15s timeout, throws ApiError on any failure).
+// URLs live here so if the backend changes (like the conversations rewrite later) only this part changes.
+
+// one msg, exactly what Anson's controller sends back. ids are real numbers b/c it casts them ::int.
+// TS types only exist while coding, gone when the app runs. just lets tsc catch typos like m.mesage_id.
+export type DirectMessage = {
+  message_id: number;
+  sender_id: number;
+  receiver_id: number;
+  content: string;
+  sent_at: string; // ISO timestamp. JSON has no date type, so Postgres timestamps show up as strings.
+};
+
+// same cap the backend checks (MAX_LENGTH in directMessagesController.js).
+// app only uses it for the counter + maxLength. server's what actually enforces it, never trust the client.
+export const DM_MAX_LENGTH = 2000;
+
+export const directMessagesApi = {
+  // server pulls the sender from the token, so we only say who it's going to.
+  // also means nobody can fake being someone else, sender_id never comes from the body.
+  // <DirectMessage> = "response looks like a DirectMessage" -> sent.message_id etc. autocomplete.
+  send: (token: string, receiverId: number, content: string) =>
+    apiRequest<DirectMessage>('/direct-messages', {
+      method: 'POST', // POST = create something new.
+      body: { receiver_id: receiverId, content }, // app's camelCase -> API's snake_case, renamed here.
+      token, // shorthand for token: token. apiRequest turns it into "Authorization: Bearer <token>".
+    }),
+
+  // whole back-and-forth between me + userId, oldest first (no paging yet).
+  // GET is the default. response = { messages: [...] }, an object wrapping the array.
+  conversation: (token: string, userId: number) =>
+    apiRequest<{ messages: DirectMessage[] }>(`/direct-messages/${userId}`, { token }),
+};

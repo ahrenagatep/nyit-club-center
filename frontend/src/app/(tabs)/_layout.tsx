@@ -58,15 +58,16 @@ export default function TabLayout() {
         }}
       />
 
-      {/* Account hub; opens Profile (the design's Profile tab) */}
       <Tabs.Screen
         name="chat"
         options={{
-          title: "Chats"  //recent added tab
+          title: "Chats",  //recent added tab
+          tabBarIcon: ({ focused }) => <TabIcon emoji="💬" focused={focused} />,
         }}
-      />  
+      />
 
 
+      {/* Account hub; opens Profile (the design's Profile tab) */}
       <Tabs.Screen
         name="more"
         options={{

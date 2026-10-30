@@ -111,6 +111,11 @@ function RootStack() {
           <Stack.Screen name="my-clubs" />
           <Stack.Screen name="notifications" />
           <Stack.Screen name="profile" />
+          {/* chat screens: signed-in only, same as everything else in here.
+              expo-router still finds app/dm-chat.tsx w/o this line, but it'd sit outside the guard
+              -> a signed-out user could open /dm-chat. listing it inside Stack.Protected is what locks it. */}
+          <Stack.Screen name="dm-chat" />
+          <Stack.Screen name="club-chat" />
         </Stack.Protected>
       </Stack>
 

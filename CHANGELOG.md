@@ -1,4 +1,19 @@
 # Changelog
+## 2026-10-30
+### Frontend
+#### Anthony Dominguez
+- First pass at Direct Messages, built on Anson's `/direct-messages` endpoints (no backend or database changes)
+    - `dm-chat.tsx` is a real screen now: open it with `/dm-chat?userId=5&name=Jane Doe`
+        - shows the conversation oldest to newest and checks for new messages every 5 seconds while it's open (stops when you leave)
+        - message box: Send is off while it's empty, 2,000 character limit with a counter in the last 200, Enter sends on web (Shift+Enter is a new line)
+        - if a send fails (no connection, server error), the error shows and the text stays in the box
+    - `club-chat.tsx` is a "coming soon" placeholder so the route works
+    - new `directMessagesApi` (`send`, `conversation`) in `api.ts`
+    - "💬 Message" button on accepted and completed Skill Exchange agreements opens a DM with the other person (the only way in for now, since there's no conversation list endpoint yet)
+    - Chats tab got its 💬 icon; fixed typos on the Chats screen; the DM list rows now pass `userId` + `name`
+    - chat screens are registered behind the signed-in route guard
+- `npx tsc --noEmit` is clean again (the empty `dm-chat`/`club-chat` route files were breaking it)
+
 ## 2026-10-29
 ### Backend
 #### Anson Chen

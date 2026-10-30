@@ -22,7 +22,7 @@ export default function ChatScreen() {
             {/*Header*/}
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Chats</Text>
-                <Text style={styles.headerSubtitle}>Stay connect with your Clubs and fellow Students!</Text>
+                <Text style={styles.headerSubtitle}>Stay connected with your Clubs and fellow Students!</Text>
 
                 {/*Group/Dm chat */}
                 <View style={styles.toggleContainer}>
@@ -121,7 +121,7 @@ export default function ChatScreen() {
                             <View style={styles.emptyContainer}>
                                 <Text style={styles.emptyIcon}>👤</Text>
                                 <Text style={styles.emptyTitle}>No messages yet</Text>
-                                <Text style={styles.emptyText}>Conversations between you and the person you're exchnaging with appaers here.</Text>
+                                <Text style={styles.emptyText}>Conversations between you and the person you're exchanging with appear here.</Text>
                             </View>
                         ) : (
                             directMessages.map((chat) => (
@@ -131,8 +131,10 @@ export default function ChatScreen() {
                                     onPress={() =>
                                         router.push({
                                             pathname: "/dm-chat",
+                                            // dm-chat looks people up by user id, no conversation ids on the backend yet.
                                             params: {
-                                                conversationId: chat.id,
+                                                userId: String(chat.otherUserId),
+                                                name: chat.otherUserName,
                                             },
                                         })
                                     }
