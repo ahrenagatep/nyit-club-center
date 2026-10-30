@@ -15,8 +15,6 @@ import {
 import { router, type Href, useFocusEffect } from "expo-router";
 
 import { openClub, openEvent } from "@/components/club-cards";
-import { DarkModeOverlay } from "@/components/dark-mode-overlay";
-import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import {
     formatEventDate,
     getClubById,
@@ -25,14 +23,23 @@ import {
     type Club,
 } from "@/data/mock-data";
 import { ApiError, PROFILE_LIMITS, SCHOOL_YEARS, skillApi, usersApi, type SchoolYear, type SkillSummary } from "@/lib/api";
+import type { ThemePreference } from "@/lib/theme-storage";
 import { KIND_LABEL, STATUS_LABEL, openSkillPost } from "@/components/skill-cards";
 import type { ThemeColors } from "@/constants/theme";
 import { useAppState } from "@/state/app-state";
 import { useAuth } from "@/state/auth";
+import { useDarkMode } from "@/state/dark-mode";
 import { useTheme, useThemedStyles } from "@/state/theme";
 
 /** How many clubs/events each section shows before "View All". */
 const PREVIEW_COUNT = 2;
+
+/** Choices in Settings → Theme; saved between launches (state/dark-mode.tsx). */
+const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
+    { value: "light", label: "Light" },
+    { value: "dark", label: "Dark" },
+    { value: "system", label: "Use device setting" },
+];
 
 // Previous screen, or Home when there is none (deep link or web refresh), like ScreenHeader.
 function goBack() {
@@ -53,6 +60,7 @@ export default function ProfileScreen() {
     const { colors } = useTheme();
     const { user, session, signOut, updateUser } = useAuth();
     const { joinedClubIds, rsvpEventIds } = useAppState();
+    const { preference, setPreference } = useDarkMode();
 
     // user is briefly null while signing out, before the redirect to Login.
     const fullName =
@@ -193,19 +201,15 @@ export default function ProfileScreen() {
 
                     <Text style={styles.headerTitle} accessibilityRole="header">Profile</Text>
 
-                    <View style={styles.headerRight}>
-                        <DarkModeToggle />
-
-                        <Pressable
-                            onPress={() => setSettingsVisible(true)}
-                            style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}
-                            hitSlop={8}
-                            accessibilityRole="button"
-                            accessibilityLabel="Settings"
-                        >
-                            <Text style={styles.settingsIcon}>⚙️</Text>
-                        </Pressable>
-                    </View>
+                    <Pressable
+                        onPress={() => setSettingsVisible(true)}
+                        style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}
+                        hitSlop={8}
+                        accessibilityRole="button"
+                        accessibilityLabel="Settings"
+                    >
+                        <Text style={styles.settingsIcon}>⚙️</Text>
+                    </Pressable>
                 </View>
 
                 {/* Profile */}
@@ -528,8 +532,6 @@ export default function ProfileScreen() {
                                 </Text>
                             </Pressable>
                         </ScrollView>
-
-                        <DarkModeOverlay style={styles.modalOverlay} />
                     </View>
                 </KeyboardAvoidingView>
             </Modal>
@@ -569,25 +571,45 @@ export default function ProfileScreen() {
                             <Text style={styles.arrow}>›</Text>
                         </Pressable>
 
-                        {/* Not built yet (FR-8) */}
-                        {[
-                            { icon: "⭐", label: "Favorites" },
-                            { icon: "🎨", label: "Themes" },
-                        ].map((item) => (
-                            <View
-                                key={item.label}
-                                style={[styles.settingsRow, styles.settingsRowDisabled]}
-                                accessible
-                                accessibilityState={{ disabled: true }}
-                                accessibilityLabel={`${item.label}, coming soon`}
-                            >
-                                <Text style={styles.settingsRowIcon}>{item.icon}</Text>
-                                <Text style={styles.settingsRowLabel}>{item.label}</Text>
-                                <Text style={styles.comingSoon}>Coming soon</Text>
+                        {/* Theme: light, dark, or follow the device; applies right away and is saved */}
+                        <View style={styles.themeSetting}>
+                            <View style={styles.themeHeading}>
+                                <Text style={styles.settingsRowIcon}>🎨</Text>
+                                <Text style={styles.settingsRowLabel}>Theme</Text>
                             </View>
-                        ))}
 
-                        <DarkModeOverlay style={styles.modalOverlay} />
+                            <View style={styles.optionRow} accessibilityRole="radiogroup" accessibilityLabel="Theme">
+                                {THEME_OPTIONS.map((option) => {
+                                    const selected = preference === option.value;
+                                    return (
+                                        <Pressable
+                                            key={option.value}
+                                            style={[styles.optionButton, selected && styles.selectedOption]}
+                                            onPress={() => setPreference(option.value)}
+                                            accessibilityRole="radio"
+                                            accessibilityLabel={option.label}
+                                            aria-checked={selected}
+                                        >
+                                            <Text style={[styles.optionText, selected && styles.selectedOptionText]}>
+                                                {option.label}
+                                            </Text>
+                                        </Pressable>
+                                    );
+                                })}
+                            </View>
+                        </View>
+
+                        {/* Not built yet (FR-8) */}
+                        <View
+                            style={[styles.settingsRow, styles.settingsRowDisabled]}
+                            accessible
+                            accessibilityState={{ disabled: true }}
+                            accessibilityLabel="Favorites, coming soon"
+                        >
+                            <Text style={styles.settingsRowIcon}>⭐</Text>
+                            <Text style={styles.settingsRowLabel}>Favorites</Text>
+                            <Text style={styles.comingSoon}>Coming soon</Text>
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -681,12 +703,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         backgroundColor: colors.backdrop,
         justifyContent: "flex-end",
     },
-    // Dark mode for the popups; a Modal draws above the root layout's overlay
-    modalOverlay: {
-        borderTopLeftRadius: 25,
-        borderTopRightRadius: 25,
-    },
-    // White popup that slides up from the bottom
+    // Popup card that slides up from the bottom
     editModal: {
         backgroundColor: colors.surface,
 
@@ -838,6 +855,22 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         color: colors.textMuted,
     },
 
+    // Theme box: same frame as a settings row, with the choices underneath
+    themeSetting: {
+        marginTop: 10,
+        padding: 15,
+        gap: 12,
+        borderWidth: 1,
+        borderColor: colors.borderProfile,
+        borderRadius: 15,
+        backgroundColor: colors.surface,
+    },
+
+    themeHeading: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+
 
     /* HEADER */
 
@@ -849,13 +882,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-    },
-
-    // Dark mode button and settings button, side by side
-    headerRight: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 8,
     },
 
     // 44x44 touch target for the back and settings buttons

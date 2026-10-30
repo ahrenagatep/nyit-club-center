@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 
-import { DarkModeToggle } from '@/components/dark-mode-toggle';
 import type { ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/state/theme';
 
@@ -56,8 +55,6 @@ export function ScreenHeader({ title, subtitle, showBack = true, children, right
           {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
         </View>
 
-        <DarkModeToggle style={right ? styles.themeToggleBeforeRight : styles.themeToggle} />
-
         {right}
       </View>
 
@@ -107,13 +104,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.onHeaderMuted,
     fontSize: 15,
     marginTop: 4,
-  },
-  themeToggle: {
-    marginLeft: 12,
-  },
-  themeToggleBeforeRight: {
-    marginLeft: 12,
-    marginRight: 8,
   },
   pressed: {
     opacity: 0.7,

@@ -15,8 +15,6 @@ import {
 import { router, useFocusEffect } from "expo-router";
 
 import { EmptyState } from "@/components/club-cards";
-import { DarkModeOverlay } from "@/components/dark-mode-overlay";
-import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import { NotificationBell } from "@/components/notification-bell";
 import { SkillPostCard } from "@/components/skill-cards";
 import { TagPicker, useSkillTagGroups } from "@/components/tag-picker";
@@ -207,8 +205,6 @@ export default function SkillExchangeScreen() {
                             <Text style={styles.headerTitle} accessibilityRole="header">Skill Exchange</Text>
                             <Text style={styles.headerSubtitle}>Share your skills and connect with others</Text>
                         </View>
-
-                        <DarkModeToggle style={styles.themeToggle} />
 
                         <NotificationBell
                             style={styles.bellButton}
@@ -491,8 +487,6 @@ export default function SkillExchangeScreen() {
                             </View>
 
                         </ScrollView>
-
-                        <DarkModeOverlay style={styles.modalOverlay} />
                     </View>
 
                 </View>
@@ -551,10 +545,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         fontSize: 13,
         marginTop: 5,
         maxWidth: 250,
-    },
-
-    themeToggle: {
-        marginRight: 8,
     },
 
     bellButton: {
@@ -773,12 +763,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
 
     modalOutside: {
         flex: 1,
-    },
-
-    // Dark mode for the popup; a Modal draws above the root layout's overlay
-    modalOverlay: {
-        borderTopLeftRadius: 25,
-        borderTopRightRadius: 25,
     },
 
     filterModal: {

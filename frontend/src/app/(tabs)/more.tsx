@@ -10,7 +10,6 @@ import {
 
 import { router } from "expo-router";
 
-import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import type { ThemeColors } from "@/constants/theme";
 import { useAuth } from "@/state/auth";
 import { useThemedStyles } from "@/state/theme";
@@ -31,7 +30,6 @@ export default function MoreScreen() {
             {/*Header*/}
             <View style={styles.header}>
                 <Text style={styles.headerSubtitle} accessibilityRole="header">Manage Account</Text>
-                <DarkModeToggle />
             </View>
 
             {/* Profile */}
@@ -97,9 +95,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         paddingTop: 65,
         paddingHorizontal: 22,
         paddingBottom: 40,
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
     },
 
     headerSubtitle: {
