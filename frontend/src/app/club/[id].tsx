@@ -1,5 +1,5 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 
 import { EmptyState, cardStyles } from '@/components/club-cards';
 import { ScreenHeader } from '@/components/screen-header';
@@ -84,6 +84,35 @@ export default function ClubScreen() {
           message="Check back later for new events from this club."
         />
       )}
+      {/*This makes it so only joined members have access to annoucements, non members would only see About & Upcoming Events */}
+      {joined && (
+        <>
+          <Text style={cardStyles.sectionTitle} accessibilityRole="header">Annoucements</Text>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.announcementButton,
+              pressed && styles.pressed,
+            ]}
+            onPress={() =>
+              router.push({
+                pathname: "/club-announcements",
+                params: {
+                  clubId: club.club_id,
+                },
+              })
+            }
+          >
+            <View>
+              <Text style={styles.announcementButtonTitle}>Club Announcements</Text>
+              <Text style={styles.announcementButtonText}> View updated and info the club</Text>
+            </View>
+
+            <Text style={styles.arrow}>›</Text>
+          </Pressable>
+        </>
+      )}
+
     </ScrollView>
   );
 }
@@ -144,5 +173,35 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     color: Brand.text,
+  },
+
+  announcementButton: {
+    marginHorizontal: 20,
+    marginTop: 10,
+    padding: 18,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  announcementButtonTitle: {
+    fontSize: 17,
+    fontWeight: "bold",
+    color: Brand.text,
+  },
+
+  announcementButtonText: {
+    fontSize: 14,
+    color: "#6B7280",
+    marginTop: 5,
+    maxWidth: 280,
+  },
+
+  arrow: {
+    fontSize: 30,
+    color: Brand.primary,
   },
 });
