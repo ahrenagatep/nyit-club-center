@@ -1,4 +1,16 @@
 # Changelog
+## 2026-11-05
+### Backend
+#### Anson Chen
+- Added `POST /clubs/:id/announcements` (club officer, president, or admin): posts an announcement to a club.
+  - Example Body (JSON): `{ "title": "First meeting", "content": "Room 101 on Friday at 12pm" }`
+  - Returns `201 Created` and is saved into announcements table
+  - Errors: `400` (missing title or content, title over 200 characters, content over 5000 characters, profanities), `401` (no/bad token), `403` (not an officer/president), `404` (club doesn't exist)
+- Added `GET /clubs/:id/announcements` (public): returns the club's announcements, newest first.
+  - Each announcement includes the poster's `username`, `first_name`, and `last_name`
+  - If the club has no announcements yet, you get an empty list: `[]`
+  - Errors: `404` (club doesn't exist)
+- Database: new `announcements` table (`sql/015_create_announcements.sql`)
 ## 2026-10-30
 ### Frontend
 #### Anthony Dominguez

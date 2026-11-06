@@ -4,6 +4,7 @@
 // PUT/DELETE require auth + officer/president/admin role
 
 const pool = require('../config/db');
+const { containsProfanity } = require('../utils/profanity');
 
 const CATEGORIES = ['Academic', 'Sports', 'Arts', 'Tech', 'Social']; // from mock-data.ts CATEGORIES
 
@@ -345,5 +346,80 @@ async function leaveClub(req, res) {
   }
 }
 
+// ENDPOINTS FOR CLUB ANNOUNCEMENTS
 
-module.exports = { listClubs, getClub, createClub, updateClub, deleteClub, joinClub, leaveClub, transferOwnership };
+const TITLE_MAX = 200; // same as varchar(200) in 015_create_announcements.sql
+const CONTENT_MAX = 5000;
+
+// POST /clubs/:id/announcements
+// requires requireAuth + requireProfile + requireRole('officer', 'president', 'admin') in the route
+// req.body: { title, content } -> 201 the new announcement, 400 bad input, 404 club not found
+async function createAnnouncement(req, res) {
+  const { id: club_id } = req.params;
+  const { title, content } = req.body || {};
+
+  const cleanTitle = typeof title === 'string' ? title.trim() : '';
+  const cleanContent = typeof content === 'string' ? content.trim() : '';
+
+  if (!cleanTitle || !cleanContent) {
+    return res.status(400).json({ error: 'title and content are required' });
+  }
+  if (cleanTitle.length > TITLE_MAX) {
+    return res.status(400).json({ error: `title must be ${TITLE_MAX} characters or less` });
+  }
+  if (cleanContent.length > CONTENT_MAX) {
+    return res.status(400).json({ error: `content must be ${CONTENT_MAX} characters or less` });
+  }
+  if (containsProfanity(cleanTitle) || containsProfanity(cleanContent)) {
+    return res.status(400).json({ error: 'Announcement contains inappropriate language' });
+  }
+
+  try {
+    const club = await pool.query('SELECT club_id FROM clubs WHERE club_id = $1', [club_id]);
+    if (!club.rows[0]) {
+      return res.status(404).json({ error: 'Club not found' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO announcements (user_id, club_id, title, content)
+       VALUES ($1, $2, $3, $4)
+       RETURNING announcement_id, user_id, club_id, title, content, sent_at`,
+      [req.user.user_id, club_id, cleanTitle, cleanContent]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to post announcement' });
+  }
+}
+
+// GET /clubs/:id/announcements
+// public like the other club GET routes, newest first, includes the poster's name
+async function listAnnouncements(req, res) {
+  const { id: club_id } = req.params;
+
+  try {
+    const club = await pool.query('SELECT club_id FROM clubs WHERE club_id = $1', [club_id]);
+    if (!club.rows[0]) {
+      return res.status(404).json({ error: 'Club not found' });
+    }
+
+    const result = await pool.query(
+      `SELECT a.announcement_id, a.user_id, a.club_id, a.title, a.content, a.sent_at,
+              u.username, u.first_name, u.last_name
+       FROM announcements a
+       LEFT JOIN users u ON u.user_id = a.user_id
+       WHERE a.club_id = $1
+       ORDER BY a.sent_at DESC, a.announcement_id DESC`,
+      [club_id]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch announcements' });
+  }
+}
+
+module.exports = { listClubs, getClub, createClub, updateClub, deleteClub, joinClub, leaveClub, transferOwnership, createAnnouncement, listAnnouncements };
