@@ -21,9 +21,7 @@ import {
 import type { ThemeColors } from "@/constants/theme";
 import {
   CATEGORIES,
-  CLUBS,
   CURRENT_USER,
-  getMemberCount,
   getMembershipRoleLabel,
   getUpcomingEvents,
   type Category,
@@ -49,7 +47,7 @@ export default function HomeScreen() {
   const styles = useThemedStyles(createStyles);
   const { colors } = useTheme();
   const [search, setSearch] = useState("");
-  const { joinedClubIds } = useAppState();
+  const { myClubs } = useAppState();
   const { user } = useAuth();
 
   // backend has no recommendations yet, so just show the first 3 clubs for now
@@ -57,9 +55,7 @@ export default function HomeScreen() {
   const recommendedClubs = clubs.slice(0, 3);
 
   const upcomingEvents = getUpcomingEvents().slice(0, HOME_EVENT_LIMIT);
-  const yourClubs = CLUBS.filter((club) =>
-    joinedClubIds.includes(club.club_id),
-  );
+  const yourClubs = myClubs;
 
   // Search runs on Explore so Home stays a preview; the box clears for next time.
   const submitSearch = () => {
@@ -194,11 +190,7 @@ export default function HomeScreen() {
         {loading && <Text style={styles.recommendedMessage}>Loading clubs...</Text>}
         {!loading && error && (<Text style={styles.recommendedMessage} accessibilityRole="alert">{error}</Text>)}
         {recommendedClubs.map((club) => {
-          const members = getMemberCount(
-            club,
-            joinedClubIds.includes(club.club_id),
-          );
-
+          const members = club.member_count;
           return (
             <Pressable
               key={club.club_id}

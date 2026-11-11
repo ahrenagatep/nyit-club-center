@@ -15,10 +15,8 @@ import { EmptyState, EventCard, openClub } from "@/components/club-cards";
 import type { ThemeColors } from "@/constants/theme";
 import {
   CATEGORIES,
-  CLUBS,
   TRENDING_CLUB_IDS,
   getClubById,
-  getMemberCount,
   getUpcomingEvents,
   isCategory,
   searchClubs,
@@ -59,7 +57,7 @@ export default function ExploreScreen() {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortOption>("name");
   const [showFilters, setShowFilters] = useState(false);
-  const { isJoined, toggleJoin, joinedClubIds } = useAppState();
+  const { isJoined, toggleJoin, joinedClubIds, myClubs } = useAppState();
 
 // clubs for the Discover list fetched from the backend (GET /clubs) 
 const { clubs, loading, error } = useClubs();
@@ -85,9 +83,7 @@ const { clubs, loading, error } = useClubs();
   // "Your Clubs" and "Trending" only show while browsing, not while filtering.
   const browsing = query === "" && category === null;
 
-  const yourClubs = CLUBS.filter((club) =>
-    joinedClubIds.includes(club.club_id),
-  );
+  const yourClubs = myClubs;
   const trendingClubs = TRENDING_CLUB_IDS.map(getClubById).filter(
     (club): club is Club => club !== undefined,
   );
@@ -277,7 +273,7 @@ const { clubs, loading, error } = useClubs();
               contentContainerStyle={styles.horizontalCards}
             >
               {yourClubs.map((club) => {
-                const members = getMemberCount(club, true);
+                const members = club.member_count;
                 return (
                   <Pressable
                     key={club.club_id}
@@ -326,7 +322,7 @@ const { clubs, loading, error } = useClubs();
             contentContainerStyle={styles.horizontalCards}
           >
             {trendingClubs.map((club) => {
-              const members = getMemberCount(club, isJoined(club.club_id));
+              const members = club.member_count;
               return (
                 <Pressable
                   key={club.club_id}
@@ -387,7 +383,7 @@ const { clubs, loading, error } = useClubs();
       ) : (
         discoverClubs.map((club) => {
           const joined = isJoined(club.club_id);
-          const members = getMemberCount(club, joined);
+          const members = club.member_count;
 
           return (
             <View key={club.club_id} style={styles.largeClubCard}>

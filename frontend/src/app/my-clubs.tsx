@@ -4,15 +4,14 @@ import { router } from 'expo-router';
 import { ClubRow, EmptyState } from '@/components/club-cards';
 import { ScreenHeader } from '@/components/screen-header';
 import type { ThemeColors } from '@/constants/theme';
-import { CLUBS, getMembershipRoleLabel } from '@/data/mock-data';
 import { useAppState } from '@/state/app-state';
 import { useThemedStyles } from '@/state/theme';
 
 /** Clubs the user has joined (Home → "View all" under Your Clubs, and Profile). */
 export default function MyClubsScreen() {
   const styles = useThemedStyles(createStyles);
-  const { joinedClubIds } = useAppState();
-  const clubs = CLUBS.filter((club) => joinedClubIds.includes(club.club_id));
+  const { myClubs } = useAppState();
+  const clubs = myClubs
 
   return (
     <ScrollView
@@ -37,7 +36,7 @@ export default function MyClubsScreen() {
           <ClubRow
             key={club.club_id}
             club={club}
-            subtitle={`${getMembershipRoleLabel(club.club_id)} · ${club.category}`}
+            subtitle={`${club.role.charAt(0).toUpperCase + club.role.slice(1)} · ${club.category}`}
           />
         ))
       )}

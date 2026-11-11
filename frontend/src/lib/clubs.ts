@@ -31,7 +31,7 @@ const CATEGORY_EMOJI: Record<Category, string> = {
   Social: '🎉',
 };
 // converts each database row into Club shape as defined above (see type definition)
-function toClub(row: ApiClub): Club {
+export function toClub(row: ApiClub): Club {
   const category: Category = isCategory(row.category) ? row.category : 'Social';
 
   return {
@@ -84,3 +84,6 @@ export function useClub(id: number) {
 
   return { club, loading, error };
 }
+
+// a Club plus the logged-in user's role in it (from GET /users/me/memberships)
+export type MyClub = Club & { role: 'member' | 'officer' | 'president' };
