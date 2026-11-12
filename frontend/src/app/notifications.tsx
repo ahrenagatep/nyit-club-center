@@ -139,6 +139,9 @@ export default function NotificationsScreen() {
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
+          tintColor={colors.primary}
+          colors={[colors.primary]}
+          progressBackgroundColor={colors.surface}
           onRefresh={() => {
             setRefreshing(true);
             load();
@@ -303,7 +306,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: '500',
-    color: colors.text,
+    color: colors.textOnSurface,
     flexShrink: 1,
   },
   titleUnread: {
@@ -311,12 +314,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   date: {
     fontSize: 13,
-    color: colors.textMuted,
+    color: colors.textMutedOnSurface,
     marginLeft: 8,
   },
   message: {
     fontSize: 15,
-    color: colors.textMuted,
+    color: colors.textMutedOnSurface,
     marginTop: 4,
     lineHeight: 21,
   },
@@ -330,7 +333,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primaryOnSurface,
     marginLeft: 10,
   },
   chevron: {

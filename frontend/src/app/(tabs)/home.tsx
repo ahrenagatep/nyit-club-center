@@ -122,7 +122,7 @@ export default function HomeScreen() {
           <TextInput
             style={styles.searchText}
             placeholder="Search clubs, events, people..."
-            placeholderTextColor={colors.placeholder}
+            placeholderTextColor={colors.placeholderOnSurface}
             value={search}
             onChangeText={setSearch}
             onSubmitEditing={submitSearch}
@@ -389,13 +389,14 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   searchText: {
     flex: 1,
     minHeight: 44,
-    color: colors.text,
+    color: colors.textOnSurface,
     fontSize: 17,
     letterSpacing: 0,
   },
 
   filterIcon: {
     fontSize: 21,
+    color: colors.textFilterIcon,
   },
 
   // wraps instead of scrolling sideways, so every category fits any screen width
@@ -450,12 +451,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   clubName: {
     fontSize: 19,
     fontWeight: "600",
-    color: colors.text,
+    color: colors.textOnSurface,
   },
 
   clubMembers: {
     fontSize: 15,
-    color: colors.textMuted,
+    color: colors.textMutedOnSurface,
     marginTop: 8,
   },
 
@@ -469,7 +470,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
 
   tagText: {
-    color: colors.textAccent,
+    color: colors.textAccentOnSurface,
     fontSize: 14,
   },
 });

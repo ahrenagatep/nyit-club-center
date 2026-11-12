@@ -11,7 +11,7 @@ import type { ThemeColors } from '@/constants/theme';
 import { ApiError, COMMENT_MAX_LENGTH, skillCommentsApi, type SkillComment, type SkillPost } from '@/lib/api';
 import { formatPostDate, timeAgo } from '@/lib/skill-dates';
 import { useAuth } from '@/state/auth';
-import { useTheme, useThemedStyles } from '@/state/theme';
+import { OnSurface, useTheme, useThemedStyles } from '@/state/theme';
 
 function errorMessage(error: unknown): string {
   if (error instanceof ApiError) {
@@ -253,15 +253,17 @@ export function SkillComments({
               onReply={post.is_owner && !comment.is_mine ? () => startReply(comment) : undefined}
               onDelete={() => remove(comment)}
             />
+            {/* a reply draws its own tinted box, so its contents use the "on surface" colors */}
             {repliesTo(comment.comment_id).map((reply) => (
-              <CommentItem
-                key={reply.comment_id}
-                comment={reply}
-                post={post}
-                isReply
-                canDelete={reply.is_mine || isAdmin}
-                onDelete={() => remove(reply)}
-              />
+              <OnSurface key={reply.comment_id}>
+                <CommentItem
+                  comment={reply}
+                  post={post}
+                  isReply
+                  canDelete={reply.is_mine || isAdmin}
+                  onDelete={() => remove(reply)}
+                />
+              </OnSurface>
             ))}
           </View>
         ))
@@ -374,10 +376,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   avatarText: {
     fontSize: 13,
     fontWeight: '700',
-    color: colors.text,
+    color: colors.textOnSurface,
   },
   avatarTextPoster: {
-    color: colors.textAccent,
+    color: colors.textAccentOnSurface,
   },
   commentWho: {
     flex: 1,
@@ -403,7 +405,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   posterBadgeText: {
     fontSize: 11,
     fontWeight: '700',
-    color: colors.textAccent,
+    color: colors.textAccentOnSurface,
   },
   email: {
     fontSize: 12,
@@ -449,7 +451,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   confirmText: {
     fontSize: 14,
-    color: colors.text,
+    color: colors.textOnSurface,
     marginBottom: 8,
   },
   confirmButtons: {
@@ -462,13 +464,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: colors.primary,
+    borderColor: colors.primaryOnSurface,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surface,
   },
   smallButtonText: {
-    color: colors.textAccent,
+    color: colors.textAccentOnSurface,
     fontWeight: '600',
   },
   smallDanger: {

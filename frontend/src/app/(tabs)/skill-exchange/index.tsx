@@ -10,7 +10,6 @@ import {
     ScrollView,
     StyleSheet,
     Modal,
-    Switch,
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 
@@ -18,6 +17,7 @@ import { EmptyState } from "@/components/club-cards";
 import { NotificationBell } from "@/components/notification-bell";
 import { SkillPostCard } from "@/components/skill-cards";
 import { TagPicker, useSkillTagGroups } from "@/components/tag-picker";
+import { ThemedSwitch } from "@/components/themed-switch";
 import type { ThemeColors } from "@/constants/theme";
 import {
     ApiError,
@@ -28,7 +28,7 @@ import {
     type SkillStatus,
 } from "@/lib/api";
 import { useAuth } from "@/state/auth";
-import { useTheme, useThemedStyles } from "@/state/theme";
+import { OnSurface, useTheme, useThemedStyles } from "@/state/theme";
 
 const PAGE_SIZE = 20;
 const SEARCH_DELAY_MS = 300;
@@ -191,6 +191,9 @@ export default function SkillExchangeScreen() {
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
+                        tintColor={colors.primary}
+                        colors={[colors.primary]}
+                        progressBackgroundColor={colors.surface}
                         onRefresh={() => {
                             setRefreshing(true);
                             load("refresh");
@@ -252,7 +255,7 @@ export default function SkillExchangeScreen() {
                         <TextInput
                             style={styles.searchInput}
                             placeholder={`Search ${noun} or students...`}
-                            placeholderTextColor={colors.placeholder}
+                            placeholderTextColor={colors.placeholderOnSurface}
                             value={search}
                             onChangeText={setSearch}
                             returnKeyType="search"
@@ -403,13 +406,15 @@ export default function SkillExchangeScreen() {
                             showsVerticalScrollIndicator={false}
                             keyboardShouldPersistTaps="handled"
                         >
-                            {/* Tags */}
-                            <TagPicker
-                                groups={tagGroups}
-                                selected={tags}
-                                onChange={setTags}
-                                label="Tags (any of)"
-                            />
+                            {/* Tags (inside the popup, so on a surface; New post shows it on the page) */}
+                            <OnSurface>
+                                <TagPicker
+                                    groups={tagGroups}
+                                    selected={tags}
+                                    onChange={setTags}
+                                    label="Tags (any of)"
+                                />
+                            </OnSurface>
 
                             {/* Sort */}
                             <Text style={styles.filterSectionTitle}>Sort by</Text>
@@ -454,14 +459,14 @@ export default function SkillExchangeScreen() {
                                 <Text style={styles.filterSectionTitleInline} nativeID="mine-label">
                                     Only my posts
                                 </Text>
-                                <Switch
-                                    value={mine}
-                                    onValueChange={setMine}
-                                    trackColor={{ true: colors.primary, false: colors.switchTrackOff }}
-                                    thumbColor={colors.switchThumb}
-                                    accessibilityLabel="Only my posts"
-                                    accessibilityLabelledBy="mine-label"
-                                />
+                                <OnSurface>
+                                    <ThemedSwitch
+                                        value={mine}
+                                        onValueChange={setMine}
+                                        accessibilityLabel="Only my posts"
+                                        accessibilityLabelledBy="mine-label"
+                                    />
+                                </OnSurface>
                             </View>
 
                             {/*Buttons at bottom*/}
@@ -600,7 +605,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     },
 
     kindTextActive: {
-        color: colors.textAccent,
+        color: colors.textAccentOnSurface,
     },
 
     /* Search */
@@ -633,7 +638,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         flex: 1,
         minHeight: 44,
         fontSize: 15,
-        color: colors.text,
+        color: colors.textOnSurface,
     },
 
     filterButton: {
@@ -786,7 +791,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     filterTitle: {
         fontSize: 23,
         fontWeight: "bold",
-        color: colors.text,
+        color: colors.textOnSurface,
     },
 
     closeHit: {
@@ -798,13 +803,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
 
     closeButton: {
         fontSize: 22,
-        color: colors.textMuted,
+        color: colors.textMutedOnSurface,
     },
 
     filterSectionTitle: {
         fontSize: 16,
         fontWeight: "600",
-        color: colors.text,
+        color: colors.textOnSurface,
 
         marginTop: 16,
         marginBottom: 12,
@@ -813,7 +818,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     filterSectionTitleInline: {
         fontSize: 16,
         fontWeight: "600",
-        color: colors.text,
+        color: colors.textOnSurface,
     },
 
     switchRow: {
@@ -842,16 +847,16 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     },
 
     selectedOption: {
-        backgroundColor: colors.primary,
+        backgroundColor: colors.primaryOnSurface,
     },
 
     optionText: {
-        color: colors.text,
+        color: colors.textOnSurface,
         fontSize: 13,
     },
 
     selectedOptionText: {
-        color: colors.onPrimary,
+        color: colors.onPrimaryOnSurface,
         fontWeight: "600",
     },
 
@@ -868,7 +873,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         flex: 1,
 
         borderWidth: 1,
-        borderColor: colors.primary,
+        borderColor: colors.primaryOnSurface,
 
         minHeight: 48,
         justifyContent: "center",
@@ -879,7 +884,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     },
 
     clearButtonText: {
-        color: colors.textAccent,
+        color: colors.textAccentOnSurface,
         fontSize: 15,
         fontWeight: "600",
     },
@@ -887,7 +892,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     showButton: {
         flex: 2,
 
-        backgroundColor: colors.primary,
+        backgroundColor: colors.primaryOnSurface,
 
         minHeight: 48,
         justifyContent: "center",
@@ -898,7 +903,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     },
 
     showButtonText: {
-        color: colors.onPrimary,
+        color: colors.onPrimaryOnSurface,
         fontSize: 15,
         fontWeight: "600",
     },

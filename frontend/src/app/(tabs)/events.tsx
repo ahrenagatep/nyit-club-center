@@ -164,7 +164,7 @@ export default function EventsScreen() {
                     <TextInput
                         style={styles.searchInput}
                         placeholder="search events..."
-                        placeholderTextColor={colors.placeholder}
+                        placeholderTextColor={colors.placeholderOnSurface}
                         value={search}
                         onChangeText={setSearch}
                         returnKeyType="search"
@@ -534,7 +534,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     },
 
     activeToggleText: {
-        color: colors.textAccent,
+        color: colors.textAccentOnSurface,
         fontWeight: "600",
     },
 
@@ -575,13 +575,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         flex: 1,
         minHeight: 44,
         fontSize: 16,
-        color: colors.text,
+        color: colors.textOnSurface,
         letterSpacing: 0,
     },
 
     filterIcon: {
         fontSize: 20,
-        color: colors.textMuted,
+        color: colors.textMutedOnSurface,
     },
 
     filterRow: {
@@ -606,17 +606,17 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     },
 
     activeCategoryButton: {
-        backgroundColor: colors.primary,
+        backgroundColor: colors.primaryOnSurface,
     },
 
     categoryText: {
-        color: colors.text,
+        color: colors.textOnSurface,
         fontSize: 13,
         fontWeight: "500",
     },
 
     activeCategoryText: {
-        color: colors.onPrimary,
+        color: colors.onPrimaryOnSurface,
     },
 
     sectionTitle: {
@@ -651,12 +651,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     eventTitle: {
         fontSize: 18,
         fontWeight: "600",
-        color: colors.text,
+        color: colors.textOnSurface,
     },
 
     clubName: {
         fontSize: 14,
-        color: colors.textMuted,
+        color: colors.textMutedOnSurface,
         marginTop: 4,
         marginBottom: 14,
     },
@@ -671,19 +671,19 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     },
 
     dateMonth: {
-        color: colors.textAccent,
+        color: colors.textAccentOnSurface,
         fontSize: 12,
     },
 
     dateDay: {
-        color: colors.textAccent,
+        color: colors.textAccentOnSurface,
         fontSize: 16,
         fontWeight: "600",
     },
 
     detailText: {
         fontSize: 14,
-        color: colors.textMuted,
+        color: colors.textMutedOnSurface,
         marginTop: 5,
     },
 
@@ -696,13 +696,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
 
     rsvpButton: {
         flex: 1,
-        backgroundColor: colors.primary,
+        backgroundColor: colors.primaryOnSurface,
         minHeight: 44,
         justifyContent: "center",
         borderRadius: 9,
         alignItems: "center",
         borderWidth: 2,
-        borderColor: colors.primary,
+        borderColor: colors.primaryOnSurface,
     },
 
     // Outlined once RSVP'd: keeps text contrast above 4.5:1 (WCAG AA).
@@ -711,7 +711,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     },
 
     rsvpText: {
-        color: colors.onPrimary,
+        color: colors.onPrimaryOnSurface,
         fontSize: 15,
         fontWeight: "600",
     },
@@ -722,14 +722,14 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
 
     eventCategory: {
         borderWidth: 1,
-        borderColor: colors.border,
+        borderColor: colors.borderOnSurface,
         borderRadius: 9,
         paddingHorizontal: 12,
         paddingVertical: 10,
     },
 
     eventCategoryText: {
-        color: colors.textMuted,
+        color: colors.textMutedOnSurface,
         fontSize: 13,
     },
 
@@ -753,12 +753,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     calendarMonth: {
         fontSize: 20,
         fontWeight: "bold",
-        color: colors.text,
+        color: colors.textOnSurface,
     },
 
     calendarArrow: {
         fontSize: 30,
-        color: colors.textAccent,
+        color: colors.textAccentOnSurface,
     },
 
     weekRow: {
@@ -772,7 +772,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         textAlign: "center",
         fontSize: 12,
         fontWeight: "600",
-        color: colors.textMuted,
+        color: colors.textMutedOnSurface,
     },
 
     calendarDay: {
@@ -780,7 +780,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         height: 38,
         textAlign: "center",
         lineHeight: 38,
-        color: colors.text,
+        color: colors.textOnSurface,
         fontSize: 14,
     },
 
@@ -793,7 +793,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         width: 38,
         height: 38,
         borderRadius: 19,
-        backgroundColor: colors.primary,
+        backgroundColor: colors.primaryOnSurface,
         alignItems: "center",
         justifyContent: "center",
     },
@@ -804,7 +804,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     },
 
     eventDayText: {
-        color: colors.onPrimary,
+        color: colors.onPrimaryOnSurface,
         fontSize: 14,
         fontWeight: "600",
     },

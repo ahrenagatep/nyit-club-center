@@ -36,32 +36,29 @@ export default function RootLayout() {
 }
 
 /**
- * Every screen draws inside this view. The navigation theme follows the app's
- * dark mode button (not the phone's setting), so what shows between and behind
- * screens matches the palette.
+ * Every screen draws inside this view. The navigation library's colors (behind and
+ * between screens, the tab bar's top line) come from the app's palette in every
+ * mode, so they follow the Theme setting rather than the library's own defaults.
  */
 function AppFrame() {
   const styles = useThemedStyles(createStyles);
   const { colors } = useTheme();
   const { isDarkMode } = useDarkMode();
 
-  const navigationTheme = useMemo(
-    () =>
-      isDarkMode
-        ? {
-            ...DarkTheme,
-            colors: {
-              ...DarkTheme.colors,
-              primary: colors.primary,
-              background: colors.background,
-              card: colors.surface,
-              text: colors.text,
-              border: colors.border,
-            },
-          }
-        : DefaultTheme,
-    [isDarkMode, colors],
-  );
+  const navigationTheme = useMemo(() => {
+    const base = isDarkMode ? DarkTheme : DefaultTheme;
+    return {
+      ...base,
+      colors: {
+        primary: colors.primary,
+        background: colors.navigationBackground,
+        card: colors.surface,
+        text: colors.text,
+        border: colors.tabBarBorder,
+        notification: colors.error,
+      },
+    };
+  }, [isDarkMode, colors]);
 
   return (
     <ThemeProvider value={navigationTheme}>

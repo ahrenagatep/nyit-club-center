@@ -161,13 +161,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     title: {
         fontSize: 28,
         fontWeight: "bold",
-        color: colors.text,
+        color: colors.textOnSurface,
     },
 
     message: {
         marginTop: 15,
         fontSize: 16,
-        color: colors.textMuted,
+        color: colors.textMutedOnSurface,
         textAlign: "center",
     },
 
@@ -175,19 +175,19 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         marginTop: 8,
         fontSize: 16,
         fontWeight: "600",
-        color: colors.textAccent,
+        color: colors.textAccentOnSurface,
     },
 
     instructions: {
         marginTop: 20,
         fontSize: 15,
-        color: colors.textMuted,
+        color: colors.textMutedOnSurface,
         textAlign: "center",
         lineHeight: 22,
     },
 
     loginButton: {
-        backgroundColor: colors.primary,
+        backgroundColor: colors.primaryOnSurface,
         width: "100%",
         paddingVertical: 15,
         borderRadius: 12,
@@ -196,7 +196,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     },
 
     loginButtonText: {
-        color: colors.onPrimary,
+        color: colors.onPrimaryOnSurface,
         fontSize: 17,
         fontWeight: "600",
     },
@@ -208,7 +208,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     },
 
     resendButton: {
-        color: colors.textAccent,
+        color: colors.textAccentOnSurface,
         fontSize: 14,
         fontWeight: "600",
     },

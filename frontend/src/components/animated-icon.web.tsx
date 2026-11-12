@@ -2,7 +2,9 @@ import { Image } from 'expo-image';
 import { StyleSheet, View } from 'react-native';
 import Animated, { Keyframe, Easing } from 'react-native-reanimated';
 
-import classes from './animated-icon.module.css';
+import type { ThemeColors } from '@/constants/theme';
+import { useThemedStyles } from '@/state/theme';
+
 const DURATION = 300;
 
 export function AnimatedSplashOverlay() {
@@ -55,15 +57,14 @@ const glowKeyframe = new Keyframe({
 });
 
 export function AnimatedIcon() {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.iconContainer}>
       <Animated.View entering={glowKeyframe.duration(60 * 1000 * 4)} style={styles.glow}>
         <Image style={styles.glow} source={require('@/assets/images/logo-glow.png')} />
       </Animated.View>
 
-      <Animated.View style={styles.background} entering={keyframe.duration(DURATION)}>
-        <div className={classes.expoLogoBackground} />
-      </Animated.View>
+      <Animated.View style={styles.background} entering={keyframe.duration(DURATION)} />
 
       <Animated.View style={styles.imageContainer} entering={logoKeyframe.duration(DURATION)}>
         <Image style={styles.image} source={require('@/assets/images/expo-logo.png')} />
@@ -72,7 +73,7 @@ export function AnimatedIcon() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     alignItems: 'center',
     width: '100%',
@@ -101,6 +102,8 @@ const styles = StyleSheet.create({
     height: 71,
   },
   background: {
+    borderRadius: 40,
+    experimental_backgroundImage: `linear-gradient(180deg, ${colors.splashIconTop}, ${colors.splashIconBottom})`,
     width: 128,
     height: 128,
     position: 'absolute',

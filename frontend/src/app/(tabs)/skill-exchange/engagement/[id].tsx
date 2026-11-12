@@ -7,17 +7,18 @@
  * Completed: whoever was helped can give Kudos once.
  */
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 
 import { FormField } from '@/components/form-field';
 import { ScreenHeader } from '@/components/screen-header';
 import { ENGAGEMENT_STATUS, KudosBadge, authorName, backToOrigin, initials } from '@/components/skill-cards';
+import { ThemedSwitch } from '@/components/themed-switch';
 import type { ThemeColors } from '@/constants/theme';
 import { ApiError, ENGAGEMENT_MESSAGE_MAX, engagementsApi, type SkillAuthor, type SkillEngagement } from '@/lib/api';
 import { formatPostDate, formatSlot, timeAgo } from '@/lib/skill-dates';
 import { useAuth } from '@/state/auth';
-import { useTheme, useThemedStyles } from '@/state/theme';
+import { OnSurface, useTheme, useThemedStyles } from '@/state/theme';
 
 type Action = 'accept' | 'decline' | 'cancel' | 'complete' | 'kudos';
 
@@ -55,6 +56,8 @@ function PersonCard({ person, role, showContact }: { person: SkillAuthor; role: 
 
 export default function EngagementScreen() {
   const styles = useThemedStyles(createStyles);
+  // the same styles in the "on surface" colors, for what's inside the Contact, Done?, Kudos and confirm boxes
+  const boxStyles = useThemedStyles(createStyles, 'surface');
   const { colors } = useTheme();
   const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
   const engagementId = /^\d+$/.test(id ?? '') ? Number(id) : null;
@@ -205,6 +208,9 @@ export default function EngagementScreen() {
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
+          tintColor={colors.primary}
+          colors={[colors.primary]}
+          progressBackgroundColor={colors.surface}
           onRefresh={() => {
             setRefreshing(true);
             load();
@@ -242,9 +248,11 @@ export default function EngagementScreen() {
             <Text style={styles.sectionTitle} accessibilityRole="header">
               Contact
             </Text>
-            <PersonCard person={other} role={e.is_poster ? (isRequest ? 'Helper' : 'Requested by') : 'Poster'} showContact />
+            <OnSurface>
+              <PersonCard person={other} role={e.is_poster ? (isRequest ? 'Helper' : 'Requested by') : 'Poster'} showContact />
+            </OnSurface>
             {accepted && (
-              <Text style={styles.meta}>
+              <Text style={boxStyles.meta}>
                 Use email to sort out the details. When it's done, {e.is_poster ? 'mark it complete below' : `${authorName(poster)} marks it complete`}.
               </Text>
             )}
@@ -257,7 +265,7 @@ export default function EngagementScreen() {
               onPress={() =>
                 router.push({ pathname: '/dm-chat', params: { userId: String(other.user_id), name: authorName(other) } })
               }
-              style={({ pressed }) => [styles.secondary, styles.messageButton, pressed && styles.pressed]}
+              style={({ pressed }) => [boxStyles.secondary, styles.messageButton, pressed && styles.pressed]}
               accessibilityRole="button"
               accessibilityLabel={`Message ${authorName(other)}`}>
               <Text style={styles.secondaryText}>💬 Message {other.first_name || authorName(other)}</Text>
@@ -339,22 +347,22 @@ export default function EngagementScreen() {
                 <Text style={styles.switchLabel} nativeID="kudos-label">
                   Give {authorName(responder)} Kudos ⭐
                 </Text>
-                <Switch
-                  value={awardKudos}
-                  onValueChange={setAwardKudos}
-                  trackColor={{ true: colors.primary, false: colors.switchTrackOff }}
-                  thumbColor={colors.switchThumb}
-                  accessibilityLabel={`Give ${authorName(responder)} Kudos`}
-                  accessibilityLabelledBy="kudos-label"
-                />
+                <OnSurface>
+                  <ThemedSwitch
+                    value={awardKudos}
+                    onValueChange={setAwardKudos}
+                    accessibilityLabel={`Give ${authorName(responder)} Kudos`}
+                    accessibilityLabelledBy="kudos-label"
+                  />
+                </OnSurface>
               </View>
             )}
             <Pressable
               onPress={() => setConfirming('complete')}
-              style={({ pressed }) => [styles.primary, pressed && styles.pressed]}
+              style={({ pressed }) => [boxStyles.primary, pressed && styles.pressed]}
               accessibilityRole="button"
               accessibilityLabel={isRequest ? 'Mark complete' : 'Mark complete and ask for Kudos'}>
-              <Text style={styles.primaryText}>{isRequest ? '✓ Mark complete' : '✓ Mark complete & ask for Kudos'}</Text>
+              <Text style={boxStyles.primaryText}>{isRequest ? '✓ Mark complete' : '✓ Mark complete & ask for Kudos'}</Text>
             </Pressable>
           </View>
         )}
@@ -378,10 +386,10 @@ export default function EngagementScreen() {
                   </Text>
                   <Pressable
                     onPress={() => setConfirming('kudos')}
-                    style={({ pressed }) => [styles.primary, pressed && styles.pressed]}
+                    style={({ pressed }) => [boxStyles.primary, pressed && styles.pressed]}
                     accessibilityRole="button"
                     accessibilityLabel={`Give ${authorName(kudosReceiver)} Kudos`}>
-                    <Text style={styles.primaryText}>⭐ Give {authorName(kudosReceiver)} Kudos</Text>
+                    <Text style={boxStyles.primaryText}>⭐ Give {authorName(kudosReceiver)} Kudos</Text>
                   </Pressable>
                 </>
               )
@@ -415,7 +423,7 @@ export default function EngagementScreen() {
               <Pressable
                 onPress={() => setConfirming(null)}
                 disabled={busy}
-                style={({ pressed }) => [styles.secondary, styles.flex, pressed && styles.pressed]}
+                style={({ pressed }) => [boxStyles.secondary, styles.flex, pressed && styles.pressed]}
                 accessibilityRole="button"
                 accessibilityLabel="Not now">
                 <Text style={styles.secondaryText}>Not now</Text>
@@ -423,11 +431,11 @@ export default function EngagementScreen() {
               <Pressable
                 onPress={() => act(confirming)}
                 disabled={busy}
-                style={({ pressed }) => [positive ? styles.primary : styles.danger, styles.flex, pressed && styles.pressed]}
+                style={({ pressed }) => [positive ? boxStyles.primary : styles.danger, styles.flex, pressed && styles.pressed]}
                 accessibilityRole="button"
                 accessibilityState={{ busy }}
                 accessibilityLabel={yesLabel[confirming]}>
-                <Text style={styles.primaryText}>{busy ? 'Saving…' : yesLabel[confirming]}</Text>
+                <Text style={positive ? boxStyles.primaryText : styles.primaryText}>{busy ? 'Saving…' : yesLabel[confirming]}</Text>
               </Pressable>
             </View>
           </View>
@@ -507,7 +515,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: colors.text,
+    color: colors.textOnSurface,
     marginBottom: 8,
   },
   contactBox: {
@@ -533,7 +541,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginRight: 12,
   },
   avatarText: {
-    color: colors.textAccent,
+    color: colors.textAccentOnSurface,
     fontWeight: '700',
     fontSize: 16,
   },
@@ -556,7 +564,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   contact: {
     fontSize: 15,
-    color: colors.textAccent,
+    color: colors.textAccentOnSurface,
     marginTop: 4,
   },
   quote: {
@@ -602,7 +610,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   switchLabel: {
     flex: 1,
     fontSize: 15,
-    color: colors.text,
+    color: colors.textOnSurface,
     paddingRight: 12,
   },
   kudosBox: {
@@ -615,7 +623,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   kudosText: {
     fontSize: 15,
     lineHeight: 21,
-    color: colors.text,
+    color: colors.textOnSurface,
   },
   multiline: {
     flex: 1,
@@ -659,7 +667,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     backgroundColor: colors.surface,
   },
   secondaryText: {
-    color: colors.textAccent,
+    color: colors.textAccentOnSurface,
     fontSize: 15,
     fontWeight: '600',
   },
@@ -698,7 +706,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   confirmText: {
     fontSize: 15,
     lineHeight: 21,
-    color: colors.text,
+    color: colors.textOnSurface,
     marginBottom: 12,
   },
   errorText: {

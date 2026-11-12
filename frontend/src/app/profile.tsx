@@ -38,6 +38,8 @@ const PREVIEW_COUNT = 2;
 const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
     { value: "light", label: "Light" },
     { value: "dark", label: "Dark" },
+    { value: "nyit", label: "NYIT" },
+    { value: "cosmo", label: "Cosmo" },
     { value: "system", label: "Use device setting" },
 ];
 
@@ -439,7 +441,7 @@ export default function ProfileScreen() {
                             <TextInput
                                 style={styles.majorInput}
                                 placeholder="Enter your major"
-                                placeholderTextColor={colors.placeholder}
+                                placeholderTextColor={colors.placeholderOnSurface}
                                 value={editMajor}
                                 onChangeText={setEditMajor}
                                 accessibilityLabel="Major"
@@ -497,7 +499,7 @@ export default function ProfileScreen() {
                                 // Allows multiple lines of text
                                 multiline={true}
                                 placeholder="Tell us about yourself..."
-                                placeholderTextColor={colors.placeholder}
+                                placeholderTextColor={colors.placeholderOnSurface}
                                 value={editBio}
                                 onChangeText={setEditBio}
                                 maxLength={PROFILE_LIMITS.bio}
@@ -728,7 +730,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     editTitle: {
         fontSize: 23,
         fontWeight: "bold",
-        color: colors.text,
+        color: colors.textOnSurface,
     },
     // 44x44 touch target around the ✕
     closeButtonArea: {
@@ -739,13 +741,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     },
     closeButton: {
         fontSize: 22,
-        color: colors.textMuted,
+        color: colors.textMutedOnSurface,
     },
     // Label for Major, School Year, and Bio
     formLabel: {
         fontSize: 16,
         fontWeight: "600",
-        color: colors.text,
+        color: colors.textOnSurface,
         marginTop: 22,
         marginBottom: 10,
     },
@@ -757,7 +759,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         paddingHorizontal: 14,
         paddingVertical: 12,
         fontSize: 14,
-        color: colors.text,
+        color: colors.textOnSurface,
     },
     // Holds the school year selection buttons
     optionRow: {
@@ -776,16 +778,16 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     },
     // Blue style for the selected school year
     selectedOption: {
-        backgroundColor: colors.primary,
+        backgroundColor: colors.primaryOnSurface,
     },
 
     optionText: {
-        color: colors.text,
+        color: colors.textOnSurface,
         fontSize: 13,
     },
     // Makes the selected school year text white
     selectedOptionText: {
-        color: colors.onPrimary,
+        color: colors.onPrimaryOnSurface,
         fontWeight: "600",
     },
     // Multiline textbox for the user's bio
@@ -796,12 +798,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         borderRadius: 14,
         padding: 14,
         fontSize: 14,
-        color: colors.text,
+        color: colors.textOnSurface,
         textAlignVertical: "top",
     },
     // Button that saves the edited profile information
     saveButton: {
-        backgroundColor: colors.primary,
+        backgroundColor: colors.primaryOnSurface,
         marginTop: 28,
         paddingVertical: 14,
         borderRadius: 12,
@@ -809,7 +811,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     },
 
     saveButtonText: {
-        color: colors.onPrimary,
+        color: colors.onPrimaryOnSurface,
         fontSize: 15,
         fontWeight: "600",
     },
@@ -847,12 +849,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         flex: 1,
         fontSize: 15,
         fontWeight: "600",
-        color: colors.text,
+        color: colors.textOnSurface,
     },
 
     comingSoon: {
         fontSize: 13,
-        color: colors.textMuted,
+        color: colors.textMutedOnSurface,
     },
 
     // Theme box: same frame as a settings row, with the choices underneath
@@ -952,7 +954,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     name: {
         fontSize: 22,
         fontWeight: "bold",
-        color: colors.text,
+        color: colors.textOnSurface,
     },
 
     major: {
@@ -963,7 +965,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
 
     year: {
         fontSize: 14,
-        color: colors.textMuted,
+        color: colors.textMutedOnSurface,
         marginTop: 3,
     },
 
@@ -977,7 +979,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     },
 
     roleText: {
-        color: colors.textAccent,
+        color: colors.textAccentOnSurface,
         fontSize: 13,
         fontWeight: "600",
     },
@@ -990,7 +992,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     },
 
     editIcon: {
-        color: colors.textAccent,
+        color: colors.textAccentOnSurface,
         fontSize: 27,
     },
 
@@ -1066,13 +1068,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     statNumber: {
         fontSize: 21,
         fontWeight: "bold",
-        color: colors.text,
+        color: colors.textOnSurface,
         marginTop: 6,
     },
 
     statLabel: {
         fontSize: 11,
-        color: colors.textMuted,
+        color: colors.textMutedOnSurface,
         textAlign: "center",
         marginTop: 4,
     },
@@ -1132,18 +1134,18 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     activityTitle: {
         fontSize: 15,
         fontWeight: "600",
-        color: colors.text,
+        color: colors.textOnSurface,
     },
 
     activitySubtitle: {
         fontSize: 12,
-        color: colors.textMuted,
+        color: colors.textMutedOnSurface,
         marginTop: 4,
     },
 
     arrow: {
         fontSize: 27,
-        color: colors.textMuted,
+        color: colors.textMutedOnSurface,
     },
 
     /* Sign out */

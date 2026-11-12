@@ -8,10 +8,12 @@ import {
 } from "react-native";
 
 import { router, useLocalSearchParams } from "expo-router";
-import { Brand } from "@/constants/brand";
 import { ScreenHeader } from "@/components/screen-header";
+import type { ThemeColors } from "@/constants/theme";
+import { useThemedStyles } from "@/state/theme";
 
 export default function ClubAnnouncementsScreen() {
+    const styles = useThemedStyles(createStyles);
     //it gets club ID that was sent from the club page
     const { clubId } = useLocalSearchParams<{ clubId: string }>();
 
@@ -60,11 +62,11 @@ export default function ClubAnnouncementsScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
 
     container: {
         flex: 1,
-        backgroundColor: Brand.white,
+        backgroundColor: colors.background,
     },
 
     content: {
@@ -86,20 +88,20 @@ const styles = StyleSheet.create({
     emptyTitle: {
         fontSize: 22,
         fontWeight: "bold",
-        color: Brand.text,
+        color: colors.text,
         marginBottom: 8,
     },
 
     emptyText: {
         fontSize: 16,
-        color: "#6B7280",
+        color: colors.textMutedAnnouncements,
         textAlign: "center",
         lineHeight: 23,
     },
 
     announcementCard: {
         borderWidth: 1,
-        borderColor: "#E5E7EB",
+        borderColor: colors.borderAnnouncements,
         borderRadius: 14,
         padding: 16,
         marginBottom: 14,
@@ -108,19 +110,19 @@ const styles = StyleSheet.create({
     announcementTitle: {
         fontSize: 18,
         fontWeight: "bold",
-        color: Brand.text,
+        color: colors.text,
         marginBottom: 6,
     },
 
     announcementMessage: {
         fontSize: 15,
         lineHeight: 22,
-        color: Brand.text,
+        color: colors.text,
     },
 
     announcementDate: {
         fontSize: 13,
-        color: "#6B7280",
+        color: colors.textMutedAnnouncements,
         marginTop: 10,
     },
 
