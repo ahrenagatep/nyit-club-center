@@ -351,6 +351,27 @@ async function leaveClub(req, res) {
 const TITLE_MAX = 200; // same as varchar(200) in 015_create_announcements.sql
 const CONTENT_MAX = 5000;
 
+// shared by create & edit, same rules for both
+// returns { error } if something is wrong, otherwise { cleanTitle, cleanContent }
+function checkAnnouncementText(title, content) {
+  const cleanTitle = typeof title === 'string' ? title.trim() : '';
+  const cleanContent = typeof content === 'string' ? content.trim() : '';
+
+  if (!cleanTitle || !cleanContent) {
+    return { error: 'title and content are required' };
+  }
+  if (cleanTitle.length > TITLE_MAX) {
+    return { error: `title must be ${TITLE_MAX} characters or less` };
+  }
+  if (cleanContent.length > CONTENT_MAX) {
+    return { error: `content must be ${CONTENT_MAX} characters or less` };
+  }
+  if (containsProfanity(cleanTitle) || containsProfanity(cleanContent)) {
+    return { error: 'Announcement contains inappropriate language' };
+  }
+  return { cleanTitle, cleanContent };
+}
+
 // POST /clubs/:id/announcements
 // requires requireAuth + requireProfile + requireRole('officer', 'president', 'admin') in the route
 // req.body: { title, content } -> 201 the new announcement, 400 bad input, 404 club not found
@@ -358,20 +379,9 @@ async function createAnnouncement(req, res) {
   const { id: club_id } = req.params;
   const { title, content } = req.body || {};
 
-  const cleanTitle = typeof title === 'string' ? title.trim() : '';
-  const cleanContent = typeof content === 'string' ? content.trim() : '';
-
-  if (!cleanTitle || !cleanContent) {
-    return res.status(400).json({ error: 'title and content are required' });
-  }
-  if (cleanTitle.length > TITLE_MAX) {
-    return res.status(400).json({ error: `title must be ${TITLE_MAX} characters or less` });
-  }
-  if (cleanContent.length > CONTENT_MAX) {
-    return res.status(400).json({ error: `content must be ${CONTENT_MAX} characters or less` });
-  }
-  if (containsProfanity(cleanTitle) || containsProfanity(cleanContent)) {
-    return res.status(400).json({ error: 'Announcement contains inappropriate language' });
+  const { error, cleanTitle, cleanContent } = checkAnnouncementText(title, content);
+  if (error) {
+    return res.status(400).json({ error });
   }
 
   try {
@@ -422,4 +432,63 @@ async function listAnnouncements(req, res) {
   }
 }
 
-module.exports = { listClubs, getClub, createClub, updateClub, deleteClub, joinClub, leaveClub, transferOwnership, createAnnouncement, listAnnouncements };
+// PUT /clubs/:id/announcements/:announcementId
+// Any officer / president of THIS club (or an admin) can edit
+// req.body: { title, content } (send both, like a PUT) -> 200 updated announcement, 400 bad input, 404 not found
+async function updateAnnouncement(req, res) {
+  const { id: club_id, announcementId } = req.params;
+  const { title, content } = req.body || {};
+
+  const { error, cleanTitle, cleanContent } = checkAnnouncementText(title, content);
+  if (error) {
+    return res.status(400).json({ error });
+  }
+
+  try {
+    // matching on club_id too means you can't edit another club's announcement
+    // by putting your own club's id in the URL
+    const result = await pool.query(
+      `UPDATE announcements
+       SET title = $1, content = $2
+       WHERE announcement_id = $3 AND club_id = $4
+       RETURNING announcement_id, user_id, club_id, title, content, sent_at`,
+      [cleanTitle, cleanContent, announcementId, club_id]
+    );
+
+    if (!result.rows[0]) {
+      return res.status(404).json({ error: 'Announcement not found in this club' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update announcement' });
+  }
+}
+
+// DELETE /clubs/:id/announcements/:announcementId
+// same middleware as POST -> 200 { message, announcement_id }, 404 not found
+async function deleteAnnouncement(req, res) {
+  const { id: club_id, announcementId } = req.params;
+
+  try {
+    const result = await pool.query(
+      `DELETE FROM announcements
+       WHERE announcement_id = $1 AND club_id = $2
+       RETURNING announcement_id`,
+      [announcementId, club_id]
+    );
+
+    if (!result.rows[0]) {
+      return res.status(404).json({ error: 'Announcement not found in this club' });
+    }
+
+    res.json({ message: 'Announcement deleted', announcement_id: Number(announcementId) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to delete announcement' });
+  }
+}
+
+module.exports = { listClubs, getClub, createClub, updateClub, deleteClub, joinClub, leaveClub, transferOwnership, 
+  createAnnouncement, listAnnouncements, updateAnnouncement, deleteAnnouncement };

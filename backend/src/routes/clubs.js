@@ -1,7 +1,7 @@
 // /clubs browsing is public, managing clubs requires auth + role
 
 const express = require('express');
-const { listClubs, getClub, createClub, updateClub, deleteClub, joinClub, leaveClub, transferOwnership, createAnnouncement, listAnnouncements } = require('../controllers/clubsController');
+const { listClubs, getClub, createClub, updateClub, deleteClub, joinClub, leaveClub, transferOwnership, createAnnouncement, listAnnouncements, updateAnnouncement, deleteAnnouncement } = require('../controllers/clubsController');
 const { requireAuth } = require('../middleware/auth');
 const { requireRole } = require('../middleware/requireRole');
 const { requireProfile } = require('../middleware/requireProfile');
@@ -20,6 +20,8 @@ router.delete('/:id/join', requireAuth, leaveClub);
 // announcements: anyone can read, only officers / president / admin can post
 router.get('/:id/announcements', listAnnouncements);  // returns array of the club's announcements, newest first
 router.post('/:id/announcements', requireAuth, requireProfile, requireRole('officer', 'president', 'admin'), createAnnouncement); // 201 + new announcement
+router.put('/:id/announcements/:announcementId', requireAuth, requireProfile, requireRole('officer', 'president', 'admin'), updateAnnouncement); // 200 + updated announcement
+router.delete('/:id/announcements/:announcementId', requireAuth, requireProfile, requireRole('officer', 'president', 'admin'), deleteAnnouncement); // 200 { message, announcement_id }
 
 // only admin / officers / president can update a club
 router.put('/:id', requireAuth, requireRole('officer', 'president', 'admin'), updateClub); // updates existing club + returns updated object or 404 (not found)
