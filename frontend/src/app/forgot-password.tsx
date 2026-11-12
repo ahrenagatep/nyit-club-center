@@ -388,7 +388,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
 
   noticeText: {
     fontSize: 14,
-    color: colors.text,
+    color: colors.textOnSurface,
     lineHeight: 20,
   },
 

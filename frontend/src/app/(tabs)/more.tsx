@@ -147,12 +147,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     name: {
         fontSize: 21,
         fontWeight: "bold",
-        color: colors.text,
+        color: colors.textOnSurface,
     },
 
     major: {
         fontSize: 14,
-        color: colors.textMuted,
+        color: colors.textMutedOnSurface,
         marginTop: 4,
     },
 
@@ -170,18 +170,18 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     viewProfileTitle: {
         fontSize: 16,
         fontWeight: "600",
-        color: colors.text,
+        color: colors.textOnSurface,
     },
 
     viewProfileSubtitle: {
         fontSize: 12,
-        color: colors.textMuted,
+        color: colors.textMutedOnSurface,
         marginTop: 4,
     },
 
     arrow: {
         fontSize: 30,
-        color: colors.textMuted,
+        color: colors.textMutedOnSurface,
     },
 
     futureCard: {
@@ -195,12 +195,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     futureTitle: {
         fontSize: 15,
         fontWeight: "600",
-        color: colors.text,
+        color: colors.textOnSurface,
     },
 
     futureText: {
         fontSize: 13,
-        color: colors.textMuted,
+        color: colors.textMutedOnSurface,
         marginTop: 5,
         lineHeight: 18,
     },

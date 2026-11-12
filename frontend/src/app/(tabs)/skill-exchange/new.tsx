@@ -4,7 +4,7 @@
  * description, tags, and extras can be edited.
  */
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 
 import { FormField } from '@/components/form-field';
@@ -12,6 +12,7 @@ import { ScreenHeader } from '@/components/screen-header';
 import { KIND_LABEL } from '@/components/skill-cards';
 import { SlotPicker, emptySelection } from '@/components/slot-picker';
 import { TagPicker, useSkillTagGroups } from '@/components/tag-picker';
+import { ThemedSwitch } from '@/components/themed-switch';
 import type { ThemeColors } from '@/constants/theme';
 import { ApiError, SKILL_LIMITS, skillApi, type SkillKind, type SkillPost } from '@/lib/api';
 import { buildSlots, formatSlot, slotSelectionError, type SlotSelection } from '@/lib/skill-dates';
@@ -286,11 +287,9 @@ export default function SkillPostFormScreen() {
                   </Text>
                   <Text style={styles.note}>Let others suggest a different place.</Text>
                 </View>
-                <Switch
+                <ThemedSwitch
                   value={flexible}
                   onValueChange={setFlexible}
-                  trackColor={{ true: colors.primary, false: colors.switchTrackOff }}
-                  thumbColor={colors.switchThumb}
                   accessibilityLabel="Flexible location"
                   accessibilityLabelledBy="flexible-label"
                 />
@@ -379,15 +378,15 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   kindButtonActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primaryOnSurface,
   },
   kindText: {
     fontSize: 15,
     fontWeight: '600',
-    color: colors.textMuted,
+    color: colors.textMutedOnSurface,
   },
   kindTextActive: {
-    color: colors.onPrimary,
+    color: colors.onPrimaryOnSurface,
   },
   locked: {
     backgroundColor: colors.surfaceMuted,

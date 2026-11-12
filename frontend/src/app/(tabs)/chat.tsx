@@ -220,7 +220,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     },
 
     activeToggleText: {
-        color: colors.textAccent,
+        color: colors.textAccentOnSurface,
     },
 
     chatList: {

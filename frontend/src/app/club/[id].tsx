@@ -143,7 +143,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingVertical: 5,
   },
   tagText: {
-    color: colors.textAccent,
+    color: colors.textAccentOnSurface,
     fontSize: 14,
   },
   joinButton: {
@@ -166,7 +166,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontWeight: 'bold',
   },
   joinTextJoined: {
-    color: colors.textAccent,
+    color: colors.textAccentOnSurface,
   },
   pressed: {
     opacity: 0.7,
@@ -184,7 +184,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     padding: 18,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: colors.borderAnnouncements,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -193,18 +193,18 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   announcementButtonTitle: {
     fontSize: 17,
     fontWeight: "bold",
-    color: Brand.text,
+    color: colors.text,
   },
 
   announcementButtonText: {
     fontSize: 14,
-    color: "#6B7280",
+    color: colors.textMutedAnnouncements,
     marginTop: 5,
     maxWidth: 280,
   },
 
   arrow: {
     fontSize: 30,
-    color: Brand.primary,
+    color: colors.textAccent,
   },
 });

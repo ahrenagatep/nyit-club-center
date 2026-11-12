@@ -5,7 +5,7 @@
  * /skill-exchange/5?focus=comments (from a comment notification) scrolls to the comments.
  */
 import { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 
 import { EmptyState } from '@/components/club-cards';
@@ -23,11 +23,12 @@ import {
   backToOrigin,
 } from '@/components/skill-cards';
 import { SkillComments } from '@/components/skill-comments';
+import { ThemedSwitch } from '@/components/themed-switch';
 import type { ThemeColors } from '@/constants/theme';
 import { ApiError, engagementsApi, skillApi, type SkillEngagement, type SkillPost } from '@/lib/api';
 import { formatPostDate, formatSlot, upcomingSlots } from '@/lib/skill-dates';
 import { useAuth } from '@/state/auth';
-import { useTheme, useThemedStyles } from '@/state/theme';
+import { OnSurface, useTheme, useThemedStyles } from '@/state/theme';
 
 function errorMessage(error: unknown): string {
   if (error instanceof ApiError) {
@@ -159,10 +160,10 @@ export default function SkillPostScreen() {
                 setLoading(true);
                 load();
               }}
-              style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}
+              style={({ pressed }) => [styles.secondaryButton, styles.retryButton, pressed && styles.pressed]}
               accessibilityRole="button"
               accessibilityLabel="Try again">
-              <Text style={styles.secondaryButtonText}>Try again</Text>
+              <Text style={[styles.secondaryButtonText, styles.retryText]}>Try again</Text>
             </Pressable>
           </View>
         )}
@@ -192,6 +193,9 @@ export default function SkillPostScreen() {
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
+          tintColor={colors.primary}
+          colors={[colors.primary]}
+          progressBackgroundColor={colors.surface}
           onRefresh={() => {
             setRefreshing(true);
             setCommentsKey((k) => k + 1);
@@ -270,17 +274,17 @@ export default function SkillPostScreen() {
               <Text style={styles.switchLabel} nativeID="available-label">
                 Available
               </Text>
-              <Text style={styles.meta}>Turn off to stop new requests for this offer.</Text>
+              <Text style={styles.boxMeta}>Turn off to stop new requests for this offer.</Text>
             </View>
-            <Switch
-              value={post.status === 'available'}
-              onValueChange={setAvailability}
-              disabled={busy !== null}
-              trackColor={{ true: colors.primary, false: colors.switchTrackOff }}
-              thumbColor={colors.switchThumb}
-              accessibilityLabel="Available"
-              accessibilityLabelledBy="available-label"
-            />
+            <OnSurface>
+              <ThemedSwitch
+                value={post.status === 'available'}
+                onValueChange={setAvailability}
+                disabled={busy !== null}
+                accessibilityLabel="Available"
+                accessibilityLabelledBy="available-label"
+              />
+            </OnSurface>
           </View>
         )}
 
@@ -358,7 +362,7 @@ export default function SkillPostScreen() {
                 <Text style={styles.actionTitle} accessibilityRole="header">
                   {mine.status === 'pending' ? `Waiting for ${poster} to reply` : `You're all set with ${poster}`}
                 </Text>
-                <Text style={styles.text}>
+                <Text style={styles.boxText}>
                   🗓 {formatSlot(mine)}
                   {mine.location ? ` · 📍 ${mine.location}` : ''}
                 </Text>
@@ -384,10 +388,10 @@ export default function SkillPostScreen() {
                   accessibilityLabel={post.kind === 'request' ? 'I can help' : 'Request this offer'}>
                   <Text style={styles.primaryButtonText}>{post.kind === 'request' ? '🙋 I can help' : '📩 Request this offer'}</Text>
                 </Pressable>
-                <Text style={styles.meta}>You'll pick a time inside {poster}'s dates. {poster} then accepts or declines.</Text>
+                <Text style={styles.boxMeta}>You'll pick a time inside {poster}'s dates. {poster} then accepts or declines.</Text>
               </>
             ) : (
-              <Text style={styles.text}>
+              <Text style={styles.boxText}>
                 {post.status === 'complete'
                   ? 'This request is complete.'
                   : post.status === 'closed'
@@ -558,6 +562,17 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.textMuted,
     marginTop: 6,
   },
+  // text and meta inside a box (the action box, the Available row)
+  boxText: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: colors.textSecondaryOnSurface,
+  },
+  boxMeta: {
+    fontSize: 13,
+    color: colors.textMutedOnSurface,
+    marginTop: 6,
+  },
   slot: {
     fontSize: 15,
     color: colors.text,
@@ -586,24 +601,24 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   actionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: colors.text,
+    color: colors.textOnSurface,
   },
   actionButton: {
     marginTop: 4,
   },
   contact: {
     fontSize: 15,
-    color: colors.textAccent,
+    color: colors.textAccentOnSurface,
   },
   primaryButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primaryOnSurface,
     minHeight: 50,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   primaryButtonText: {
-    color: colors.onPrimary,
+    color: colors.onPrimaryOnSurface,
     fontSize: 16,
     fontWeight: '700',
   },
@@ -667,21 +682,28 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   switchLabel: {
     fontSize: 15,
     fontWeight: '600',
-    color: colors.text,
+    color: colors.textOnSurface,
   },
   secondaryButton: {
     minHeight: 46,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: colors.primary,
+    borderColor: colors.primaryOnSurface,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,
   },
   secondaryButtonText: {
-    color: colors.textAccent,
+    color: colors.textAccentOnSurface,
     fontSize: 15,
     fontWeight: '600',
+  },
+  // the same outline button on the page (the "couldn't load" Try again)
+  retryButton: {
+    borderColor: colors.primary,
+  },
+  retryText: {
+    color: colors.textAccent,
   },
   confirm: {
     backgroundColor: colors.dangerBackground,
@@ -691,7 +713,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   confirmText: {
     fontSize: 15,
-    color: colors.text,
+    color: colors.textOnSurface,
     marginBottom: 12,
   },
   confirmButtons: {

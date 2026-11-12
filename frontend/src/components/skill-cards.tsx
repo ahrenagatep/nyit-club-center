@@ -9,7 +9,7 @@ import { router } from 'expo-router';
 import type { ThemeColorName, ThemeColors } from '@/constants/theme';
 import type { EngagementStatus, SkillAuthor, SkillKind, SkillPost, SkillStatus } from '@/lib/api';
 import { formatPostDate, formatSlot, timeAgo } from '@/lib/skill-dates';
-import { useTheme, useThemedStyles } from '@/state/theme';
+import { OnSurface, useTheme, useThemedStyles } from '@/state/theme';
 
 /** Screens outside the Skill Exchange tab that open its screens; Back returns to them. */
 export type SkillOrigin = 'notifications' | 'profile';
@@ -60,7 +60,7 @@ export const ENGAGEMENT_STATUS: Record<EngagementStatus, { label: string } & Bad
   accepted: { label: 'AGREED', bg: 'successBackground', fg: 'success' },
   declined: { label: 'DECLINED', bg: 'surfaceMuted', fg: 'neutral' },
   cancelled: { label: 'CANCELLED', bg: 'surfaceMuted', fg: 'neutral' },
-  completed: { label: 'COMPLETED', bg: 'primaryTintBadge', fg: 'textAccent' },
+  completed: { label: 'COMPLETED', bg: 'primaryTintBadge', fg: 'textAccentOnSurface' },
 };
 
 export function KindBadge({ kind }: { kind: SkillKind }) {
@@ -177,7 +177,10 @@ export function SkillPostCard({
 
   return (
     <View style={styles.card}>
-      <AuthorRow author={post.author} postedAt={post.created_at} />
+      {/* on the card here; a post's own screen shows the same row on the page */}
+      <OnSurface>
+        <AuthorRow author={post.author} postedAt={post.created_at} />
+      </OnSurface>
 
       <Pressable
         onPress={() => openSkillPost(post.post_id)}
@@ -292,7 +295,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginRight: 12,
   },
   avatarText: {
-    color: colors.textAccent,
+    color: colors.textAccentOnSurface,
     fontSize: 16,
     fontWeight: '700',
   },
@@ -357,17 +360,17 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     backgroundColor: colors.primaryTintBadge,
   },
   requestText: {
-    color: colors.textAccent,
+    color: colors.textAccentOnSurface,
   },
   yours: {
     fontSize: 12,
-    color: colors.textMuted,
+    color: colors.textMutedOnSurface,
     fontStyle: 'italic',
   },
   title: {
     fontSize: 17,
     fontWeight: '700',
-    color: colors.text,
+    color: colors.textOnSurface,
     marginTop: 10,
   },
   tagRow: {
@@ -401,7 +404,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   description: {
     fontSize: 14,
     lineHeight: 20,
-    color: colors.textSecondary,
+    color: colors.textSecondaryOnSurface,
   },
   facts: {
     marginTop: 10,
@@ -409,7 +412,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   fact: {
     fontSize: 13,
-    color: colors.text,
+    color: colors.textOnSurface,
   },
   factMore: {
     fontSize: 13,
@@ -434,7 +437,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   meta: {
     fontSize: 13,
-    color: colors.textMuted,
+    color: colors.textMutedOnSurface,
     marginTop: 8,
   },
   cardBottom: {
@@ -449,12 +452,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingRight: 8,
   },
   textButtonText: {
-    color: colors.textAccent,
+    color: colors.textAccentOnSurface,
     fontSize: 14,
     fontWeight: '600',
   },
   openButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primaryOnSurface,
     minHeight: 44,
     minWidth: 80,
     paddingHorizontal: 18,
@@ -463,7 +466,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   openButtonText: {
-    color: colors.onPrimary,
+    color: colors.onPrimaryOnSurface,
     fontSize: 14,
     fontWeight: '600',
   },

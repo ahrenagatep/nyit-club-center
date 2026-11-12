@@ -278,7 +278,7 @@ export default function DmChatScreen() {
               onChangeText={setDraft}
               onKeyPress={onKeyPress}
               placeholder={`Message ${otherName}`}
-              placeholderTextColor={colors.placeholder}
+              placeholderTextColor={colors.placeholderOnSurface}
               multiline
               maxLength={DM_MAX_LENGTH} // box won't let you type past 2000 (server still checks too).
               accessibilityLabel={`Message ${otherName}`}
@@ -292,7 +292,7 @@ export default function DmChatScreen() {
               accessibilityLabel="Send"
               accessibilityState={{ disabled: !canSend, busy: sending }}>
               {sending ? (
-                <ActivityIndicator color={colors.onPrimary} />
+                <ActivityIndicator color={colors.onPrimaryOnSurface} />
               ) : (
                 <Text style={styles.sendText}>Send</Text>
               )}
@@ -353,7 +353,7 @@ const createStyles = (colors: ThemeColors) =>
       backgroundColor: colors.primary,
     },
     avatarText: {
-      color: colors.textAccent,
+      color: colors.textAccentOnSurface,
       fontSize: 16,
       fontWeight: 'bold',
     },
@@ -403,9 +403,9 @@ const createStyles = (colors: ThemeColors) =>
       maxHeight: 120, // grows a few lines, then scrolls inside.
       borderRadius: 12,
       borderWidth: 1,
-      borderColor: colors.borderStrong,
+      borderColor: colors.borderStrongOnSurface,
       backgroundColor: colors.inputBackground,
-      color: colors.text,
+      color: colors.textOnSurface,
       fontSize: 15,
       paddingHorizontal: 12,
       paddingTop: 11,
@@ -415,7 +415,7 @@ const createStyles = (colors: ThemeColors) =>
       minWidth: 64,
       minHeight: 44,
       borderRadius: 12,
-      backgroundColor: colors.primary,
+      backgroundColor: colors.primaryOnSurface,
       alignItems: 'center',
       justifyContent: 'center',
       paddingHorizontal: 14,
@@ -424,7 +424,7 @@ const createStyles = (colors: ThemeColors) =>
       opacity: 0.45, // faded = can't tap it. (the disabled prop is what actually blocks the tap.)
     },
     sendText: {
-      color: colors.onPrimary,
+      color: colors.onPrimaryOnSurface,
       fontSize: 15,
       fontWeight: '700',
     },

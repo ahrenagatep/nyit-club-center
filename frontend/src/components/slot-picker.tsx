@@ -5,9 +5,10 @@
  * - Requests can instead pick "Need it by": any time from now until that day.
  */
 import { useMemo } from 'react';
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { MonthCalendar } from '@/components/month-calendar';
+import { ThemedSwitch } from '@/components/themed-switch';
 import type { ThemeColors } from '@/constants/theme';
 import type { SkillKind } from '@/lib/api';
 import {
@@ -53,11 +54,9 @@ function TimeEditor({
         <Text style={styles.switchLabel} nativeID={labelId}>
           All day
         </Text>
-        <Switch
+        <ThemedSwitch
           value={!value}
           onValueChange={(allDay) => onChange(allDay ? null : DEFAULT_WINDOW)}
-          trackColor={{ true: colors.primary, false: colors.switchTrackOff }}
-          thumbColor={colors.switchThumb}
           accessibilityLabel={`All day${suffix}`}
           accessibilityLabelledBy={labelId}
         />
@@ -248,7 +247,7 @@ export function SlotPicker({
               <Text style={styles.switchLabel} nativeID="same-time-label">
                 Same time on every date
               </Text>
-              <Switch
+              <ThemedSwitch
                 value={!dates.perDay}
                 onValueChange={(same) =>
                   onChange({
@@ -258,8 +257,6 @@ export function SlotPicker({
                     windows: same ? dates.windows : Object.fromEntries(dates.dates.map((d) => [d, windowForDate(dates, d)])),
                   })
                 }
-                trackColor={{ true: colors.primary, false: colors.switchTrackOff }}
-                thumbColor={colors.switchThumb}
                 accessibilityLabel="Same time on every date"
                 accessibilityLabelledBy="same-time-label"
               />
@@ -343,11 +340,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   modeText: {
     fontSize: 14,
-    color: colors.textMuted,
+    color: colors.textMutedOnSurface,
     fontWeight: '500',
   },
   modeTextActive: {
-    color: colors.textAccent,
+    color: colors.textAccentOnSurface,
     fontWeight: '700',
   },
   switchRow: {
@@ -402,7 +399,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   stepButtonText: {
     fontSize: 24,
-    color: colors.textAccent,
+    color: colors.textAccentOnSurface,
     marginTop: -2,
   },
   stepValue: {

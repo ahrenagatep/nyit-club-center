@@ -6,14 +6,16 @@
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
-/** 'system' follows the device's own light/dark setting. */
-export type ThemePreference = 'light' | 'dark' | 'system';
+import type { ThemeName } from '@/constants/theme';
+
+/** A theme, or 'system' to follow the device's own light/dark setting. */
+export type ThemePreference = ThemeName | 'system';
 
 /** Also read by the web page's head script (app/+html.tsx) before the app loads. */
 export const THEME_KEY = 'nyit.theme';
 
 function isThemePreference(value: unknown): value is ThemePreference {
-  return value === 'light' || value === 'dark' || value === 'system';
+  return value === 'light' || value === 'dark' || value === 'nyit' || value === 'cosmo' || value === 'system';
 }
 
 /** The saved choice, or null when nothing (or something unreadable) is saved. */

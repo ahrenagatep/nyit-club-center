@@ -16,7 +16,7 @@ import {
   type ClubEvent,
 } from '@/data/mock-data';
 import { useAppState } from '@/state/app-state';
-import { useThemedStyles } from '@/state/theme';
+import { OnSurface, useThemedStyles } from '@/state/theme';
 
 export function openClub(clubId: number) {
   router.push({ pathname: '/club/[id]', params: { id: String(clubId) } });
@@ -91,7 +91,10 @@ export function EventCard({ event, showClub = true }: { event: ClubEvent; showCl
         </View>
       </Pressable>
 
-      <RsvpButton going={going} onPress={() => toggleRsvp(event.event_id)} title={event.title} />
+      {/* on the card here; the Event screen shows the same button on the page */}
+      <OnSurface>
+        <RsvpButton going={going} onPress={() => toggleRsvp(event.event_id)} title={event.title} />
+      </OnSurface>
     </View>
   );
 }
@@ -208,16 +211,16 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   clubName: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: colors.textOnSurface,
   },
   muted: {
     fontSize: 15,
-    color: colors.textMuted,
+    color: colors.textMutedOnSurface,
     marginTop: 6,
   },
   chevron: {
     fontSize: 28,
-    color: colors.textMuted,
+    color: colors.textMutedOnSurface,
     marginLeft: 8,
   },
   eventCard: {
@@ -239,12 +242,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingRight: 12,
   },
   eventTitle: {
-    color: colors.text,
+    color: colors.textOnSurface,
     fontSize: 19,
     fontWeight: '600',
   },
   eventClub: {
-    color: colors.textMuted,
+    color: colors.textMutedOnSurface,
     fontSize: 15,
     marginTop: 6,
   },
@@ -255,7 +258,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 18,
   },
   dateText: {
-    color: colors.textAccent,
+    color: colors.textAccentOnSurface,
     fontSize: 15,
     fontWeight: '500',
   },
@@ -266,7 +269,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginTop: 20,
   },
   detailText: {
-    color: colors.textMuted,
+    color: colors.textMutedOnSurface,
     fontSize: 14,
   },
   rsvpButton: {
@@ -298,7 +301,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 16,
   },
   chipActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primaryOnSurface,
   },
   chipText: {
     color: colors.textChip,
@@ -306,7 +309,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontWeight: '600',
   },
   chipTextActive: {
-    color: colors.onPrimary,
+    color: colors.onPrimaryOnSurface,
   },
   empty: {
     alignItems: 'center',

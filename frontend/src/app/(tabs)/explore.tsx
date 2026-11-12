@@ -159,7 +159,7 @@ const { clubs, loading, error } = useClubs();
           <TextInput
             style={styles.searchInput}
             placeholder="Search clubs and events..."
-            placeholderTextColor={colors.placeholder}
+            placeholderTextColor={colors.placeholderOnSurface}
             value={search}
             onChangeText={setSearch}
             returnKeyType="search"
@@ -550,11 +550,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flex: 1,
     minHeight: 44,
     fontSize: 17,
-    color: colors.text,
+    color: colors.textOnSurface,
   },
 
   filterIcon: {
     fontSize: 21,
+    color: colors.textFilterIcon,
   },
 
   sortPanel: {
@@ -590,17 +591,17 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
 
   activeCategoryButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primaryOnSurface,
   },
 
   categoryText: {
-    color: colors.text,
+    color: colors.textOnSurface,
     fontWeight: "600",
     fontSize: 15,
   },
 
   activeCategoryText: {
-    color: colors.onPrimary,
+    color: colors.onPrimaryOnSurface,
     fontWeight: "600",
     fontSize: 15,
   },
@@ -660,11 +661,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   smallClubName: {
     fontSize: 18,
     fontWeight: "600",
-    color: colors.text,
+    color: colors.textOnSurface,
   },
 
   clubMembers: {
-    color: colors.textMuted,
+    color: colors.textMutedOnSurface,
     fontSize: 14,
     marginTop: 8,
   },
@@ -679,7 +680,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
 
   tagText: {
-    color: colors.textAccent,
+    color: colors.textAccentOnSurface,
     fontSize: 13,
     fontWeight: "500",
   },
@@ -697,20 +698,20 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   trendingName: {
     fontSize: 19,
     fontWeight: "600",
-    color: colors.text,
+    color: colors.textOnSurface,
     marginBottom: 7,
   },
 
   clubDescription: {
     fontSize: 14,
     lineHeight: 20,
-    color: colors.textMuted,
+    color: colors.textMutedOnSurface,
   },
 
   trendingInfo: {
     marginTop: 15,
     fontSize: 14,
-    color: colors.textMuted,
+    color: colors.textMutedOnSurface,
   },
 
   largeClubCard: {
@@ -749,7 +750,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   largeClubName: {
     fontSize: 20,
     fontWeight: "bold",
-    color: colors.text,
+    color: colors.textOnSurface,
     marginBottom: 5,
   },
 
@@ -761,7 +762,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
 
   statText: {
     fontSize: 13,
-    color: colors.textMuted,
+    color: colors.textMutedOnSurface,
   },
 
   actionRow: {
@@ -772,7 +773,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
 
   joinButton: {
     flex: 1,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primaryOnSurface,
     minHeight: 44,
     justifyContent: "center",
     borderRadius: 11,
@@ -780,7 +781,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
 
   joinButtonText: {
-    color: colors.onPrimary,
+    color: colors.onPrimaryOnSurface,
     fontWeight: "600",
     fontSize: 16,
   },
@@ -792,7 +793,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
 
   leaveButtonText: {
-    color: colors.text,
+    color: colors.textOnSurface,
   },
 
   viewButton: {
@@ -803,11 +804,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 11,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: colors.primary,
+    borderColor: colors.primaryOnSurface,
   },
 
   viewButtonText: {
-    color: colors.textAccent,
+    color: colors.textAccentOnSurface,
     fontWeight: "600",
     fontSize: 16,
   },

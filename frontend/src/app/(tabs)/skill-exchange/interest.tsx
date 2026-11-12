@@ -362,12 +362,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   summaryText: {
     fontSize: 14,
-    color: colors.textMuted,
+    color: colors.textMutedOnSurface,
   },
   summaryTitle: {
     fontSize: 17,
     fontWeight: '700',
-    color: colors.text,
+    color: colors.textOnSurface,
   },
   label: {
     fontSize: 15,
@@ -453,7 +453,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   confirmText: {
     fontSize: 15,
     lineHeight: 21,
-    color: colors.text,
+    color: colors.textOnSurface,
     marginBottom: 12,
   },
   confirmButtons: {
@@ -484,7 +484,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     backgroundColor: colors.surface,
   },
   secondaryText: {
-    color: colors.textAccent,
+    color: colors.textAccentOnSurface,
     fontSize: 15,
     fontWeight: '600',
   },
