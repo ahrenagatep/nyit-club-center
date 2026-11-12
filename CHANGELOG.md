@@ -1,4 +1,15 @@
 # Changelog
+## 2026-11-11
+### Backend
+#### Anson Chen
+- Added `PUT /clubs/:id/announcements/:announcementId` (club officer, president, or admin): edits an announcement in that club.
+  - Example Body (JSON): `{ "title": "Meeting moved", "content": "Now in Anna Rubin Hall at 3pm" }`
+  - Returns `200 OK` with the updated announcement. `sent_at` stays unchanged.
+  - Errors: `400` (missing title or content or does not pass `checkAnnouncementText`), `401` (no/bad token), `403` (not an officer/president), `404` (announcement doesn't exist or isn't in this club)
+- Added `DELETE /clubs/:id/announcements/:announcementId` (club officer, president, or admin): deletes an announcement in that club.
+  - Returns `200 OK` with `{ "message": "Announcement deleted", "announcement_id": 12 }`
+  - Errors: `401` (no/bad token), `403` (not an officer/president), `404` (announcement doesn't exist or isn't in this club)
+- No database changes
 ## 2026-11-05
 ### Backend
 #### Anson Chen
