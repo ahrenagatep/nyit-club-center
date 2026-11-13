@@ -1,27 +1,77 @@
-import React, { useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import {
     View,
     Text,
     ScrollView,
     StyleSheet,
     Pressable,
+    ActivityIndicator,
 } from "react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 
+import { ChatAvatar } from "@/components/chat-avatar";
 import type { ThemeColors } from "@/constants/theme";
-import { useThemedStyles } from "@/state/theme";
+import { ApiError, directMessagesApi, type DmConversation } from "@/lib/api";
+import { formatListTime, fullName, previewText } from "@/lib/chat";
+import { useAuth } from "@/state/auth";
+import { useTheme, useThemedStyles } from "@/state/theme";
+
+const LIST_POLL_MS = 30000; // refresh the DM list every 30s while the tab is open (no sockets yet)
 
 export default function ChatScreen() {
     const styles = useThemedStyles(createStyles);
+    const { colors } = useTheme();
+    const { session } = useAuth();
     const [chatType, setChatType] = useState< "group" | "DM">("group");
     const [groupChats, setGroupChats] = useState<any[]>([]);
-    const [directMessages, setDirectMessages] = useState<any[]>([]);
+    const [directMessages, setDirectMessages] = useState<DmConversation[]>([]);
+    const [dmLoaded, setDmLoaded] = useState(false);
+    const [dmError, setDmError] = useState<string | null>(null);
+    const inFlight = useRef(false); // no overlapping requests if one is slow
+
+    const loadConversations = useCallback(async () => {
+        if (!session || inFlight.current) return;
+        inFlight.current = true;
+        try {
+            const { conversations } = await directMessagesApi.list(session.access_token);
+            setDirectMessages(conversations);
+            setDmError(null);
+        } catch (e) {
+            if (e instanceof ApiError && e.status === 401) setDmError("Your session has expired. Sign out and log in again.");
+            else setDmError(e instanceof ApiError ? e.message : "Couldn't load your messages. Please try again.");
+        } finally {
+            inFlight.current = false;
+            setDmLoaded(true);
+        }
+    }, [session]);
+
+    // load on focus (so coming back from a chat shows the newest msg), then poll; stop when the tab loses focus
+    useFocusEffect(
+        useCallback(() => {
+            loadConversations();
+            const timer = setInterval(loadConversations, LIST_POLL_MS);
+            return () => clearInterval(timer);
+        }, [loadConversations]),
+    );
+
+    const openNewMessage = () => router.push("/new-message");
 
     return (
         <View style={styles.container}>
             {/*Header*/}
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>Chats</Text>
+                <View style={styles.headerTitleRow}>
+                    <Text style={styles.headerTitle} accessibilityRole="header">Chats</Text>
+                    <Pressable
+                        onPress={openNewMessage}
+                        style={({ pressed }) => [styles.plusButton, pressed && styles.pressed]}
+                        hitSlop={8}
+                        accessibilityRole="button"
+                        accessibilityLabel="New message or search chats"
+                    >
+                        <Text style={styles.plusIcon}>+</Text>
+                    </Pressable>
+                </View>
                 <Text style={styles.headerSubtitle}>Stay connected with your Clubs and fellow Students!</Text>
 
                 {/*Group/Dm chat */}
@@ -117,47 +167,66 @@ export default function ChatScreen() {
                     <>
                         <Text style={styles.sectionTitle}>DMs</Text>
 
-                        {directMessages.length === 0 ? (
+                        {dmError ? (
+                            <Text style={styles.errorText} accessibilityRole="alert">{dmError}</Text>
+                        ) : null}
+
+                        {!dmLoaded ? (
+                            <ActivityIndicator style={styles.loading} size="large" color={colors.primary} accessibilityLabel="Loading messages" />
+                        ) : directMessages.length === 0 ? (
                             <View style={styles.emptyContainer}>
                                 <Text style={styles.emptyIcon}>👤</Text>
                                 <Text style={styles.emptyTitle}>No messages yet</Text>
                                 <Text style={styles.emptyText}>Conversations between you and the person you're exchanging with appear here.</Text>
+                                <Pressable
+                                    onPress={openNewMessage}
+                                    style={({ pressed }) => [styles.startButton, pressed && styles.pressed]}
+                                    accessibilityRole="button"
+                                >
+                                    <Text style={styles.startButtonText}>Start a conversation</Text>
+                                </Pressable>
                             </View>
                         ) : (
-                            directMessages.map((chat) => (
-                                <Pressable
-                                    key={chat.id}
-                                    style={styles.chatCard}
-                                    onPress={() =>
-                                        router.push({
-                                            pathname: "/dm-chat",
-                                            // dm-chat looks people up by user id, no conversation ids on the backend yet.
-                                            params: {
-                                                userId: String(chat.otherUserId),
-                                                name: chat.otherUserName,
-                                            },
-                                        })
-                                    }
-                                >
-                                    <View style={styles.avatar}>
-                                        <Text style={styles.avatarText}>{chat.otherUserName?.charAt(0)?.toUpperCase()}</Text>
-                                    </View>
+                            directMessages.map((chat) => {
+                                const name = fullName(chat);
+                                const time = formatListTime(chat.last_sent_at);
+                                const preview = previewText(chat);
+                                return (
+                                    <Pressable
+                                        key={chat.user_id}
+                                        style={({ pressed }) => [styles.chatCard, pressed && styles.pressed]}
+                                        onPress={() =>
+                                            router.push({
+                                                pathname: "/dm-chat",
+                                                // dm-chat looks people up by user id, no conversation ids on the backend yet.
+                                                params: {
+                                                    userId: String(chat.user_id),
+                                                    name,
+                                                },
+                                            })
+                                        }
+                                        accessibilityRole="button"
+                                        accessibilityLabel={`${name}, ${time}: ${preview}`}
+                                        accessibilityHint="Opens the conversation"
+                                    >
+                                        <ChatAvatar name={name} imageUrl={chat.profile_image} />
 
-                                    <View style={styles.chatInfo}>
-                                        <View style={styles.chatTopRow}>
-                                            <Text style={styles.chatName}>
-                                                {chat.otherUserName}
-                                            </Text>
-                                            <Text style={styles.timeText}>{chat.time}</Text>
+                                        <View style={styles.chatInfo}>
+                                            <View style={styles.chatTopRow}>
+                                                <Text style={styles.chatName} numberOfLines={1}>
+                                                    {name}
+                                                </Text>
+                                                <Text style={styles.timeText}>{time}</Text>
+                                            </View>
+
+                                            <Text
+                                                style={styles.lastMessage}
+                                                numberOfLines={1}
+                                            >{preview}</Text>
                                         </View>
-
-                                        <Text
-                                            style={styles.lastMessage}
-                                            numberOfLines={1}
-                                        >{chat.lastMessage}</Text>
-                                    </View>
-                                </Pressable>
-                            ))
+                                    </Pressable>
+                                );
+                            })
                         )}
                     </>
                 )}
@@ -182,10 +251,64 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         paddingBottom: 25,
     },
 
+    headerTitleRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+    },
+
     headerTitle: {
         color: colors.onHeader,
         fontSize: 34,
         fontWeight: "bold",
+    },
+
+    plusButton: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: colors.headerButton,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+
+    plusIcon: {
+        color: colors.onHeader,
+        fontSize: 30,
+        lineHeight: 32,
+        fontWeight: "600",
+        marginTop: -2,
+    },
+
+    pressed: {
+        opacity: 0.7,
+    },
+
+    loading: {
+        paddingTop: 60,
+    },
+
+    errorText: {
+        color: colors.error,
+        fontSize: 14,
+        textAlign: "center",
+        marginBottom: 12,
+    },
+
+    startButton: {
+        marginTop: 20,
+        minHeight: 44,
+        paddingHorizontal: 20,
+        borderRadius: 12,
+        backgroundColor: colors.primary,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+
+    startButtonText: {
+        color: colors.onPrimary,
+        fontSize: 16,
+        fontWeight: "600",
     },
 
     headerSubtitle: {

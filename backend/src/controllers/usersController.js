@@ -185,4 +185,33 @@ async function deleteAvatar(req, res) {
   }
 }
 
-module.exports = { getMe, updateMe, uploadAvatar, deleteAvatar };
+const SEARCH_LENGTH = { min: 2, max: 50 };
+const SEARCH_LIMIT = 20;
+
+// GET /users/search?q= -> { users } up to 20 name/username matches, never the caller (chat's New Message)
+async function searchUsers(req, res) {
+  const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+  if (q.length < SEARCH_LENGTH.min || q.length > SEARCH_LENGTH.max) {
+    return res.status(400).json({ error: `Search must be ${SEARCH_LENGTH.min}-${SEARCH_LENGTH.max} characters` });
+  }
+
+  const escaped = q.replace(/[\\%_]/g, '\\$&'); // so "%" and "_" match themselves, not "anything"
+  try {
+    const result = await pool.query(
+      `SELECT user_id::int AS user_id, username, first_name, last_name, major, school_year, profile_image
+       FROM users
+       WHERE user_id <> $1
+         AND (username ILIKE $2 OR concat_ws(' ', first_name, last_name) ILIKE $2)
+       ORDER BY (username ILIKE $3 OR concat_ws(' ', first_name, last_name) ILIKE $3) DESC,
+                first_name, last_name, user_id
+       LIMIT ${SEARCH_LIMIT}`,
+      [req.user.user_id, `%${escaped}%`, `${escaped}%`]
+    );
+    res.json({ users: result.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to search users' });
+  }
+}
+
+module.exports = { getMe, updateMe, uploadAvatar, deleteAvatar, searchUsers };
