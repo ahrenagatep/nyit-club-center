@@ -106,14 +106,13 @@ export default function NotificationsScreen() {
     markRead(notification);
     // interest, accepted, declined, cancelled, Kudos asked/given: open the agreement
     if (notification.engagement_id) {
-      openSkillEngagement(notification.engagement_id, 'notifications');
+      openSkillEngagement(notification.engagement_id);
     } else if (notification.post_id && notification.post_kind) {
       router.push({
         pathname: '/skill-exchange/[id]',
         params: {
           id: String(notification.post_id),
           ...(OPENS_COMMENTS.includes(notification.type) && { focus: 'comments' }),
-          from: 'notifications',
         },
       });
     }

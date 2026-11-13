@@ -27,31 +27,36 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: colors.surface,
         },
+        // android: slide the tab bar away while the keyboard is open so it doesn't sit on top of
+        // the message box in chats (every screen now lives inside a tab, so the bar is always there)
+        tabBarHideOnKeyboard: true,
       }}
     >  {/*This makes names for tabs appear on the bottom of the app*/}
+      {/* each name is a route group: "(home)" = the Home tab's own stack (see the shared
+          (home,explore,…)/_layout.tsx), so screens opened from a tab keep the tab bar */}
       <Tabs.Screen
-        name="home"
+        name="(home)"
         options={{
           title: "Home",
           tabBarIcon: ({ focused }) => <TabIcon emoji="🏠" focused={focused} />,
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="(explore)"
         options={{
           title: "Explore",
           tabBarIcon: ({ focused }) => <TabIcon emoji="🧭" focused={focused} />,
         }}
       />
       <Tabs.Screen
-        name="skill-exchange"
+        name="(skill-exchange)"
         options={{
           title: "Skill Exchange",
           tabBarIcon: ({ focused }) => <TabIcon emoji="🧠" focused={focused} />,
         }}
       />
       <Tabs.Screen
-        name="events"
+        name="(events)"
         options={{
           title: "Events",
           tabBarIcon: ({ focused }) => <TabIcon emoji="📅" focused={focused} />,
@@ -59,7 +64,7 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="chat"
+        name="(chat)"
         options={{
           title: "Chats",  //recent added tab
           tabBarIcon: ({ focused }) => <TabIcon emoji="💬" focused={focused} />,
@@ -69,7 +74,7 @@ export default function TabLayout() {
 
       {/* Account hub; opens Profile (the design's Profile tab) */}
       <Tabs.Screen
-        name="more"
+        name="(more)"
         options={{
           title: "More",
           tabBarIcon: ({ focused }) => <TabIcon emoji="👤" focused={focused} />,

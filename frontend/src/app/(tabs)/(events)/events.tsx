@@ -7,7 +7,7 @@ import {
     ScrollView,
     StyleSheet,
 } from "react-native";
-import { NotificationBell } from "@/components/notification-bell";
+import { HeaderActions } from "@/components/header-actions";
 
 import { EmptyState, openEvent } from "@/components/club-cards";
 import type { ThemeColors } from "@/constants/theme";
@@ -139,11 +139,8 @@ export default function EventsScreen() {
                     <Text style={styles.headerTitle} accessibilityRole="header">
                         Events
                     </Text>
-                    <NotificationBell
-                        style={styles.iconButton}
-                        pressedStyle={styles.pressed}
-                        iconStyle={styles.bellIcon}
-                    />
+                    {/* bell + profile, same on every main tab */}
+                    <HeaderActions />
                 </View>
 
                 {/* List & Calender */}
@@ -529,11 +526,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         color: colors.onHeader,
         fontSize: 26,
         fontWeight: "bold",
-    },
-
-    bellIcon: {
-        color: colors.onHeader,
-        fontSize: 24,
     },
 
     viewToggle: {

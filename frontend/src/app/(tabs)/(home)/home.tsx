@@ -9,7 +9,7 @@ import {
   Platform,
 } from "react-native";
 import { router } from "expo-router";
-import { NotificationBell } from "@/components/notification-bell";
+import { HeaderActions } from "@/components/header-actions";
 
 import {
   CategoryChip,
@@ -81,25 +81,8 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        <View style={styles.headerIcons}>
-          <NotificationBell
-            style={styles.iconButton}
-            pressedStyle={styles.pressed}
-            iconStyle={styles.notificationIcon}
-          />
-
-          <Pressable
-            onPress={() => router.push("/profile")}
-            style={({ pressed }) => [
-              styles.profileCircle,
-              pressed && styles.pressed,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Your profile"
-          >
-            <Text style={styles.profileIcon}>👤</Text>
-          </Pressable>
-        </View>
+        {/* bell + profile picture, the same component every main tab uses */}
+        <HeaderActions />
       </View>
 
       {/* SEARCH & FILTER */}
@@ -344,29 +327,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 30,
     fontWeight: "bold",
     marginTop: 4,
-  },
-
-  headerIcons: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 18,
-  },
-
-  notificationIcon: {
-    fontSize: 27,
-  },
-
-  profileCircle: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    backgroundColor: colors.headerButton,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  profileIcon: {
-    fontSize: 27,
   },
 
   searchCard: {

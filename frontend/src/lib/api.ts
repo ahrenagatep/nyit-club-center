@@ -206,6 +206,8 @@ export type AuthUser = {
   major?: string | null;
   school_year?: SchoolYear | null;
   bio?: string | null;
+  // picture URL (Supabase Storage, PR #53). the API already sends it; the type just didn't list it. null = no picture
+  profile_image?: string | null;
 };
 
 /** Allowed school_year values (sql/011, PATCH /users/me). */

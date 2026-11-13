@@ -9,7 +9,7 @@ import {
   Platform,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { NotificationBell } from "@/components/notification-bell";
+import { HeaderActions } from "@/components/header-actions";
 
 import { EmptyState, EventCard, openClub } from "@/components/club-cards";
 import type { ThemeColors } from "@/constants/theme";
@@ -143,11 +143,8 @@ const { clubs, loading, error } = useClubs();
           Explore Clubs
         </Text>
 
-        <NotificationBell
-          style={styles.iconButton}
-          pressedStyle={styles.pressed}
-          iconStyle={styles.notificationIcon}
-        />
+        {/* bell + profile, same on every main tab */}
+        <HeaderActions />
       </View>
 
       {/* Search */}
@@ -513,10 +510,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.onHeader,
     fontSize: 30,
     fontWeight: "bold",
-  },
-
-  notificationIcon: {
-    fontSize: 27,
   },
 
   searchCard: {

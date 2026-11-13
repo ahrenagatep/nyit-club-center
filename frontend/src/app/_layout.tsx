@@ -101,19 +101,9 @@ function RootStack() {
         </Stack.Protected>
 
         <Stack.Protected guard={status !== "signedOut"}>
+          {/* every signed-in screen lives inside (tabs) now (club, event, profile, chats…), so
+              guarding this one group locks all of them, incl. ones we forget to list by name */}
           <Stack.Screen name="(tabs)" />
-          {/* Screens opened from the tabs (each draws its own ScreenHeader) */}
-          <Stack.Screen name="club/[id]" />
-          <Stack.Screen name="event/[id]" />
-          <Stack.Screen name="my-clubs" />
-          <Stack.Screen name="notifications" />
-          <Stack.Screen name="profile" />
-          {/* chat screens: signed-in only, same as everything else in here.
-              expo-router still finds app/dm-chat.tsx w/o this line, but it'd sit outside the guard
-              -> a signed-out user could open /dm-chat. listing it inside Stack.Protected is what locks it. */}
-          <Stack.Screen name="dm-chat" />
-          <Stack.Screen name="new-message" />
-          <Stack.Screen name="club-chat" />
         </Stack.Protected>
       </Stack>
 
