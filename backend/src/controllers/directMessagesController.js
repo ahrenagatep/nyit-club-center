@@ -6,6 +6,25 @@ const { containsProfanity } = require('../utils/profanity');
 const ID_PATTERN = /^[1-9]\d{0,9}$/;
 const MAX_LENGTH = 2000;
 
+// one row per person I've messaged (either direction) w/ the newest msg between us, newest convo first.
+const CONVERSATIONS_SQL = `
+  WITH latest AS (
+    SELECT DISTINCT ON (other_id) message_id, sender_id, content, sent_at, other_id
+    FROM (
+      SELECT message_id, sender_id, content, sent_at,
+             CASE WHEN sender_id = $1 THEN receiver_id ELSE sender_id END AS other_id
+      FROM direct_messages
+      WHERE sender_id = $1 OR receiver_id = $1
+    ) AS mine
+    ORDER BY other_id, sent_at DESC, message_id DESC
+  )
+  SELECT u.user_id::int AS user_id, u.username, u.first_name, u.last_name, u.profile_image,
+         latest.content AS last_message, latest.sent_at AS last_sent_at,
+         latest.sender_id = $1 AS last_from_me
+  FROM latest
+  JOIN users u ON u.user_id = latest.other_id
+  ORDER BY latest.sent_at DESC, latest.message_id DESC`;
+
 // POST /direct-messages  body: { receiver_id, content } -> the new message
 async function sendMessage(req, res) {
   const { receiver_id, content } = req.body || {};
@@ -74,4 +93,15 @@ async function getConversation(req, res) {
   }
 }
 
-module.exports = { sendMessage, getConversation };
+// GET /direct-messages -> { conversations } one row per person I've messaged, newest first
+async function listConversations(req, res) {
+  try {
+    const result = await pool.query(CONVERSATIONS_SQL, [req.user.user_id]);
+    res.json({ conversations: result.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load conversations' });
+  }
+}
+
+module.exports = { sendMessage, getConversation, listConversations };

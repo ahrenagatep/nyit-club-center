@@ -291,7 +291,25 @@ export const usersApi = {
       body: update,
       token,
     }),
+
+  /** Other students whose name or username contains `q` (2–50 chars), up to 20, never yourself. */
+  search: (token: string, q: string) =>
+    apiRequest<{ users: UserSearchResult[] }>(`/users/search?q=${encodeURIComponent(q)}`, { token }),
 };
+
+/** A student found by GET /users/search (public fields only; no email). */
+export type UserSearchResult = {
+  user_id: number;
+  username: string;
+  first_name: string;
+  last_name: string;
+  major: string | null;
+  school_year: SchoolYear | null;
+  profile_image: string | null;
+};
+
+/** Same limits the backend checks in GET /users/search. */
+export const USER_SEARCH_LENGTH = { min: 2, max: 50 } as const;
 
 // ---------- Clubs (/clubs) ----------
 
@@ -728,4 +746,19 @@ export const directMessagesApi = {
   // GET is the default. response = { messages: [...] }, an object wrapping the array.
   conversation: (token: string, userId: number) =>
     apiRequest<{ messages: DirectMessage[] }>(`/direct-messages/${userId}`, { token }),
+
+  // everyone I've messaged (either direction) w/ the newest msg between us, newest first.
+  list: (token: string) => apiRequest<{ conversations: DmConversation[] }>('/direct-messages', { token }),
+};
+
+// one row of the Chats list: the other person + the latest msg between us.
+export type DmConversation = {
+  user_id: number;
+  username: string;
+  first_name: string;
+  last_name: string;
+  profile_image: string | null;
+  last_message: string;
+  last_sent_at: string;
+  last_from_me: boolean;
 };

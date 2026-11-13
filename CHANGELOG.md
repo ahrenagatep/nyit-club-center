@@ -19,6 +19,15 @@
     - Errors: `400` (bad id), `401`, `404` (event doesn't exist), `409` ("This event has ended")
   - Added `GET /users/me/events` (login required): the user's upcoming RSVP'd events, same fields, soonest first
 - Database: `sql/016_events_end_category.sql` adds `events.ends_at` and `events.category` (both optional, with checks), an index on `attendance(user_id, status)`, and turns on RLS for `events` and `attendance`. **Not applied to the live database yet.**
+- Added `GET /direct-messages` (signed in): the signed-in user's DM conversations, one per person, newest first.
+  - Returns `200 OK` with `{ "conversations": [{ "user_id", "username", "first_name", "last_name", "profile_image", "last_message", "last_sent_at", "last_from_me" }] }` (empty list if none)
+  - Built on the existing `direct_messages` table (one query, no N+1). `GET /direct-messages/:userId` and `POST /direct-messages` are unchanged.
+  - Errors: `401` (no/bad token), `404` (no profile)
+- Added `GET /users/search?q=` (signed in): other students whose name or username contains `q` (case-insensitive), up to 20, never yourself.
+  - Returns `200 OK` with `{ "users": [{ "user_id", "username", "first_name", "last_name", "major", "school_year", "profile_image" }] }`. Emails are not searched or returned.
+  - `%` and `_` in `q` match literally. Names/usernames that start with `q` are listed first.
+  - Errors: `400` (`q` missing, under 2 or over 50 characters after trimming), `401` (no/bad token), `404` (no profile)
+- No database changes for the DM list or search
 ### Frontend
 #### Anthony Dominguez
 - Events and RSVPs use real data now; the mock events are gone from `data/mock-data.ts`
@@ -27,6 +36,9 @@
   - Home, Events (list and calendar), Explore search, the club page's Upcoming Events, the event page, and Profile (Upcoming Events, Events Going) all show real events, with loading, empty, and error states
   - Events calendar loads each month from the server (in campus time). Past events show there greyed out with an "Ended" label and no RSVP button; days with only past events get a muted circle. The list view still shows upcoming events only
   - An event that has ended says "This event has ended" instead of the RSVP button
+- Chats tab → Direct Messages lists your real conversations (avatar or initial, name, "You: " preview, time); tap one to open it. Reloads when the tab opens and every 30 seconds while it's open.
+- New "+" button on the Chats header opens **New Message**: filters your previous chats as you type and looks up other students by name or username; tapping either opens the DM. The empty DM list also has a "Start a conversation" button.
+- New shared `ChatAvatar` (profile picture with initial fallback) and `lib/chat.ts` helpers. All new UI uses the theme colors (light, dark, NYIT, Cosmo).
 ## 2026-11-11
 ### Backend
 #### Anson Chen
