@@ -36,7 +36,7 @@ export default function MyClubsScreen() {
           <ClubRow
             key={club.club_id}
             club={club}
-            subtitle={`${club.role.charAt(0).toUpperCase + club.role.slice(1)} · ${club.category}`}
+            subtitle={`${club.role.charAt(0).toUpperCase() + club.role.slice(1)} · ${club.category}`}
           />
         ))
       )}
