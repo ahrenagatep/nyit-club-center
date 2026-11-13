@@ -323,6 +323,47 @@ export const membershipsApi = {
   mine: (token: string) => apiRequest<ApiMembership[]>('/users/me/memberships', { token })
 };
 
+// ---------- Events (/events) ----------
+
+/** Row from GET /events, /events/:id, /users/me/events. `category` falls back to the club's. */
+export type ApiEvent = {
+  event_id: number;
+  club_id: number;
+  club_name: string;
+  title: string;
+  description: string | null;
+  event_date: string;
+  ends_at: string | null;
+  location: string | null;
+  category: string | null;
+  attendee_count: number;
+  created_at: string;
+};
+
+/** No from/to: upcoming only. from + to (ISO, ≤ 93 days apart): that range, past events included. */
+export type EventQuery = { from?: string; to?: string; club_id?: number; limit?: number };
+
+export type RsvpResult = { event_id: number; going: boolean; attendee_count: number };
+
+export const eventsApi = {
+  list: (query: EventQuery = {}) => {
+    // only the params that are set, URL-encoded (ISO dates contain ":" and "+")
+    const params = Object.entries(query)
+      .filter(([, value]) => value !== undefined)
+      .map(([key, value]) => `${key}=${encodeURIComponent(String(value))}`)
+      .join('&');
+    return apiRequest<{ events: ApiEvent[] }>(`/events${params ? `?${params}` : ''}`);
+  },
+  get: (id: number) => apiRequest<{ event: ApiEvent }>(`/events/${id}`),
+  /** RSVP / cancel; both are safe to repeat and return the new count. 409 once the event has ended. */
+  rsvp: (id: number, token: string) =>
+    apiRequest<RsvpResult>(`/events/${id}/rsvp`, { method: 'POST', token }),
+  cancelRsvp: (id: number, token: string) =>
+    apiRequest<RsvpResult>(`/events/${id}/rsvp`, { method: 'DELETE', token }),
+  /** The signed-in user's upcoming RSVP'd events. */
+  mine: (token: string) => apiRequest<{ events: ApiEvent[] }>('/users/me/events', { token }),
+};
+
 // ---------- Skill Exchange (/skill-exchange) ----------
 
 export type SkillKind = 'request' | 'offer';

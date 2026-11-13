@@ -15,13 +15,8 @@ import {
 import { router, type Href, useFocusEffect } from "expo-router";
 
 import { openClub, openEvent } from "@/components/club-cards";
-import {
-    formatEventDate,
-    getClubById,
-    getMemberCount,
-    getUpcomingEvents,
-    type Club,
-} from "@/data/mock-data";
+import { getClubById, getMemberCount, type Club } from "@/data/mock-data";
+import { formatEventDate } from "@/lib/events";
 import { ApiError, PROFILE_LIMITS, SCHOOL_YEARS, skillApi, usersApi, type SchoolYear, type SkillSummary } from "@/lib/api";
 import type { ThemePreference } from "@/lib/theme-storage";
 import { KIND_LABEL, STATUS_LABEL, openSkillPost } from "@/components/skill-cards";
@@ -61,7 +56,7 @@ export default function ProfileScreen() {
     const styles = useThemedStyles(createStyles);
     const { colors } = useTheme();
     const { user, session, signOut, updateUser } = useAuth();
-    const { joinedClubIds, rsvpEventIds } = useAppState();
+    const { joinedClubIds, rsvpEvents } = useAppState();
     const { preference, setPreference } = useDarkMode();
 
     // user is briefly null while signing out, before the redirect to Login.
@@ -77,10 +72,8 @@ export default function ProfileScreen() {
         .map(getClubById)
         .filter((club): club is Club => club !== undefined)
         .slice(0, PREVIEW_COUNT);
-    // Soonest RSVP'd events that haven't ended
-    const upcomingEvents = getUpcomingEvents()
-        .filter((event) => rsvpEventIds.includes(event.event_id))
-        .slice(0, PREVIEW_COUNT);
+    // Soonest RSVP'd events that haven't ended (GET /users/me/events, kept in app state)
+    const upcomingEvents = rsvpEvents.slice(0, PREVIEW_COUNT);
 
     const major = user?.major ?? "";
     const schoolYear = user?.school_year ?? "";
@@ -178,7 +171,7 @@ export default function ProfileScreen() {
 
     const stats: { icon: string; count: number; label: string; href: Href }[] = [
         { icon: "👥", count: joinedClubIds.length, label: "Clubs Joined", href: "/my-clubs" },
-        { icon: "📅", count: rsvpEventIds.length, label: "Events Going", href: "/events" },
+        { icon: "📅", count: rsvpEvents.length, label: "Events Going", href: "/events" },
         { icon: "🧠", count: skillSummary?.post_count ?? 0, label: "Skill Posts", href: "/skill-exchange" },
     ];
 
@@ -333,14 +326,13 @@ export default function ProfileScreen() {
 
                 {upcomingEvents.length > 0 ? (
                     upcomingEvents.map((event) => {
-                        const club = getClubById(event.club_id);
                         const when = formatEventDate(event.event_date);
                         return (
                             <ActivityRow
                                 key={event.event_id}
-                                icon={club?.emoji ?? "📅"}
+                                icon="📅"
                                 title={event.title}
-                                subtitle={club ? `${club.name} · ${when}` : when}
+                                subtitle={`${event.club_name} · ${when}`}
                                 hint="Opens the event page"
                                 onPress={() => openEvent(event.event_id)}
                             />

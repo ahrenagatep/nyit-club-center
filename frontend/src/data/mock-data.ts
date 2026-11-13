@@ -1,20 +1,15 @@
 /**
- * TEMPORARY mock data for the mobile client.
+ * TEMPORARY mock data for the mobile client (clubs only; events come from the API, lib/events.ts).
  *
- * Field names mirror the PostgreSQL schema in backend/sql (clubs, events,
- * memberships) so that swapping these arrays for real API
- * calls (e.g. GET /clubs, GET /clubs/:id) only changes where the data comes
- * from, not how screens read it.
+ * Field names mirror the PostgreSQL schema in backend/sql (clubs, memberships)
+ * so that swapping these arrays for real API calls (e.g. GET /clubs, GET /clubs/:id)
+ * only changes where the data comes from, not how screens read it.
  *
  * UI-only extras that are not in the schema yet are marked "UI-only".
  */
 
 export const CATEGORIES = ['Academic', 'Sports', 'Arts', 'Tech', 'Social'] as const;
 export type Category = (typeof CATEGORIES)[number];
-
-/** Event filters on the Events tab: every club category plus "Workshop". */
-export const EVENT_CATEGORIES = [...CATEGORIES, 'Workshop'] as const;
-export type EventCategory = (typeof EVENT_CATEGORIES)[number];
 
 export type Club = {
   club_id: number;
@@ -24,18 +19,6 @@ export type Club = {
   emoji: string; // UI-only: placeholder until clubs have logos
   member_count: number; // returned by GET /clubs
   rating: number; // UI-only: shown on Explore; no ratings table yet
-};
-
-export type ClubEvent = {
-  event_id: number;
-  club_id: number;
-  title: string;
-  description: string;
-  event_date: string; // ISO timestamp (TIMESTAMPTZ)
-  end_date?: string; // UI-only: events table has no end time yet
-  location: string;
-  category: EventCategory; // UI-only: events table has no category yet
-  attendee_count: number; // UI-only: will come from COUNT(attendance)
 };
 
 export type MembershipRole = 'member' | 'officer' | 'president';
@@ -187,107 +170,6 @@ export const CLUBS: Club[] = [
   },
 ];
 
-/**
- * Mock events are scheduled relative to today so "upcoming" lists never go
- * empty. Times are built in the device's local time zone.
- */
-function daysFromNow(days: number, hour: number, minute = 0): string {
-  const date = new Date();
-  date.setDate(date.getDate() + days);
-  date.setHours(hour, minute, 0, 0);
-  return date.toISOString();
-}
-
-export const EVENTS: ClubEvent[] = [
-  {
-    event_id: 1,
-    club_id: 4,
-    title: 'Tech Talk: Rise of AI',
-    description:
-      'A guest speaker from industry walks through how modern AI systems are built and deployed, followed by Q&A.',
-    event_date: daysFromNow(1, 17),
-    location: 'Room 301',
-    category: 'Tech',
-    attendee_count: 35,
-  },
-  {
-    event_id: 2,
-    club_id: 6,
-    title: 'Fall Concert',
-    description:
-      'The Music Club’s annual fall showcase featuring student bands, soloists, and a closing group performance.',
-    event_date: daysFromNow(9, 19),
-    location: 'SAC Gym',
-    category: 'Arts',
-    attendee_count: 100,
-  },
-  {
-    event_id: 3,
-    club_id: 1,
-    title: 'Robot Build Night',
-    description: 'Hands-on build session for the upcoming competition robot. Pizza provided.',
-    event_date: daysFromNow(6, 18),
-    location: 'Engineering Lab 105',
-    category: 'Workshop',
-    attendee_count: 22,
-  },
-  {
-    event_id: 4,
-    club_id: 2,
-    title: 'Campus Photo Walk',
-    description: 'Golden-hour photo walk around campus. Any camera, including phones, is fine.',
-    event_date: daysFromNow(13, 17, 30),
-    location: 'Meet at Student Center',
-    category: 'Arts',
-    attendee_count: 18,
-  },
-  {
-    event_id: 5,
-    club_id: 3,
-    title: 'Smash Tournament',
-    description: 'Double-elimination bracket with prizes for the top three players.',
-    event_date: daysFromNow(16, 15),
-    location: 'Student Lounge',
-    category: 'Social',
-    attendee_count: 48,
-  },
-  {
-    event_id: 6,
-    club_id: 10,
-    title: 'Club Mixer Night',
-    description:
-      'Meet officers from every club on campus, grab food, and find a club that fits you.',
-    event_date: daysFromNow(5, 18),
-    end_date: daysFromNow(5, 21),
-    location: 'SAC',
-    category: 'Social',
-    attendee_count: 64,
-  },
-  {
-    event_id: 7,
-    club_id: 11,
-    title: 'STEM Symposium',
-    description:
-      'Student research posters and short talks from engineering and science majors, with judges from industry.',
-    event_date: daysFromNow(20, 10),
-    end_date: daysFromNow(20, 12),
-    location: 'Anna Rubin, Rm 301',
-    category: 'Academic',
-    attendee_count: 40,
-  },
-  {
-    event_id: 8,
-    club_id: 12,
-    title: 'Open Mic Night',
-    description: 'Music, poetry, and comedy. Sign up at the door for a five-minute slot.',
-    event_date: daysFromNow(35, 19),
-    end_date: daysFromNow(35, 22),
-    location: 'Auditorium',
-    category: 'Arts',
-    attendee_count: 30,
-  },
-];
-
 /** Clubs the signed-in user belongs to (memberships table, status = 'active'). */
 export const MY_MEMBERSHIPS: Membership[] = [
   { club_id: 4, role: 'member' },
@@ -321,22 +203,6 @@ export function getClubById(id: number): Club | undefined {
   return CLUBS.find((club) => club.club_id === id);
 }
 
-export function getEventById(id: number): ClubEvent | undefined {
-  return EVENTS.find((event) => event.event_id === id);
-}
-
-export function getEventsForClub(clubId: number): ClubEvent[] {
-  return getUpcomingEvents().filter((event) => event.club_id === clubId);
-}
-
-/** Events that haven't ended yet, soonest first. */
-export function getUpcomingEvents(): ClubEvent[] {
-  const now = Date.now();
-  return sortByDate(
-    EVENTS.filter((event) => new Date(event.end_date ?? event.event_date).getTime() >= now),
-  );
-}
-
 export function isCategory(value: unknown): value is Category {
   return typeof value === 'string' && (CATEGORIES as readonly string[]).includes(value);
 }
@@ -350,62 +216,4 @@ export function searchClubs(query: string, category: Category | null, clubs: Clu
       q === '' || club.name.toLowerCase().includes(q) || club.description.toLowerCase().includes(q);
     return matchesCategory && matchesQuery;
   });
-}
-
-function sortByDate(events: ClubEvent[]): ClubEvent[] {
-  return [...events].sort(
-    (a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime(),
-  );
-}
-
-// ---------- Formatting helpers ----------
-
-/** Events are shown in campus time so dates don't shift for users whose phone is set elsewhere. */
-export const CAMPUS_TIME_ZONE = 'America/New_York';
-
-export function formatEventDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    timeZone: CAMPUS_TIME_ZONE,
-  });
-}
-
-/** Month and day as separate strings, for the stacked date badge on the Events tab. */
-export function formatEventMonthDay(iso: string): { month: string; day: string } {
-  const date = new Date(iso);
-  return {
-    month: date.toLocaleDateString('en-US', { month: 'short', timeZone: CAMPUS_TIME_ZONE }),
-    day: date.toLocaleDateString('en-US', { day: 'numeric', timeZone: CAMPUS_TIME_ZONE }),
-  };
-}
-
-export function formatEventTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    timeZone: CAMPUS_TIME_ZONE,
-  });
-}
-
-/** "6:00 PM – 9:00 PM", or just the start time when the event has no end time. */
-export function formatEventTimeRange(event: ClubEvent): string {
-  const start = formatEventTime(event.event_date);
-  return event.end_date ? `${start} – ${formatEventTime(event.end_date)}` : start;
-}
-
-export function formatEventDateLong(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-    timeZone: CAMPUS_TIME_ZONE,
-  });
-}
-
-/** "YYYY-MM-DD" in campus time; used to match events to calendar days. */
-export function campusDateKey(iso: string): string {
-  // en-CA formats dates as YYYY-MM-DD.
-  return new Date(iso).toLocaleDateString('en-CA', { timeZone: CAMPUS_TIME_ZONE });
 }

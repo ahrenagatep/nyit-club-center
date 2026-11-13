@@ -7,14 +7,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 
 import type { ThemeColors } from '@/constants/theme';
-import {
-  formatEventDate,
-  formatEventTimeRange,
-  getClubById,
-  getMemberCount,
-  type Club,
-  type ClubEvent,
-} from '@/data/mock-data';
+import { getMemberCount, type Club } from '@/data/mock-data';
+import { formatEventDate, formatEventTimeRange, type ClubEvent } from '@/lib/events';
 import { useAppState } from '@/state/app-state';
 import { OnSurface, useThemedStyles } from '@/state/theme';
 
@@ -57,8 +51,7 @@ export function ClubRow({ club, subtitle }: { club: Club; subtitle?: string }) {
 /** Event card with date badge, details, and an RSVP toggle. */
 export function EventCard({ event, showClub = true }: { event: ClubEvent; showClub?: boolean }) {
   const styles = useThemedStyles(createStyles);
-  const { hasRsvp, toggleRsvp } = useAppState();
-  const club = getClubById(event.club_id);
+  const { hasRsvp, toggleRsvp, rsvpPending, attendeeCount } = useAppState();
   const going = hasRsvp(event.event_id);
   const date = formatEventDate(event.event_date);
   const time = formatEventTimeRange(event);
@@ -71,12 +64,12 @@ export function EventCard({ event, showClub = true }: { event: ClubEvent; showCl
         onPress={() => openEvent(event.event_id)}
         style={({ pressed }) => pressed && styles.pressed}
         accessibilityRole="button"
-        accessibilityLabel={`${event.title}${club && showClub ? `, hosted by ${club.name}` : ''}, ${date} at ${time}, ${event.location}`}
+        accessibilityLabel={`${event.title}${showClub ? `, hosted by ${event.club_name}` : ''}, ${date} at ${time}, ${event.location}`}
         accessibilityHint="Opens the event details">
         <View style={styles.eventTopRow}>
           <View style={styles.eventTextArea}>
             <Text style={styles.eventTitle}>{event.title}</Text>
-            {showClub && club ? <Text style={styles.eventClub}>{club.name}</Text> : null}
+            {showClub ? <Text style={styles.eventClub}>{event.club_name}</Text> : null}
           </View>
 
           <View style={styles.dateBadge}>
@@ -87,13 +80,19 @@ export function EventCard({ event, showClub = true }: { event: ClubEvent; showCl
         <View style={styles.eventDetails}>
           <Text style={styles.detailText}>🕔 {time}</Text>
           <Text style={styles.detailText}>📍 {event.location}</Text>
-          <Text style={styles.detailText}>👥 {event.attendee_count + (going ? 1 : 0)}</Text>
+          {/* the server's count, updated right after this user RSVPs or cancels */}
+          <Text style={styles.detailText}>👥 {attendeeCount(event)}</Text>
         </View>
       </Pressable>
 
       {/* on the card here; the Event screen shows the same button on the page */}
       <OnSurface>
-        <RsvpButton going={going} onPress={() => toggleRsvp(event.event_id)} title={event.title} />
+        <RsvpButton
+          going={going}
+          pending={rsvpPending(event.event_id)}
+          onPress={() => toggleRsvp(event.event_id)}
+          title={event.title}
+        />
       </OnSurface>
     </View>
   );
@@ -101,10 +100,13 @@ export function EventCard({ event, showClub = true }: { event: ClubEvent; showCl
 
 export function RsvpButton({
   going,
+  pending = false,
   onPress,
   title,
 }: {
   going: boolean;
+  /** true while the RSVP request is in flight: dimmed and not pressable */
+  pending?: boolean;
   onPress: () => void;
   title: string;
 }) {
@@ -112,13 +114,14 @@ export function RsvpButton({
   return (
     <Pressable
       onPress={onPress}
+      disabled={pending} // blocks a double tap from sending a second request
       style={({ pressed }) => [
         styles.rsvpButton,
         going && styles.rsvpButtonGoing,
-        pressed && styles.pressed,
+        (pressed || pending) && styles.pressed,
       ]}
       accessibilityRole="button"
-      accessibilityState={{ selected: going }}
+      accessibilityState={{ selected: going, disabled: pending, busy: pending }}
       accessibilityLabel={going ? `Cancel RSVP for ${title}` : `RSVP to ${title}`}>
       <Text style={[styles.rsvpText, going && styles.rsvpTextGoing]}>
         {going ? '✓ Going' : 'RSVP'}

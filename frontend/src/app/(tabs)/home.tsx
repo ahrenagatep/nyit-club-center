@@ -23,11 +23,11 @@ import {
   CATEGORIES,
   CURRENT_USER,
   getMembershipRoleLabel,
-  getUpcomingEvents,
   type Category,
 } from "@/data/mock-data";
 
 import { useClubs } from "@/lib/clubs";
+import { useEvents } from "@/lib/events";
 
 import { useAppState } from "@/state/app-state";
 import { useAuth } from "@/state/auth";
@@ -54,7 +54,8 @@ export default function HomeScreen() {
   const { clubs, loading, error } = useClubs();
   const recommendedClubs = clubs.slice(0, 3);
 
-  const upcomingEvents = getUpcomingEvents().slice(0, HOME_EVENT_LIMIT);
+  // the server returns upcoming events soonest first, so limit gives the next few
+  const upcoming = useEvents({ limit: HOME_EVENT_LIMIT });
   const yourClubs = myClubs;
 
   // Search runs on Explore so Home stays a preview; the box clears for next time.
@@ -234,9 +235,19 @@ export default function HomeScreen() {
         </Pressable>
       </View>
 
-      {upcomingEvents.map((event) => (
-        <EventCard key={event.event_id} event={event} />
-      ))}
+      {upcoming.loading ? (
+        <Text style={styles.recommendedMessage}>Loading events…</Text>
+      ) : upcoming.error ? (
+        <EmptyState emoji="⚠️" title="Couldn't load events" message={upcoming.error} />
+      ) : upcoming.events.length === 0 ? (
+        <EmptyState
+          emoji="📅"
+          title="No upcoming events"
+          message="Check back later for new events from your clubs."
+        />
+      ) : (
+        upcoming.events.map((event) => <EventCard key={event.event_id} event={event} />)
+      )}
 
       {/* YOUR CLUBS */}
       {/* Shows clubs that the student has already joined */}
