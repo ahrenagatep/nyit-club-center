@@ -1,11 +1,12 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 
-import { EmptyState, createCardStyles } from '@/components/club-cards';
+import { EmptyState, EventCard, createCardStyles } from '@/components/club-cards';
 import { ScreenHeader } from '@/components/screen-header';
 import type { ThemeColors } from '@/constants/theme';
 import { useAppState } from '@/state/app-state';
 import { useClub } from '@/lib/clubs';
+import { useEvents } from '@/lib/events';
 import { useThemedStyles } from '@/state/theme';
 
 /** Club detail: about, join/leave, and the club's upcoming events. */
@@ -15,6 +16,8 @@ export default function ClubScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { club, loading, error } = useClub(Number(id));
   const { isJoined, toggleJoin } = useAppState();
+  // this club's upcoming events; called up here because hooks can't come after the early returns below
+  const clubEvents = useEvents({ club_id: Number(id) });
 
   if (loading) {
     return (
@@ -38,7 +41,6 @@ export default function ClubScreen() {
   }
 
   const joined = isJoined(club.club_id);
-  // const events = getEventsForClub(club.club_id);
   const memberCount = club.member_count;
 
   return (
@@ -80,12 +82,19 @@ export default function ClubScreen() {
       <Text style={cardStyles.sectionTitle} accessibilityRole="header">
         Upcoming Events
       </Text>
-      {(  // add back events.length === 0 ? when we get events endpoint working
+      {clubEvents.loading ? (
+        <Text style={styles.body}>Loading events…</Text>
+      ) : clubEvents.error ? (
+        <EmptyState emoji="⚠️" title="Couldn't load events" message={clubEvents.error} />
+      ) : clubEvents.events.length === 0 ? (
         <EmptyState
           emoji="📅"
           title="No upcoming events"
           message="Check back later for new events from this club."
         />
+      ) : (
+        // showClub off: every event here is hosted by this club
+        clubEvents.events.map((event) => <EventCard key={event.event_id} event={event} showClub={false} />)
       )}
       {/*This makes it so only joined members have access to annoucements, non members would only see About & Upcoming Events */}
       {joined && (

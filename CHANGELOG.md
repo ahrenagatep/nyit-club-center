@@ -1,4 +1,32 @@
 # Changelog
+## 2026-11-12
+### Backend
+#### Anthony Dominguez
+- Events and RSVPs, on the existing `events` and `attendance` tables
+  - Added `GET /events` (public): `{ "events": [ ... ] }`, soonest first
+    - No `from`/`to`: only events that haven't ended. With `from` + `to` (ISO date-times with a time zone, up to 93 days apart): events starting in that range, past ones included (for the calendar)
+    - Optional `club_id`, `limit` (default 100, max 200)
+    - Each event: `event_id`, `club_id`, `club_name`, `title`, `description`, `event_date`, `ends_at`, `location`, `category` (the club's category when the event has none), `attendee_count` (RSVPs that are registered or checked in), `created_at`
+    - Errors: `400` (bad dates, `to` not after `from`, range over 93 days, bad `club_id` or `limit`)
+  - Added `GET /events/:id` (public): `{ "event": { ... } }`, same fields. Errors: `400` (bad id), `404`
+  - Added `POST /clubs/:id/events` (club officer, president, or admin): creates an event
+    - Example Body (JSON): `{ "title": "Build Night", "event_date": "2026-11-20T18:00:00-05:00", "ends_at": "2026-11-20T21:00:00-05:00", "location": "Room 105", "description": "Pizza provided", "category": "Workshop" }` (only `title` and `event_date` are required; `category` is one of Academic, Sports, Arts, Tech, Social, Workshop)
+    - Returns `201 Created` with `{ "event": { ... } }`. Past start dates are allowed (for back-filling)
+    - Errors: `400` (missing/long title, bad dates, `ends_at` not after `event_date`, unknown category, long location/description, inappropriate language), `401`, `403` (not an officer/president of that club), `404` (club doesn't exist)
+  - Added `PUT /clubs/:id/events/:eventId` and `DELETE /clubs/:id/events/:eventId` (same roles): edit any of the fields above, or delete the event (its RSVPs go with it). `404` if the event isn't in that club
+  - Added `POST /events/:id/rsvp` and `DELETE /events/:id/rsvp` (login required, any student, member or not): RSVP or cancel
+    - Both return `200 OK` with `{ "event_id": 7, "going": true, "attendee_count": 12 }`. Repeating either one is safe (same answer, nothing counted twice)
+    - Errors: `400` (bad id), `401`, `404` (event doesn't exist), `409` ("This event has ended")
+  - Added `GET /users/me/events` (login required): the user's upcoming RSVP'd events, same fields, soonest first
+- Database: `sql/016_events_end_category.sql` adds `events.ends_at` and `events.category` (both optional, with checks), an index on `attendance(user_id, status)`, and turns on RLS for `events` and `attendance`. **Not applied to the live database yet.**
+### Frontend
+#### Anthony Dominguez
+- Events and RSVPs use real data now; the mock events are gone from `data/mock-data.ts`
+  - New `lib/events.ts`: `useEvents()`, `useEvent(id)`, the event date helpers (moved from `mock-data.ts`), `isPast()`; new `eventsApi` in `api.ts`
+  - RSVPs load from the server when you sign in and save with the RSVP button (tap again to cancel). The count updates right away, and the button is off while it saves. If saving fails, the button stays as it was and the error is shown
+  - Home, Events (list and calendar), Explore search, the club page's Upcoming Events, the event page, and Profile (Upcoming Events, Events Going) all show real events, with loading, empty, and error states
+  - Events calendar loads each month from the server (in campus time). Past events show there greyed out with an "Ended" label and no RSVP button; days with only past events get a muted circle. The list view still shows upcoming events only
+  - An event that has ended says "This event has ended" instead of the RSVP button
 ## 2026-11-11
 ### Backend
 #### Anson Chen

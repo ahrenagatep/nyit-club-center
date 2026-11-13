@@ -11,6 +11,9 @@ const skillExchangeRoutes = require('./routes/skillExchange');
 const notificationsRoutes = require('./routes/notifications');
 const membershipsRoutes = require('./routes/memberships');
 const directMessagesRoutes = require('./routes/directMessages');
+const eventsRoutes = require('./routes/events');
+const clubEventsRoutes = require('./routes/clubEvents');
+const myEventsRoutes = require('./routes/myEvents');
 const path = require('path'); 
 
 const app = express();
@@ -19,12 +22,15 @@ app.use(cors());            // allows frontend to make requests to this API from
 app.use(express.json());    // parses incoming JSON requests and puts into in req.body
 
 app.use('/auth', authRoutes);
+app.use('/clubs/:id/events', clubEventsRoutes); // before /clubs: club event management lives in its own router
 app.use('/clubs', clubsRoutes);
 app.use('/users/me/memberships', membershipsRoutes);
+app.use('/users/me/events', myEventsRoutes); // before /users, like memberships
 app.use('/users', usersRoutes);
 app.use('/skill-exchange', skillExchangeRoutes);
 app.use('/notifications', notificationsRoutes);
 app.use('/direct-messages', directMessagesRoutes);
+app.use('/events', eventsRoutes); // browse events (public) + RSVP
 
 app.get('/health', async (req, res) => {
   try {

@@ -17,13 +17,13 @@ import {
   CATEGORIES,
   TRENDING_CLUB_IDS,
   getClubById,
-  getUpcomingEvents,
   isCategory,
   searchClubs,
   type Club,
 } from "@/data/mock-data";
 
 import { useClubs } from "@/lib/clubs";
+import { useEvents } from "@/lib/events";
 import { useAppState } from "@/state/app-state";
 import { useTheme, useThemedStyles } from "@/state/theme";
 
@@ -61,6 +61,8 @@ export default function ExploreScreen() {
 
 // clubs for the Discover list fetched from the backend (GET /clubs) 
 const { clubs, loading, error } = useClubs();
+  // upcoming events (GET /events) for the search results below; matching happens on the phone
+  const upcoming = useEvents();
 
   const scrollRef = useRef<ScrollView>(null);
   const discoverY = useRef(0);
@@ -99,19 +101,18 @@ const { clubs, loading, error } = useClubs();
     return results.sort((a, b) => a.name.localeCompare(b.name));
   }, [query, category, sort, clubs]);
 
-  // Upcoming events whose title or host club matches the search text.
+  // Upcoming events whose title or host club matches the search text; the chip filters by the event's category.
   const matchingEvents = useMemo(() => {
     const q = query.toLowerCase();
     if (!q) return [];
-    return getUpcomingEvents().filter((event) => {
-      const club = getClubById(event.club_id);
-      const inCategory = category === null || club?.category === category;
+    return upcoming.events.filter((event) => {
+      const inCategory = category === null || event.category === category;
       const matches =
         event.title.toLowerCase().includes(q) ||
-        (club?.name.toLowerCase().includes(q) ?? false);
+        event.club_name.toLowerCase().includes(q);
       return inCategory && matches;
     });
-  }, [query, category]);
+  }, [query, category, upcoming.events]);
 
   const selectCategory = (next: string | null) => {
     router.setParams({ category: next ?? undefined });

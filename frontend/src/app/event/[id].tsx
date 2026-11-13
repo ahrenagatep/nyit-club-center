@@ -4,12 +4,8 @@ import { useLocalSearchParams } from 'expo-router';
 import { ClubRow, EmptyState, RsvpButton, createCardStyles } from '@/components/club-cards';
 import { ScreenHeader } from '@/components/screen-header';
 import type { ThemeColors } from '@/constants/theme';
-import {
-  formatEventDateLong,
-  formatEventTimeRange,
-  getClubById,
-  getEventById,
-} from '@/data/mock-data';
+import { useClub } from '@/lib/clubs';
+import { formatEventDateLong, formatEventTimeRange, isPast, useEvent } from '@/lib/events';
 import { useAppState } from '@/state/app-state';
 import { useThemedStyles } from '@/state/theme';
 
@@ -18,10 +14,28 @@ export default function EventScreen() {
   const styles = useThemedStyles(createStyles);
   const cardStyles = useThemedStyles(createCardStyles);
   const { id } = useLocalSearchParams<{ id: string }>();
-  const event = getEventById(Number(id));
-  const { hasRsvp, toggleRsvp } = useAppState();
+  const { event, loading, error, notFound } = useEvent(Number(id));
+  const { hasRsvp, toggleRsvp, rsvpPending, attendeeCount } = useAppState();
 
-  if (!event) {
+  // "&& !event": when the screen refocuses, keep showing the loaded event while it refreshes
+  if (loading && !event) {
+    return (
+      <View style={styles.container}>
+        <ScreenHeader title="Loading…" />
+      </View>
+    );
+  }
+
+  if (error && !event) {
+    return (
+      <View style={styles.container}>
+        <ScreenHeader title="Event" />
+        <EmptyState emoji="⚠️" title="Couldn't load this event" message={error} />
+      </View>
+    );
+  }
+
+  if (notFound || !event) {
     return (
       <View style={styles.container}>
         <ScreenHeader title="Event not found" />
@@ -34,14 +48,14 @@ export default function EventScreen() {
     );
   }
 
-  const club = getClubById(event.club_id);
   const going = hasRsvp(event.event_id);
+  const ended = isPast(event); // the API refuses RSVPs once an event ends (409), so hide the button
 
   const details = [
     { icon: '📅', label: 'Date', value: formatEventDateLong(event.event_date) },
     { icon: '🕔', label: 'Time', value: formatEventTimeRange(event) },
     { icon: '📍', label: 'Location', value: event.location },
-    { icon: '👥', label: 'Going', value: `${event.attendee_count + (going ? 1 : 0)} students` },
+    { icon: '👥', label: 'Going', value: `${attendeeCount(event)} students` }, // includes this user's latest RSVP
   ];
 
   return (
@@ -49,7 +63,7 @@ export default function EventScreen() {
       style={styles.container}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}>
-      <ScreenHeader title={event.title} subtitle={club?.name} />
+      <ScreenHeader title={event.title} subtitle={event.club_name} />
 
       <View style={styles.detailCard}>
         {details.map((item) => (
@@ -70,23 +84,42 @@ export default function EventScreen() {
       </View>
 
       <View style={styles.rsvpWrap}>
-        <RsvpButton going={going} onPress={() => toggleRsvp(event.event_id)} title={event.title} />
+        {ended ? (
+          <View style={styles.endedNote} accessible accessibilityLabel="This event has ended">
+            <Text style={styles.endedText}>This event has ended</Text>
+          </View>
+        ) : (
+          <RsvpButton
+            going={going}
+            pending={rsvpPending(event.event_id)}
+            onPress={() => toggleRsvp(event.event_id)}
+            title={event.title}
+          />
+        )}
       </View>
 
       <Text style={cardStyles.sectionTitle} accessibilityRole="header">
         About this event
       </Text>
-      <Text style={styles.body}>{event.description}</Text>
+      <Text style={styles.body}>{event.description || 'No description yet.'}</Text>
 
-      {club && (
-        <>
-          <Text style={cardStyles.sectionTitle} accessibilityRole="header">
-            Hosted by
-          </Text>
-          <ClubRow club={club} />
-        </>
-      )}
+      <HostClub clubId={event.club_id} />
     </ScrollView>
+  );
+}
+
+// the host club's row, loaded from GET /clubs/:id once the event is known
+function HostClub({ clubId }: { clubId: number }) {
+  const cardStyles = useThemedStyles(createCardStyles);
+  const { club } = useClub(clubId);
+  if (!club) return null;
+  return (
+    <>
+      <Text style={cardStyles.sectionTitle} accessibilityRole="header">
+        Hosted by
+      </Text>
+      <ClubRow club={club} />
+    </>
   );
 }
 
@@ -128,6 +161,19 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   rsvpWrap: {
     marginHorizontal: 20,
+  },
+  endedNote: {
+    marginTop: 20,
+    minHeight: 48,
+    borderRadius: 13,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.surfaceMuted,
+  },
+  endedText: {
+    color: colors.textMutedOnSurface,
+    fontSize: 17,
+    fontWeight: '600',
   },
   body: {
     marginHorizontal: 20,

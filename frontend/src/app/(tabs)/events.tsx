@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
     View,
     Text,
@@ -17,11 +17,12 @@ import {
     formatEventDateLong,
     formatEventMonthDay,
     formatEventTimeRange,
-    getClubById,
-    getUpcomingEvents,
+    campusMonthRange,
+    isPast,
+    useEvents,
     type ClubEvent,
     type EventCategory,
-} from "@/data/mock-data";
+} from "@/lib/events";
 import {
     WEEK_DAYS,
     dayKey,
@@ -52,34 +53,41 @@ export default function EventsScreen() {
     const [goingOnly, setGoingOnly] = useState(false);
     const [month, setMonth] = useState<CalendarMonth>(currentMonth);
     const [selectedDay, setSelectedDay] = useState<string | null>(null);
-    const { hasRsvp, toggleRsvp } = useAppState();
+    const { hasRsvp, toggleRsvp, rsvpPending } = useAppState();
+
+    // list view: upcoming events; calendar: everything in the visible month (campus time), past included
+    const upcoming = useEvents();
+    const monthly = useEvents(campusMonthRange(month));
 
     const categories: (EventCategory | "All")[] = ["All", ...EVENT_CATEGORIES];
 
-    const events = useMemo(() => {
-        const q = search.trim().toLowerCase();
-        return getUpcomingEvents().filter((event) => {
-            const club = getClubById(event.club_id);
+    // search, category, and Going stay client-side
+    const matches = useCallback(
+        (event: ClubEvent) => {
+            const q = search.trim().toLowerCase();
             const matchesQuery =
                 q === "" ||
                 event.title.toLowerCase().includes(q) ||
                 event.location.toLowerCase().includes(q) ||
-                (club?.name.toLowerCase().includes(q) ?? false);
+                event.club_name.toLowerCase().includes(q);
             const matchesCategory =
                 selectedCategory === "All" || event.category === selectedCategory;
             const matchesGoing = !goingOnly || hasRsvp(event.event_id);
             return matchesQuery && matchesCategory && matchesGoing;
-        });
-    }, [search, selectedCategory, goingOnly, hasRsvp]);
+        },
+        [search, selectedCategory, goingOnly, hasRsvp],
+    );
+    const events = useMemo(() => upcoming.events.filter(matches), [upcoming.events, matches]);
+    const monthEvents = useMemo(() => monthly.events.filter(matches), [monthly.events, matches]);
 
     const eventsByDay = useMemo(() => {
         const map = new Map<string, ClubEvent[]>();
-        for (const event of events) {
+        for (const event of monthEvents) {
             const key = campusDateKey(event.event_date);
             map.set(key, [...(map.get(key) ?? []), event]);
         }
         return map;
-    }, [events]);
+    }, [monthEvents]);
 
     const monthPrefix = `${month.year}-${pad(month.month + 1)}-`;
     const monthName = new Date(month.year, month.month, 1).toLocaleDateString("en-US", {
@@ -88,11 +96,22 @@ export default function EventsScreen() {
     });
     const calendarEvents = selectedDay
         ? eventsByDay.get(selectedDay) ?? []
-        : events.filter((event) => campusDateKey(event.event_date).startsWith(monthPrefix));
+        : monthEvents.filter((event) => campusDateKey(event.event_date).startsWith(monthPrefix));
 
     const changeMonth = (delta: number) => {
         setMonth((current) => shiftMonth(current, delta));
         setSelectedDay(null);
+    };
+
+    // loading / error / empty for whichever list is showing; null when there are events to show
+    const listStatus = (state: { loading: boolean; error: string | null }, shown: ClubEvent[]) => {
+        if (state.loading) {
+            return <Text style={styles.statusText}>Loading events…</Text>;
+        }
+        if (state.error) {
+            return <EmptyState emoji="⚠️" title="Couldn't load events" message={state.error} />;
+        }
+        return shown.length === 0 ? emptyState : null;
     };
 
     const emptyState = (
@@ -257,11 +276,10 @@ export default function EventsScreen() {
                         Upcoming Events
                     </Text>
 
-                    {events.length === 0
-                        ? emptyState
-                        : events.map((event) => {
-                              const club = getClubById(event.club_id);
+                    {listStatus(upcoming, events) ??
+                        events.map((event) => {
                               const going = hasRsvp(event.event_id);
+                              const pending = rsvpPending(event.event_id); // dims + disables the button while saving
                               const { month: badgeMonth, day: badgeDay } = formatEventMonthDay(
                                   event.event_date,
                               );
@@ -274,15 +292,13 @@ export default function EventsScreen() {
                                           onPress={() => openEvent(event.event_id)}
                                           style={({ pressed }) => pressed && styles.pressed}
                                           accessibilityRole="button"
-                                          accessibilityLabel={`${event.title}${club ? `, hosted by ${club.name}` : ""}, ${badgeMonth} ${badgeDay}, ${time}, ${event.location}`}
+                                          accessibilityLabel={`${event.title}, hosted by ${event.club_name}, ${badgeMonth} ${badgeDay}, ${time}, ${event.location}`}
                                           accessibilityHint="Opens the event details"
                                       >
                                           <View style={styles.eventTop}>
                                               <View style={styles.eventInfo}>
                                                   <Text style={styles.eventTitle}>{event.title}</Text>
-                                                  {club ? (
-                                                      <Text style={styles.clubName}>{club.name}</Text>
-                                                  ) : null}
+                                                  <Text style={styles.clubName}>{event.club_name}</Text>
                                               </View>
 
                                               <View style={styles.dateBadge}>
@@ -300,11 +316,12 @@ export default function EventsScreen() {
                                               style={({ pressed }) => [
                                                   styles.rsvpButton,
                                                   going && styles.rsvpActiveButton,
-                                                  pressed && styles.pressed,
+                                                  (pressed || pending) && styles.pressed,
                                               ]}
                                               onPress={() => toggleRsvp(event.event_id)}
+                                              disabled={pending}
                                               accessibilityRole="button"
-                                              accessibilityState={{ selected: going }}
+                                              accessibilityState={{ selected: going, disabled: pending, busy: pending }}
                                               accessibilityLabel={
                                                   going
                                                       ? `Cancel RSVP for ${event.title}`
@@ -397,21 +414,24 @@ export default function EventsScreen() {
                                     }
 
                                     const selected = selectedDay === key;
+                                    // days whose events have all ended get a muted highlight
+                                    const allPast = dayEvents.every((event) => isPast(event));
                                     return (
                                         <Pressable
                                             key={key}
                                             onPress={() => setSelectedDay(selected ? null : key)}
                                             style={({ pressed }) => [
                                                 styles.eventDay,
+                                                allPast && styles.pastEventDay,
                                                 selected && styles.selectedEventDay,
                                                 pressed && styles.pressed,
                                             ]}
                                             hitSlop={3}
                                             accessibilityRole="button"
                                             accessibilityState={{ selected }}
-                                            accessibilityLabel={`${formatEventDateLong(dayEvents[0].event_date)}, ${dayEvents.length} ${dayEvents.length === 1 ? "event" : "events"}`}
+                                            accessibilityLabel={`${formatEventDateLong(dayEvents[0].event_date)}, ${dayEvents.length} ${allPast ? "past " : ""}${dayEvents.length === 1 ? "event" : "events"}`}
                                         >
-                                            <Text style={styles.eventDayText}>{day}</Text>
+                                            <Text style={[styles.eventDayText, allPast && styles.pastEventDayText]}>{day}</Text>
                                         </Pressable>
                                     );
                                 })}
@@ -425,14 +445,13 @@ export default function EventsScreen() {
                             : `Events in ${monthName}`}
                     </Text>
 
-                    {calendarEvents.length === 0
-                        ? emptyState
-                        : calendarEvents.map((event) => {
-                              const club = getClubById(event.club_id);
+                    {listStatus(monthly, calendarEvents) ??
+                        calendarEvents.map((event) => {
                               const { month: badgeMonth, day: badgeDay } = formatEventMonthDay(
                                   event.event_date,
                               );
                               const time = formatEventTimeRange(event);
+                              const ended = isPast(event); // calendar shows past events (greyed); the list view never gets them
 
                               return (
                                   <Pressable
@@ -443,19 +462,25 @@ export default function EventsScreen() {
                                           pressed && styles.pressed,
                                       ]}
                                       accessibilityRole="button"
-                                      accessibilityLabel={`${event.title}, ${badgeMonth} ${badgeDay}, ${time}, ${event.location}`}
+                                      accessibilityLabel={`${ended ? "Ended: " : ""}${event.title}, ${badgeMonth} ${badgeDay}, ${time}, ${event.location}, hosted by ${event.club_name}`}
                                       accessibilityHint="Opens the event details"
                                   >
-                                      <View style={styles.calendarDot} />
+                                      <View style={[styles.calendarDot, ended && styles.pastDot]} />
                                       <View style={styles.eventInfo}>
-                                          <Text style={styles.calendarEventTitle}>{event.title}</Text>
+                                          <Text style={[styles.calendarEventTitle, ended && styles.pastEventTitle]}>
+                                              {event.title}
+                                          </Text>
                                           <Text style={styles.calendarEventInfo}>
                                               {badgeMonth} {badgeDay} · {time} · {event.location}
                                           </Text>
-                                          {club ? (
-                                              <Text style={styles.calendarEventInfo}>{club.name}</Text>
-                                          ) : null}
+                                          <Text style={styles.calendarEventInfo}>{event.club_name}</Text>
                                       </View>
+                                      {/* text too, so "ended" isn't shown by color alone */}
+                                      {ended ? (
+                                          <View style={styles.endedTag}>
+                                              <Text style={styles.endedTagText}>Ended</Text>
+                                          </View>
+                                      ) : null}
                                   </Pressable>
                               );
                           })}
@@ -798,6 +823,17 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         justifyContent: "center",
     },
 
+    // every event that day has ended: muted instead of the primary fill
+    pastEventDay: {
+        backgroundColor: colors.surfaceMuted,
+        borderWidth: 1,
+        borderColor: colors.textMutedOnSurface,
+    },
+
+    pastEventDayText: {
+        color: colors.textMutedOnSurface,
+    },
+
     selectedEventDay: {
         borderWidth: 3,
         borderColor: colors.primaryBorderStrong,
@@ -826,6 +862,37 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         borderRadius: 5,
         backgroundColor: colors.primary,
         marginRight: 12,
+    },
+
+    // faded dot; text keeps full opacity in a muted color so it still passes AA contrast
+    pastDot: {
+        backgroundColor: colors.textMuted,
+        opacity: 0.5,
+    },
+
+    pastEventTitle: {
+        color: colors.textMuted,
+    },
+
+    endedTag: {
+        borderWidth: 1,
+        borderColor: colors.textMuted,
+        borderRadius: 9,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        marginLeft: 8,
+    },
+
+    endedTagText: {
+        color: colors.textMuted,
+        fontSize: 12,
+        fontWeight: "600",
+    },
+
+    statusText: {
+        marginHorizontal: 20,
+        fontSize: 16,
+        color: colors.textMuted,
     },
 
     calendarEventTitle: {
