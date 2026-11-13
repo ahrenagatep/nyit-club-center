@@ -10,6 +10,7 @@ import {
 import { router, useFocusEffect } from "expo-router";
 
 import { ChatAvatar } from "@/components/chat-avatar";
+import { HeaderActions } from "@/components/header-actions";
 import type { ThemeColors } from "@/constants/theme";
 import { ApiError, directMessagesApi, type DmConversation } from "@/lib/api";
 import { formatListTime, fullName, previewText } from "@/lib/chat";
@@ -62,15 +63,19 @@ export default function ChatScreen() {
             <View style={styles.header}>
                 <View style={styles.headerTitleRow}>
                     <Text style={styles.headerTitle} accessibilityRole="header">Chats</Text>
-                    <Pressable
-                        onPress={openNewMessage}
-                        style={({ pressed }) => [styles.plusButton, pressed && styles.pressed]}
-                        hitSlop={8}
-                        accessibilityRole="button"
-                        accessibilityLabel="New message or search chats"
-                    >
-                        <Text style={styles.plusIcon}>+</Text>
-                    </Pressable>
+                    {/* right side: "+" new message, then bell + profile (same on every main tab) */}
+                    <View style={styles.headerRight}>
+                        <Pressable
+                            onPress={openNewMessage}
+                            style={({ pressed }) => [styles.plusButton, pressed && styles.pressed]}
+                            hitSlop={8}
+                            accessibilityRole="button"
+                            accessibilityLabel="New message or search chats"
+                        >
+                            <Text style={styles.plusIcon}>+</Text>
+                        </Pressable>
+                        <HeaderActions />
+                    </View>
                 </View>
                 <Text style={styles.headerSubtitle}>Stay connected with your Clubs and fellow Students!</Text>
 
@@ -255,6 +260,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
+    },
+
+    // keeps "+" and the bell/profile pair together on the right
+    headerRight: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
     },
 
     headerTitle: {

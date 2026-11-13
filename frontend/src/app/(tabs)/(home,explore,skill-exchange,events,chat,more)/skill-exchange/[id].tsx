@@ -20,7 +20,6 @@ import {
   StatusBadge,
   TagChips,
   authorName,
-  backToOrigin,
 } from '@/components/skill-cards';
 import { SkillComments } from '@/components/skill-comments';
 import { ThemedSwitch } from '@/components/themed-switch';
@@ -50,7 +49,7 @@ function leave() {
 export default function SkillPostScreen() {
   const styles = useThemedStyles(createStyles);
   const { colors } = useTheme();
-  const { id, focus, from } = useLocalSearchParams<{ id: string; focus?: string; from?: string }>();
+  const { id, focus } = useLocalSearchParams<{ id: string; focus?: string }>();
   const postId = /^\d+$/.test(id ?? '') ? Number(id) : null;
   const { session, user } = useAuth();
 
@@ -145,7 +144,7 @@ export default function SkillPostScreen() {
   if (loading || notFound || (!post && loadError)) {
     return (
       <View style={styles.container}>
-        <ScreenHeader title="Skill Exchange" onBack={backToOrigin(from)} />
+        <ScreenHeader title="Skill Exchange" />
         {loading ? (
           <ActivityIndicator style={styles.spinner} size="large" color={colors.primary} accessibilityLabel="Loading post" />
         ) : notFound ? (
@@ -206,7 +205,6 @@ export default function SkillPostScreen() {
       <ScreenHeader
         title={post.kind === 'offer' ? 'Offer' : 'Request'}
         subtitle="Skill Exchange"
-        onBack={backToOrigin(from)}
         right={<NotificationBell style={styles.bellButton} pressedStyle={styles.pressed} iconStyle={styles.bellIcon} />}
       />
 

@@ -11,25 +11,15 @@ import type { EngagementStatus, SkillAuthor, SkillKind, SkillPost, SkillStatus }
 import { formatPostDate, formatSlot, timeAgo } from '@/lib/skill-dates';
 import { OnSurface, useTheme, useThemedStyles } from '@/state/theme';
 
-/** Screens outside the Skill Exchange tab that open its screens; Back returns to them. */
-export type SkillOrigin = 'notifications' | 'profile';
-
-export function openSkillPost(postId: number, from?: SkillOrigin) {
-  router.push({ pathname: '/skill-exchange/[id]', params: { id: String(postId), ...(from && { from }) } });
+// open a post / agreement on top of whatever tab we're in. these screens are shared routes,
+// so they stack on the current tab and plain Back returns to where we came from
+// (Notifications, Profile, the list…). no "from" param needed anymore.
+export function openSkillPost(postId: number) {
+  router.push({ pathname: '/skill-exchange/[id]', params: { id: String(postId) } });
 }
 
-export function openSkillEngagement(engagementId: number, from?: SkillOrigin) {
-  router.push({ pathname: '/skill-exchange/engagement/[id]', params: { id: String(engagementId), ...(from && { from }) } });
-}
-
-/**
- * Back for a Skill Exchange screen opened from outside the tab: the screen lives in the
- * tab's own stack, so the previous screen there is the list, not where the user came from.
- */
-export function backToOrigin(from: string | undefined): (() => void) | undefined {
-  if (from === 'notifications') return () => router.navigate('/notifications');
-  if (from === 'profile') return () => router.navigate('/profile');
-  return undefined;
+export function openSkillEngagement(engagementId: number) {
+  router.push({ pathname: '/skill-exchange/engagement/[id]', params: { id: String(engagementId) } });
 }
 
 export const KIND_LABEL: Record<SkillKind, string> = { request: 'Requesting', offer: 'Offering' };

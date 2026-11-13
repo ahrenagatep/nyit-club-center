@@ -10,6 +10,7 @@ import {
 
 import { router } from "expo-router";
 
+import { HeaderActions } from "@/components/header-actions";
 import type { ThemeColors } from "@/constants/theme";
 import { useAuth } from "@/state/auth";
 import { useThemedStyles } from "@/state/theme";
@@ -28,8 +29,10 @@ export default function MoreScreen() {
             showsVerticalScrollIndicator={false}
         >
             {/*Header*/}
-            <View style={styles.header}>
+            <View style={[styles.header, styles.headerRow]}>
                 <Text style={styles.headerSubtitle} accessibilityRole="header">Manage Account</Text>
+                {/* bell + profile, same on every main tab */}
+                <HeaderActions />
             </View>
 
             {/* Profile */}
@@ -95,6 +98,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         paddingTop: 65,
         paddingHorizontal: 22,
         paddingBottom: 40,
+    },
+
+    // title on the left, bell + profile on the right
+    headerRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
     },
 
     headerSubtitle: {

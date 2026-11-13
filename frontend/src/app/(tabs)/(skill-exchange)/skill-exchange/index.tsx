@@ -14,7 +14,7 @@ import {
 import { router, useFocusEffect } from "expo-router";
 
 import { EmptyState } from "@/components/club-cards";
-import { NotificationBell } from "@/components/notification-bell";
+import { HeaderActions } from "@/components/header-actions";
 import { SkillPostCard } from "@/components/skill-cards";
 import { TagPicker, useSkillTagGroups } from "@/components/tag-picker";
 import { ThemedSwitch } from "@/components/themed-switch";
@@ -209,11 +209,8 @@ export default function SkillExchangeScreen() {
                             <Text style={styles.headerSubtitle}>Share your skills and connect with others</Text>
                         </View>
 
-                        <NotificationBell
-                            style={styles.bellButton}
-                            pressedStyle={styles.pressed}
-                            iconStyle={styles.bellIcon}
-                        />
+                        {/* bell + profile, same on every main tab */}
+                        <HeaderActions />
 
                         <Pressable
                             style={({ pressed }) => [styles.postButton, pressed && styles.pressed]}
@@ -550,18 +547,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         fontSize: 13,
         marginTop: 5,
         maxWidth: 250,
-    },
-
-    bellButton: {
-        minWidth: 44,
-        minHeight: 44,
-        alignItems: "center",
-        justifyContent: "center",
-        marginRight: 8,
-    },
-
-    bellIcon: {
-        fontSize: 24,
     },
 
     postButton: {

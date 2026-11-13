@@ -12,7 +12,7 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 
 import { FormField } from '@/components/form-field';
 import { ScreenHeader } from '@/components/screen-header';
-import { ENGAGEMENT_STATUS, KudosBadge, authorName, backToOrigin, initials } from '@/components/skill-cards';
+import { ENGAGEMENT_STATUS, KudosBadge, authorName, initials } from '@/components/skill-cards';
 import { ThemedSwitch } from '@/components/themed-switch';
 import type { ThemeColors } from '@/constants/theme';
 import { ApiError, ENGAGEMENT_MESSAGE_MAX, engagementsApi, type SkillAuthor, type SkillEngagement } from '@/lib/api';
@@ -59,7 +59,7 @@ export default function EngagementScreen() {
   // the same styles in the "on surface" colors, for what's inside the Contact, Done?, Kudos and confirm boxes
   const boxStyles = useThemedStyles(createStyles, 'surface');
   const { colors } = useTheme();
-  const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const engagementId = /^\d+$/.test(id ?? '') ? Number(id) : null;
   const { session } = useAuth();
 
@@ -122,7 +122,7 @@ export default function EngagementScreen() {
   if (!engagement) {
     return (
       <View style={styles.container}>
-        <ScreenHeader title="Skill Exchange" onBack={backToOrigin(from)} />
+        <ScreenHeader title="Skill Exchange" />
         <View style={styles.center}>
           {loadError ? (
             <Text style={styles.errorText} accessibilityRole="alert">
@@ -217,7 +217,7 @@ export default function EngagementScreen() {
           }}
         />
       }>
-      <ScreenHeader title={heading} subtitle={isRequest ? 'Request' : 'Offer'} onBack={backToOrigin(from)} />
+      <ScreenHeader title={heading} subtitle={isRequest ? 'Request' : 'Offer'} />
 
       <View style={styles.body}>
         <View style={[styles.status, { backgroundColor: colors[status.bg] }]}>
