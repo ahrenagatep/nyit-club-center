@@ -15,7 +15,6 @@ import {
 import { router, type Href, useFocusEffect } from "expo-router";
 
 import { openClub, openEvent } from "@/components/club-cards";
-import { getClubById, getMemberCount, type Club } from "@/data/mock-data";
 import { formatEventDate } from "@/lib/events";
 import { ApiError, PROFILE_LIMITS, SCHOOL_YEARS, skillApi, usersApi, type SchoolYear, type SkillSummary } from "@/lib/api";
 import type { ThemePreference } from "@/lib/theme-storage";
@@ -56,7 +55,7 @@ export default function ProfileScreen() {
     const styles = useThemedStyles(createStyles);
     const { colors } = useTheme();
     const { user, session, signOut, updateUser } = useAuth();
-    const { joinedClubIds, rsvpEvents } = useAppState();
+    const { joinedClubIds, rsvpEvents, myClubs } = useAppState();
     const { preference, setPreference } = useDarkMode();
 
     // user is briefly null while signing out, before the redirect to Login.
@@ -67,11 +66,8 @@ export default function ProfileScreen() {
     const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
 
     // Most recently joined first
-    const recentClubs = [...joinedClubIds]
-        .reverse()
-        .map(getClubById)
-        .filter((club): club is Club => club !== undefined)
-        .slice(0, PREVIEW_COUNT);
+    const recentClubs = myClubs.slice(0, PREVIEW_COUNT);
+
     // Soonest RSVP'd events that haven't ended (GET /users/me/events, kept in app state)
     const upcomingEvents = rsvpEvents.slice(0, PREVIEW_COUNT);
 
@@ -296,7 +292,7 @@ export default function ProfileScreen() {
 
                 {recentClubs.length > 0 ? (
                     recentClubs.map((club) => {
-                        const members = `${getMemberCount(club, true)} members`;
+                        const members = `${club.member_count} members`;
                         return (
                             <ActivityRow
                                 key={club.club_id}

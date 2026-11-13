@@ -18,10 +18,11 @@ async function listMyMemberships(req, res) {
     try {
         const result = await pool.query(
             `SELECT c.club_id, c.president_id, c.name, c.description, c.category, c.created_at, 
-                (SELECT COUNT(*) FROM memberships m2 WHERE m2.club_id = c.club_id AND m2.status = 'active')::int AS member_count, m.role
+                (SELECT COUNT(*) FROM memberships m2 WHERE m2.club_id = c.club_id AND m2.status = 'active')::int AS member_count, m.role, m.joined_at
                 FROM clubs c
                 JOIN memberships m ON m.club_id = c.club_id
-                WHERE m.user_id = $1 AND m.status = 'active'`,
+                WHERE m.user_id = $1 AND m.status = 'active'
+                ORDER BY m.joined_at DESC`,
             [user_id] // pass user_id as parameter for $1 , prevents SQL injection
         );
         res.json(result.rows);
